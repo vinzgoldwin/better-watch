@@ -131,24 +131,11 @@ h2 {
   font-weight: 680;
 }
 
-.view-button::before,
-.collection span::before {
-  content: "";
+.view-button svg,
+.collection svg {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
-  background: currentColor;
-  mask-position: center;
-  mask-repeat: no-repeat;
-  mask-size: contain;
-}
-
-.view-button:first-child::before {
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='5' y='5' width='5' height='5'/%3E%3Crect x='14' y='5' width='5' height='5'/%3E%3Crect x='5' y='14' width='5' height='5'/%3E%3Crect x='14' y='14' width='5' height='5'/%3E%3C/g%3E%3C/svg%3E");
-}
-
-.view-button:last-child::before {
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='8' r='3.25'/%3E%3Cpath d='M5.75 19c.75-3.25 2.85-5 6.25-5s5.5 1.75 6.25 5'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .view-button:hover {
@@ -204,10 +191,9 @@ h2 {
   white-space: nowrap;
 }
 
-.collection span::before {
+.collection svg {
   width: 13px;
   height: 13px;
-  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7.5h6l1.7 2H20v7.75A2.25 2.25 0 0 1 17.75 19H6.25A2.25 2.25 0 0 1 4 16.75Z'/%3E%3Cpath d='M4 7.5v9.25'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .collection:hover {
@@ -278,7 +264,7 @@ h2 {
 }
 
 .search input,
-.select select {
+.app-select-trigger {
   height: 36px;
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -301,82 +287,88 @@ h2 {
   color: var(--dim);
 }
 
-.select select {
-  position: absolute;
-  inset: auto;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.custom-select {
-  position: relative;
-  width: 132px;
-}
-
-.custom-select-button {
+.app-select-trigger {
   width: 100%;
-  height: 36px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 0 38px 0 10px;
-  background:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 20px) 16px / 7px 7px no-repeat,
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 13px) 16px / 7px 7px no-repeat,
-    var(--surface-strong);
-  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  background: var(--surface-strong);
   cursor: pointer;
   font-size: 13px;
   font-weight: 400;
-  line-height: 34px;
   text-align: left;
+}
+
+.app-select-trigger:focus {
+  outline: none;
+}
+
+.app-select-trigger:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.app-select-control {
+  width: 132px;
+}
+
+.select.subfolder .app-select-control {
+  width: min(22vw, 235px);
+}
+
+.select.list-filter .app-select-control {
+  width: 156px;
+}
+
+.select.artist-filter .app-select-control {
+  width: 178px;
+}
+
+.app-select-value {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.custom-select-button:focus {
-  outline: none;
+.app-select-trigger-icon {
+  display: inline-flex;
+  color: var(--muted);
 }
 
-.custom-select-button:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--accent);
+.app-select-trigger-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
-.custom-select-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 40;
-  width: 100%;
+.app-select-positioner {
+  z-index: 50;
+}
+
+.app-select-content {
+  z-index: 50;
+  width: var(--anchor-width);
   max-height: min(360px, 54vh);
   overflow: auto;
-  display: none;
-  padding: 5px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: rgba(255, 253, 247, 0.98);
   box-shadow: 0 12px 28px rgba(49, 40, 28, 0.16);
 }
 
-.custom-select-menu.align-right {
-  right: 0;
-  left: auto;
-}
-
-.custom-select.open .custom-select-menu {
-  display: grid;
-  gap: 2px;
-}
-
-.custom-select-option {
+.app-select-item {
+  position: relative;
   min-height: 34px;
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   padding: 0 10px;
   background: transparent;
   color: var(--text);
@@ -386,59 +378,46 @@ h2 {
   font-weight: 650;
 }
 
-.custom-select-option::before {
-  content: "";
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
-  margin-right: 8px;
-  opacity: 0;
-}
-
-.custom-select-option-label {
+.app-select-item-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.custom-select-option:hover {
+.app-select-item[data-highlighted] {
   background: var(--surface-muted);
 }
 
-.custom-select-option.selected {
+.app-select-item[data-selected] {
   background: var(--accent);
   color: #fffaf4;
 }
 
-.custom-select-option.selected::before {
-  opacity: 1;
-  background: currentColor;
-  mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 12.4 9.25 16.65 19 6.9' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+.app-select-item-indicator {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/*
-  Keep width rules attached to the native select classes. The custom control
-  sits next to each hidden select and inherits the intended control footprint.
-*/
-.select select + .custom-select {
-  width: 132px;
+.app-select-item-indicator svg,
+.app-select-scroll svg {
+  width: 15px;
+  height: 15px;
 }
 
-.select.subfolder .custom-select {
-  width: min(22vw, 235px);
+.app-select-scroll {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
 }
 
-.select.list-filter .custom-select {
-  width: 156px;
-}
-
-.select.artist-filter .custom-select {
-  width: 178px;
-}
-
-.search input:focus,
-.select select:focus + .custom-select .custom-select-button {
+.search input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(189, 31, 26, 0.1);
 }
@@ -927,11 +906,24 @@ h2 {
   transform: translateY(0);
 }
 
-.hover-preview img {
+.hover-preview img,
+.hover-preview video {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
+}
+
+.hover-preview video {
+  display: none;
+}
+
+.hover-preview.video-preview img {
+  display: none;
+}
+
+.hover-preview.video-preview video {
+  display: block;
 }
 
 @media (max-width: 1180px) {
@@ -980,14 +972,10 @@ h2 {
   }
 
   .search input,
-  .select .custom-select,
-  .select select + .custom-select,
-  .select.subfolder select,
-  .select.subfolder .custom-select,
-  .select.artist-filter select,
-  .select.artist-filter .custom-select,
-  .select.list-filter select,
-  .select.list-filter .custom-select,
+  .app-select-control,
+  .select.subfolder .app-select-control,
+  .select.artist-filter .app-select-control,
+  .select.list-filter .app-select-control,
   .rescan,
   .cleanup {
     width: 100%;

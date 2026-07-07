@@ -1,3 +1,4 @@
 .cache/
 .playwright-mcp/
+node_modules/
 *.png

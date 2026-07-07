@@ -11,8 +11,10 @@ const PORT = Number(process.env.PORT || 3000);
 const LIBRARY_ROOT = process.env.LIBRARY_ROOT || '/Volumes/Ultra Touch';
 const CACHE_DIR = join(__dirname, '.cache');
 const THUMB_DIR = join(CACHE_DIR, 'thumbs');
+const PREVIEW_DIR = join(CACHE_DIR, 'previews');
 const INDEX_PATH = join(CACHE_DIR, 'index.json');
 const PUBLIC_DIR = join(__dirname, 'public');
+const PREVIEW_DURATION_SECONDS = 6;
 
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mkv', '.mov', '.avi', '.m4v', '.webm']);
 const APPLEDOUBLE_MAGIC = Buffer.from([0x00, 0x05, 0x16, 0x07]);
@@ -339,6 +341,48 @@ async function generateThumb(filePath, id, duration) {
   return `/thumbs/${id}.jpg`;
 }
 
+async function generatePreview(filePath, id, duration) {
+  await mkdir(PREVIEW_DIR, { recursive: true });
+  const outPath = join(PREVIEW_DIR, `${id}.mp4`);
+  if (existsSync(outPath)) return `/previews/${id}.mp4`;
+
+  const safeDuration = duration && duration > PREVIEW_DURATION_SECONDS + 4 ? duration : null;
+  const latestStart = safeDuration ? Math.max(0, safeDuration - PREVIEW_DURATION_SECONDS - 1) : 0;
+  const start = safeDuration ? Math.min(Math.max(2, Math.floor(safeDuration * 0.22)), latestStart) : 0;
+
+  try {
+    await run('ffmpeg', [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-ss',
+      String(start),
+      '-i',
+      filePath,
+      '-t',
+      String(PREVIEW_DURATION_SECONDS),
+      '-an',
+      '-vf',
+      'scale=480:270:force_original_aspect_ratio=increase,crop=480:270,format=yuv420p',
+      '-c:v',
+      'libx264',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '28',
+      '-movflags',
+      '+faststart',
+      outPath
+    ]);
+  } catch (error) {
+    await rm(outPath, { force: true });
+    throw error;
+  }
+
+  return `/previews/${id}.mp4`;
+}
+
 async function loadCachedIndex() {
   try {
     const text = await readFile(INDEX_PATH, 'utf8');
@@ -383,6 +427,7 @@ async function scanLibrary() {
       if (cached?.id === id && cached.thumbnail) {
         movies.push({
           ...cached,
+          preview: existsSync(join(PREVIEW_DIR, `${id}.mp4`)) ? `/previews/${id}.mp4` : null,
           description
         });
         if (movies.length % 8 === 0) library.movies = [...movies];
@@ -420,6 +465,7 @@ async function scanLibrary() {
         width: probe.width,
         height: probe.height,
         thumbnail,
+        preview: existsSync(join(PREVIEW_DIR, `${id}.mp4`)) ? `/previews/${id}.mp4` : null,
         failed
       });
       if (movies.length % 4 === 0) library.movies = [...movies];
@@ -456,6 +502,19 @@ async function serveStatic(request, response) {
 
     response.writeHead(200, { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=31536000' });
     createReadStream(thumbPath).pipe(response);
+    return;
+  }
+
+  if (requestPath.startsWith('/previews/')) {
+    const previewPath = resolve(PREVIEW_DIR, requestPath.replace('/previews/', ''));
+    if (!previewPath.startsWith(resolve(PREVIEW_DIR)) || !existsSync(previewPath)) {
+      response.writeHead(404);
+      response.end('Not found');
+      return;
+    }
+
+    response.writeHead(200, { 'content-type': 'video/mp4', 'cache-control': 'public, max-age=31536000' });
+    createReadStream(previewPath).pipe(response);
     return;
   }
 
@@ -505,6 +564,25 @@ async function handleApi(request, response) {
       }
 
       sendJson(response, 200, await cleanupAppleDoubleSidecars());
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/preview' && request.method === 'POST') {
+    try {
+      const { id } = await readJsonBody(request);
+      const movie = library.movies.find((item) => item.id === id);
+      if (!movie) {
+        sendJson(response, 404, { error: 'Movie not found' });
+        return;
+      }
+
+      const preview = await generatePreview(movie.path, movie.id, movie.duration);
+      movie.preview = preview;
+      await writeFile(INDEX_PATH, JSON.stringify(library, null, 2));
+      sendJson(response, 200, { preview });
     } catch (error) {
       sendJson(response, 400, { error: error.message });
     }
