@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
@@ -15,6 +15,8 @@ const INDEX_PATH = join(CACHE_DIR, 'index.json');
 const PUBLIC_DIR = join(__dirname, 'public');
 
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mkv', '.mov', '.avi', '.m4v', '.webm']);
+const APPLEDOUBLE_MAGIC = Buffer.from([0x00, 0x05, 0x16, 0x07]);
+const SIDECAR_CLEANUP_CONFIRMATION = 'remove-appledouble-sidecars';
 const IGNORED_DIRS = new Set([
   '.Spotlight-V100',
   '.TemporaryItems',
@@ -30,6 +32,7 @@ let library = {
   generatedAt: null,
   scanning: false,
   movies: [],
+  directories: [],
   errors: []
 };
 
@@ -63,6 +66,27 @@ function sendJson(response, statusCode, payload) {
     'cache-control': 'no-store'
   });
   response.end(JSON.stringify(payload));
+}
+
+function readJsonBody(request) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    let body = '';
+    request.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 10_000) {
+        request.destroy();
+        rejectPromise(new Error('Request body too large'));
+      }
+    });
+    request.on('end', () => {
+      try {
+        resolvePromise(JSON.parse(body || '{}'));
+      } catch (error) {
+        rejectPromise(error);
+      }
+    });
+    request.on('error', rejectPromise);
+  });
 }
 
 function cleanTitle(filePath) {
@@ -104,6 +128,115 @@ async function readFinderComment(filePath) {
   }
 }
 
+function shouldSkipDirectory(name) {
+  return name.startsWith('.') || IGNORED_DIRS.has(name);
+}
+
+function isInsideLibraryRoot(filePath) {
+  const root = resolve(LIBRARY_ROOT);
+  const resolvedPath = resolve(filePath);
+  return resolvedPath === root || resolvedPath.startsWith(`${root}/`);
+}
+
+function isAppleDoubleName(name) {
+  return name.startsWith('._') && name.length > 2;
+}
+
+async function isAppleDoubleFile(filePath) {
+  let handle;
+  try {
+    handle = await open(filePath, 'r');
+    const header = Buffer.alloc(APPLEDOUBLE_MAGIC.length);
+    const { bytesRead } = await handle.read(header, 0, header.length, 0);
+    return bytesRead === APPLEDOUBLE_MAGIC.length && header.equals(APPLEDOUBLE_MAGIC);
+  } catch {
+    return false;
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function walkAppleDoubleSidecars(dir, found = []) {
+  let entries = [];
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    return found;
+  }
+
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      if (!shouldSkipDirectory(entry.name)) {
+        await walkAppleDoubleSidecars(fullPath, found);
+      }
+      continue;
+    }
+
+    if (!entry.isFile() || !isAppleDoubleName(entry.name)) continue;
+
+    const stats = await lstat(fullPath);
+    if (!stats.isFile() || !isInsideLibraryRoot(fullPath)) continue;
+    if (await isAppleDoubleFile(fullPath)) found.push(fullPath);
+  }
+
+  return found;
+}
+
+async function cleanupAppleDoubleSidecars() {
+  const sidecars = await walkAppleDoubleSidecars(LIBRARY_ROOT, []);
+  const removed = [];
+  const failed = [];
+
+  for (const filePath of sidecars) {
+    const name = basename(filePath);
+    if (!isAppleDoubleName(name) || !isInsideLibraryRoot(filePath)) continue;
+
+    try {
+      const stats = await lstat(filePath);
+      if (!stats.isFile() || !(await isAppleDoubleFile(filePath))) continue;
+      await rm(filePath);
+      removed.push(relative(LIBRARY_ROOT, filePath));
+    } catch (error) {
+      failed.push({ path: relative(LIBRARY_ROOT, filePath), message: error.message });
+    }
+  }
+
+  return {
+    root: LIBRARY_ROOT,
+    removedCount: removed.length,
+    removed,
+    failed
+  };
+}
+
+async function walkDirectories(dir, found = []) {
+  let entries = [];
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    library.errors.push({ path: dir, message: error.message });
+    return found;
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || shouldSkipDirectory(entry.name)) continue;
+
+    const fullPath = join(dir, entry.name);
+    const relativePath = relative(LIBRARY_ROOT, fullPath);
+    if (relativePath) found.push(relativePath);
+    await walkDirectories(fullPath, found);
+  }
+
+  return found;
+}
+
+async function listLibraryDirectories() {
+  const directories = await walkDirectories(LIBRARY_ROOT, []);
+  return directories.sort((a, b) => a.localeCompare(b));
+}
+
 async function walkVideos(dir, found = []) {
   let entries = [];
   try {
@@ -118,7 +251,7 @@ async function walkVideos(dir, found = []) {
     const fullPath = join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      if (!entry.name.startsWith('.') && !IGNORED_DIRS.has(entry.name)) {
+      if (!shouldSkipDirectory(entry.name)) {
         await walkVideos(fullPath, found);
       }
       continue;
@@ -210,12 +343,14 @@ async function loadCachedIndex() {
   try {
     const text = await readFile(INDEX_PATH, 'utf8');
     library = JSON.parse(text);
+    library.directories = Array.isArray(library.directories) ? library.directories : await listLibraryDirectories();
   } catch {
     library = {
       root: LIBRARY_ROOT,
       generatedAt: null,
       scanning: false,
       movies: [],
+      directories: await listLibraryDirectories(),
       errors: []
     };
   }
@@ -231,7 +366,10 @@ async function scanLibrary() {
   library.errors = [];
 
   await mkdir(THUMB_DIR, { recursive: true });
-  const paths = await walkVideos(LIBRARY_ROOT);
+  const [paths, directories] = await Promise.all([
+    walkVideos(LIBRARY_ROOT),
+    listLibraryDirectories()
+  ]);
   const movies = [];
 
   for (const filePath of paths) {
@@ -296,6 +434,7 @@ async function scanLibrary() {
     generatedAt: new Date().toISOString(),
     scanning: false,
     movies,
+    directories,
     errors: library.errors
   };
 
@@ -341,7 +480,10 @@ async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
   if (url.pathname === '/api/library' && request.method === 'GET') {
-    sendJson(response, 200, library);
+    sendJson(response, 200, {
+      ...library,
+      directories: await listLibraryDirectories()
+    });
     return;
   }
 
@@ -354,27 +496,36 @@ async function handleApi(request, response) {
     return;
   }
 
-  if (url.pathname === '/api/open' && request.method === 'POST') {
-    let body = '';
-    request.on('data', (chunk) => {
-      body += chunk;
-    });
-    request.on('end', () => {
-      try {
-        const { id } = JSON.parse(body || '{}');
-        const movie = library.movies.find((item) => item.id === id);
-        if (!movie) {
-          sendJson(response, 404, { error: 'Movie not found' });
-          return;
-        }
-
-        const opener = spawn('open', ['-a', 'IINA', movie.path], { detached: true, stdio: 'ignore' });
-        opener.unref();
-        sendJson(response, 200, { ok: true });
-      } catch (error) {
-        sendJson(response, 400, { error: error.message });
+  if (url.pathname === '/api/sidecars/cleanup' && request.method === 'POST') {
+    try {
+      const { confirm } = await readJsonBody(request);
+      if (confirm !== SIDECAR_CLEANUP_CONFIRMATION) {
+        sendJson(response, 400, { error: 'Cleanup confirmation is required' });
+        return;
       }
-    });
+
+      sendJson(response, 200, await cleanupAppleDoubleSidecars());
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/open' && request.method === 'POST') {
+    try {
+      const { id } = await readJsonBody(request);
+      const movie = library.movies.find((item) => item.id === id);
+      if (!movie) {
+        sendJson(response, 404, { error: 'Movie not found' });
+        return;
+      }
+
+      const opener = spawn('open', ['-a', 'IINA', movie.path], { detached: true, stdio: 'ignore' });
+      opener.unref();
+      sendJson(response, 200, { ok: true });
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
     return;
   }
 

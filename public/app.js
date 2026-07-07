@@ -24,11 +24,14 @@ const filterSelects = [
   artistListSelect
 ];
 const rescanButton = document.querySelector('#rescanButton');
+const cleanupButton = document.querySelector('#cleanupButton');
+const cleanupStatus = document.querySelector('#cleanupStatus');
 const hoverPreview = document.querySelector('#hoverPreview');
 const hoverPreviewImage = hoverPreview.querySelector('img');
 
 const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
 const ARTIST_MARKS_KEY = 'ultra-touch-gallery:artist-marks';
+const SIDECAR_CLEANUP_CONFIRMATION = 'remove-appledouble-sidecars';
 const MARK_TYPES = [
   { key: 'favorite', label: 'Favorite', icon: 'heart' },
   { key: 'watchLater', label: 'Watch Later', icon: 'clock' },
@@ -42,7 +45,8 @@ const ICONS = {
   info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M12 10.1v5.2"/><path d="M12 7.6h.01"/></svg>',
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.25 7.5 7.25 4.5-7.25 4.5Z"/></svg>',
   refresh: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.15 8.45A6.35 6.35 0 0 1 18.35 11"/><path d="M18.35 6.7V11h-4.3"/><path d="M16.85 15.55A6.35 6.35 0 0 1 5.65 13"/><path d="M5.65 17.3V13h4.3"/></svg>',
-  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4.75 2.18 4.42 4.87.71-3.52 3.43.83 4.85L12 15.87l-4.36 2.29.83-4.85-3.52-3.43 4.87-.71Z"/></svg>'
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4.75 2.18 4.42 4.87.71-3.52 3.43.83 4.85L12 15.87l-4.36 2.29.83-4.85-3.52-3.43 4.87-.71Z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.75 7.25h12.5"/><path d="M9.25 7.25V5.5h5.5v1.75"/><path d="M8 9.75 8.7 18h6.6l.7-8.25"/><path d="M10.75 11.25v4.75"/><path d="M13.25 11.25v4.75"/></svg>'
 };
 
 function iconSvg(name) {
@@ -52,7 +56,41 @@ function iconSvg(name) {
 function closeCustomSelects(except) {
   for (const select of filterSelects) {
     const custom = select.nextElementSibling;
-    if (custom !== except) custom?.classList.remove('open');
+    if (custom !== except) setCustomSelectOpen(custom, false);
+  }
+}
+
+function setCustomSelectOpen(custom, open) {
+  if (!custom?.classList.contains('custom-select')) return;
+
+  custom.classList.toggle('open', open);
+  custom.querySelector('.custom-select-button')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function handleCustomSelectClick(event) {
+  const custom = event.target.closest('.custom-select');
+  if (!custom) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const select = custom.previousElementSibling;
+  if (!select?.matches('select')) return;
+
+  const optionButton = event.target.closest('.custom-select-option');
+  if (optionButton) {
+    select.value = optionButton.dataset.value;
+    closeCustomSelects();
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    updateCustomSelect(select);
+    return;
+  }
+
+  if (event.target.closest('.custom-select-button')) {
+    const willOpen = !custom.classList.contains('open');
+    closeCustomSelects(custom);
+    if (willOpen) positionCustomSelectMenu(custom);
+    setCustomSelectOpen(custom, willOpen);
   }
 }
 
@@ -74,13 +112,13 @@ function positionCustomSelectMenu(custom) {
   const button = custom.querySelector('.custom-select-button');
   const menu = custom.querySelector('.custom-select-menu');
   menu.classList.remove('align-right');
+  menu.style.removeProperty('--select-menu-width');
 
   if (window.matchMedia('(max-width: 900px)').matches) return;
 
   const rect = button.getBoundingClientRect();
   const viewportPadding = 12;
-  const menuWidth = Math.min(Math.max(rect.width, 240), window.innerWidth - viewportPadding * 2);
-  menu.style.setProperty('--select-menu-width', `${menuWidth}px`);
+  const menuWidth = rect.width;
 
   if (rect.left + menuWidth > window.innerWidth - viewportPadding) {
     menu.classList.add('align-right');
@@ -101,15 +139,13 @@ function updateCustomSelect(select) {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = `custom-select-option${option.selected ? ' selected' : ''}`;
-    item.textContent = option.textContent;
+    item.dataset.value = option.value;
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', option.selected ? 'true' : 'false');
-    item.addEventListener('click', () => {
-      select.value = option.value;
-      closeCustomSelects();
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      updateCustomSelect(select);
-    });
+    const label = document.createElement('span');
+    label.className = 'custom-select-option-label';
+    label.textContent = option.textContent;
+    item.append(label);
     menu.append(item);
   }
 }
@@ -118,17 +154,8 @@ function setupCustomSelects() {
   for (const select of filterSelects) {
     const custom = document.createElement('div');
     custom.className = 'custom-select';
-    custom.innerHTML = '<button class="custom-select-button" type="button" aria-haspopup="listbox"></button><div class="custom-select-menu" role="listbox"></div>';
+    custom.innerHTML = '<button class="custom-select-button" type="button" aria-haspopup="listbox" aria-expanded="false"></button><div class="custom-select-menu" role="listbox"></div>';
     select.after(custom);
-
-    const button = custom.querySelector('.custom-select-button');
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const willOpen = !custom.classList.contains('open');
-      closeCustomSelects(custom);
-      if (willOpen) positionCustomSelectMenu(custom);
-      custom.classList.toggle('open', willOpen);
-    });
 
     updateCustomSelect(select);
   }
@@ -329,34 +356,59 @@ function countByFolder() {
   });
 }
 
+function directSubfolderValue(folderPath) {
+  const parts = folderPath.split('/').filter(Boolean);
+  if (!parts.length) return null;
+  if (activeFolder === 'All Films') return parts[0];
+  if (parts[0] !== activeFolder || parts.length < 2) return null;
+  return `${activeFolder}/${parts[1]}`;
+}
+
+function subfolderLabel(value) {
+  return value.split('/').pop() || value;
+}
+
+function movieMatchesSubfolder(movie) {
+  return activeSubfolder === 'All Subfolders' || movie.folder === activeSubfolder || movie.folder.startsWith(`${activeSubfolder}/`);
+}
+
 function availableSubfolders() {
+  const folders = new Map();
   const counts = new Map();
-  counts.set('All Subfolders', 0);
+
+  for (const directory of library.directories || []) {
+    const value = directSubfolderValue(directory);
+    if (value) folders.set(value, subfolderLabel(value));
+  }
 
   for (const movie of library.movies) {
     if (activeFolder !== 'All Films' && movie.topFolder !== activeFolder) continue;
-    counts.set(movie.folder, (counts.get(movie.folder) || 0) + 1);
-    counts.set('All Subfolders', counts.get('All Subfolders') + 1);
+
+    const value = directSubfolderValue(movie.folder);
+    if (!value) continue;
+
+    folders.set(value, subfolderLabel(value));
+    counts.set(value, (counts.get(value) || 0) + 1);
   }
 
-  return [...counts.entries()].sort((a, b) => {
-    if (a[0] === 'All Subfolders') return -1;
-    if (b[0] === 'All Subfolders') return 1;
-    return a[0].localeCompare(b[0]);
-  });
+  const options = [...folders.entries()]
+    .map(([value, label]) => ({ value, label, count: counts.get(value) || 0 }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return [{ value: 'All Subfolders', label: 'All Subfolders', count: options.length }, ...options];
 }
 
 function renderSubfolders() {
   const options = availableSubfolders();
-  const validValues = new Set(options.map(([folder]) => folder));
+  const validValues = new Set(options.map((option) => option.value));
   if (!validValues.has(activeSubfolder)) activeSubfolder = 'All Subfolders';
 
   subfolderSelect.replaceChildren();
-  for (const [folder, count] of options) {
+  for (const optionItem of options) {
     const option = document.createElement('option');
-    option.value = folder;
-    option.textContent = folder === 'All Subfolders' ? `${folder} (${count})` : `${folder} (${count})`;
-    option.selected = folder === activeSubfolder;
+    option.value = optionItem.value;
+    option.textContent = `${optionItem.label} (${optionItem.count})`;
+    option.selected = optionItem.value === activeSubfolder;
     subfolderSelect.append(option);
   }
   updateCustomSelect(subfolderSelect);
@@ -369,7 +421,7 @@ function availableArtists() {
 
   for (const movie of library.movies) {
     if (activeFolder !== 'All Films' && movie.topFolder !== activeFolder) continue;
-    if (activeSubfolder !== 'All Subfolders' && movie.folder !== activeSubfolder) continue;
+    if (!movieMatchesSubfolder(movie)) continue;
     counts.set('All Artists', counts.get('All Artists') + 1);
 
     const artists = movieArtists(movie);
@@ -471,8 +523,7 @@ function filteredMovies() {
   let movies = library.movies.filter((movie) => {
     const folderMatch = activeFolder === 'All Films' || movie.topFolder === activeFolder;
     if (!folderMatch) return false;
-    const subfolderMatch = activeSubfolder === 'All Subfolders' || movie.folder === activeSubfolder;
-    if (!subfolderMatch) return false;
+    if (!movieMatchesSubfolder(movie)) return false;
     const artists = movieArtists(movie);
     const artistMatch =
       activeArtist === 'All Artists' ||
@@ -642,6 +693,18 @@ async function openMovie(movie) {
   });
 }
 
+async function cleanupSidecars() {
+  const response = await fetch('/api/sidecars/cleanup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ confirm: SIDECAR_CLEANUP_CONFIRMATION })
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Sidecar cleanup failed');
+  return result;
+}
+
 function renderMovies() {
   const movies = filteredMovies();
   movieGrid.replaceChildren();
@@ -769,6 +832,7 @@ markFilterSelect.addEventListener('change', () => {
 artistSearchInput.addEventListener('input', renderArtistCards);
 artistSortSelect.addEventListener('change', renderArtistCards);
 artistListSelect.addEventListener('change', renderArtistCards);
+document.addEventListener('click', handleCustomSelectClick, true);
 document.addEventListener('click', () => closeCustomSelects());
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
@@ -791,6 +855,26 @@ rescanButton.addEventListener('click', async () => {
   await fetch('/api/rescan', { method: 'POST' });
   setTimeout(refreshLibrary, 700);
 });
+cleanupButton.addEventListener('click', async () => {
+  const approved = window.confirm('Remove AppleDouble ._* sidecar files from the Ultra Touch library? Real video files are not matched.');
+  if (!approved) return;
+
+  cleanupButton.disabled = true;
+  cleanupButton.innerHTML = `${iconSvg('refresh')}Cleaning...`;
+  cleanupStatus.textContent = '';
+
+  try {
+    const result = await cleanupSidecars();
+    const failed = result.failed?.length ? `, ${result.failed.length} failed` : '';
+    cleanupStatus.textContent = `Removed ${result.removedCount} sidecar${result.removedCount === 1 ? '' : 's'}${failed}.`;
+  } catch (error) {
+    cleanupStatus.textContent = error.message;
+  } finally {
+    cleanupButton.disabled = false;
+    cleanupButton.innerHTML = `${iconSvg('trash')}Clean Sidecars`;
+  }
+});
 
 setupCustomSelects();
+cleanupButton.innerHTML = `${iconSvg('trash')}Clean Sidecars`;
 refreshLibrary();

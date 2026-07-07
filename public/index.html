@@ -26,6 +26,10 @@
           <button class="rescan" id="rescanButton" type="button">
             Rescan Library
           </button>
+          <button class="cleanup" id="cleanupButton" type="button">
+            Clean Sidecars
+          </button>
+          <p class="cleanup-status" id="cleanupStatus" aria-live="polite"></p>
         </div>
       </aside>
 
@@ -37,41 +41,41 @@
               <input id="searchInput" type="search" placeholder="Title, folder, filename">
             </label>
 
-            <label class="select">
+            <div class="select">
               <span>Sort</span>
-              <select id="sortSelect">
+              <select id="sortSelect" aria-label="Sort">
                 <option value="name">Name</option>
                 <option value="folder">Folder</option>
                 <option value="duration">Duration</option>
                 <option value="size">Size</option>
                 <option value="modified">Newest</option>
               </select>
-            </label>
+            </div>
 
-            <label class="select subfolder">
+            <div class="select subfolder">
               <span>Subfolder</span>
-              <select id="subfolderSelect">
+              <select id="subfolderSelect" aria-label="Subfolder">
                 <option value="All Subfolders">All Subfolders</option>
               </select>
-            </label>
+            </div>
 
-            <label class="select artist-filter">
+            <div class="select artist-filter">
               <span>Artist</span>
-              <select id="artistSelect">
+              <select id="artistSelect" aria-label="Artist">
                 <option value="All Artists">All Artists</option>
               </select>
-            </label>
+            </div>
 
-            <label class="select list-filter">
+            <div class="select list-filter">
               <span>List</span>
-              <select id="markFilterSelect">
+              <select id="markFilterSelect" aria-label="List">
                 <option value="all">All Lists</option>
                 <option value="favorite">Favorites</option>
                 <option value="watchLater">Watch Later</option>
                 <option value="watched">Watched</option>
                 <option value="notWatched">Not Watched</option>
               </select>
-            </label>
+            </div>
 
           </div>
         </header>
@@ -86,22 +90,22 @@
                 <input id="artistSearchInput" type="search" placeholder="Artist name">
               </label>
 
-              <label class="select">
+              <div class="select">
                 <span>Sort Artists</span>
-                <select id="artistSortSelect">
+                <select id="artistSortSelect" aria-label="Sort Artists">
                   <option value="name">Name</option>
                   <option value="count">Most Films</option>
                   <option value="favorite">Favorites First</option>
                 </select>
-              </label>
+              </div>
 
-              <label class="select list-filter">
+              <div class="select list-filter">
                 <span>List</span>
-                <select id="artistListSelect">
+                <select id="artistListSelect" aria-label="Artist List">
                   <option value="all">All Artists</option>
                   <option value="favorite">Favorite Artists</option>
                 </select>
-              </label>
+              </div>
             </div>
           </header>
 
