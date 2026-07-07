@@ -12,7 +12,8 @@ import {
   RefreshCw,
   Star,
   Trash2,
-  User
+  User,
+  X
 } from 'lucide-react';
 import {
   Select,
@@ -84,6 +85,11 @@ function formatSize(bytes) {
 function formatResolution(movie) {
   if (!movie.width || !movie.height) return movie.extension || 'Video';
   return `${movie.height}p`;
+}
+
+function formatModified(timestamp) {
+  if (!timestamp) return 'Unknown';
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(timestamp));
 }
 
 function titleCaseFromToken(token) {
@@ -395,6 +401,27 @@ function App() {
       });
   }, [artistMarks, artistSearch, artistSort, artistList, artistSummaries]);
 
+  const selectedMovie = useMemo(
+    () => movies.find((movie) => movie.id === descriptionOpenId) || null,
+    [descriptionOpenId, movies]
+  );
+
+  useEffect(() => {
+    if (!descriptionOpenId) return undefined;
+
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') setDescriptionOpenId(null);
+    }
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [descriptionOpenId]);
+
+  useEffect(() => {
+    if (selectedMovie || !descriptionOpenId) return;
+    setDescriptionOpenId(null);
+  }, [descriptionOpenId, selectedMovie]);
+
   function chooseFolder(folder) {
     setActiveFolder(folder);
     setActiveSubfolder('All Subfolders');
@@ -599,8 +626,8 @@ function App() {
                     movie={movie}
                     marks={movieMarks[movie.id] || {}}
                     isOpening={openingMovieId === movie.id}
-                    descriptionOpen={descriptionOpenId === movie.id}
-                    onToggleDescription={() => setDescriptionOpenId((current) => (current === movie.id ? null : movie.id))}
+                    detailsOpen={descriptionOpenId === movie.id}
+                    onOpenDetails={() => setDescriptionOpenId(movie.id)}
                     onToggleMark={(markKey) => toggleMovieMark(movie.id, markKey)}
                     onOpen={() => openMovie(movie)}
                     onHoverStart={showHoverPreview}
@@ -665,13 +692,21 @@ function App() {
       </div>
 
       <HoverPreview preview={hoverPreview} videoRef={hoverVideoRef} />
+      <MovieDetailsPanel
+        movie={selectedMovie}
+        marks={selectedMovie ? movieMarks[selectedMovie.id] || {} : {}}
+        isOpening={selectedMovie ? openingMovieId === selectedMovie.id : false}
+        onClose={() => setDescriptionOpenId(null)}
+        onToggleMark={(markKey) => selectedMovie && toggleMovieMark(selectedMovie.id, markKey)}
+        onOpen={() => selectedMovie && openMovie(selectedMovie)}
+      />
     </>
   );
 }
 
-function MovieCard({ movie, marks, isOpening, descriptionOpen, onToggleDescription, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
+function MovieCard({ movie, marks, isOpening, detailsOpen, onOpenDetails, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
   return (
-    <article className="movie">
+    <article className={`movie${detailsOpen ? ' selected' : ''}`}>
       <div
         className={`thumb${movie.thumbnail ? '' : ' missing'}`}
         onMouseEnter={(event) => onHoverStart(event, movie)}
@@ -688,11 +723,10 @@ function MovieCard({ movie, marks, isOpening, descriptionOpen, onToggleDescripti
             <p className="path">{movie.folder}</p>
           </div>
           {movie.description ? (
-            <div className={`description-slot${descriptionOpen ? ' open' : ''}`}>
-              <button className="description-trigger" type="button" aria-label="Show description" aria-expanded={descriptionOpen} onClick={onToggleDescription}>
+            <div className="description-slot">
+              <button className="description-trigger" type="button" aria-label="Show details" aria-expanded={detailsOpen} onClick={onOpenDetails}>
                 <Info aria-hidden="true" />
               </button>
-              <div className="description-popover" role="tooltip">{movie.description}</div>
             </div>
           ) : null}
         </div>
@@ -721,6 +755,86 @@ function MovieCard({ movie, marks, isOpening, descriptionOpen, onToggleDescripti
         </button>
       </div>
     </article>
+  );
+}
+
+function MovieDetailsPanel({ movie, marks, isOpening, onClose, onToggleMark, onOpen }) {
+  if (!movie) return null;
+
+  return (
+    <aside className="details-panel" aria-label="Movie details">
+      <div className="details-media">
+        {movie.thumbnail ? <img src={movie.thumbnail} alt={`${movie.title} preview strip`} /> : <div className="details-fallback">No preview</div>}
+      </div>
+
+      <div className="details-content">
+        <div className="details-header">
+          <div>
+            <p className="details-kicker">{movie.topFolder || 'Library'}</p>
+            <h2>{movie.title || movie.relativePath}</h2>
+            <p className="details-path">{movie.folder}</p>
+          </div>
+          <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
+            <X aria-hidden="true" />
+          </button>
+        </div>
+
+        <dl className="details-stats">
+          <div>
+            <dt>Duration</dt>
+            <dd>{formatDuration(movie.duration)}</dd>
+          </div>
+          <div>
+            <dt>Quality</dt>
+            <dd>{formatResolution(movie)}</dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd>{formatSize(movie.size)}</dd>
+          </div>
+          <div>
+            <dt>Modified</dt>
+            <dd>{formatModified(movie.modified)}</dd>
+          </div>
+        </dl>
+
+        {movie.artists?.length ? (
+          <div className="details-section">
+            <h3>Artists</h3>
+            <div className="details-tags">
+              {movie.artists.map((artist) => <span key={artist}>{artist}</span>)}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="details-section details-description">
+          <h3>Description</h3>
+          <p>{movie.description || 'No description available.'}</p>
+        </div>
+
+        <div className="details-actions">
+          <button className="details-play" type="button" disabled={isOpening} onClick={onOpen}>
+            {isOpening ? <RefreshCw aria-hidden="true" /> : <Play aria-hidden="true" />}
+            {isOpening ? 'Opening...' : 'Play'}
+          </button>
+          <div className="details-marks" aria-label="Movie lists">
+            {MARK_TYPES.map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                className={`mark${marks[key] ? ' active' : ''}`}
+                type="button"
+                title={label}
+                aria-label={label}
+                aria-pressed={Boolean(marks[key])}
+                onClick={() => onToggleMark(key)}
+              >
+                <Icon aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
 
