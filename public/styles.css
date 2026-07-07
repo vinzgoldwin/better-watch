@@ -865,22 +865,32 @@ h2 {
 .hover-preview {
   position: fixed;
   z-index: 20;
-  width: min(720px, 54vw);
-  aspect-ratio: 16 / 4.1;
+  width: clamp(320px, 34vw, 520px);
   overflow: hidden;
   pointer-events: none;
   opacity: 0;
-  transform: translateY(6px);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: #151412;
-  box-shadow: 0 12px 28px rgba(49, 40, 28, 0.22);
-  transition: opacity 120ms ease, transform 120ms ease;
+  transform: translate3d(0, 8px, 0) scale(0.985);
+  border: 1px solid rgba(255, 253, 247, 0.16);
+  border-radius: 8px;
+  background: #171511;
+  box-shadow:
+    0 24px 58px rgba(49, 40, 28, 0.34),
+    0 0 0 1px rgba(49, 40, 28, 0.08);
+  transition: opacity 160ms ease, transform 180ms ease;
 }
 
 .hover-preview.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.hover-preview-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.08), transparent 42%),
+    #151412;
 }
 
 .hover-preview img,
@@ -889,6 +899,11 @@ h2 {
   height: 100%;
   display: block;
   object-fit: cover;
+}
+
+.hover-preview.image-preview img {
+  filter: saturate(0.86) contrast(0.9);
+  transform: scale(1.02);
 }
 
 .hover-preview video {
@@ -901,6 +916,53 @@ h2 {
 
 .hover-preview.video-preview video {
   display: block;
+}
+
+.hover-preview-badge {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 253, 247, 0.18);
+  border-radius: 4px;
+  background: rgba(18, 17, 15, 0.76);
+  color: rgba(255, 250, 244, 0.92);
+  font-size: 11px;
+  font-weight: 720;
+  backdrop-filter: blur(10px);
+}
+
+.hover-preview-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px 12px;
+  border-top: 1px solid rgba(255, 253, 247, 0.09);
+  background: rgba(23, 21, 17, 0.98);
+  color: rgba(255, 250, 244, 0.72);
+}
+
+.hover-preview-details p {
+  overflow: hidden;
+  margin: 0;
+  color: #fffaf4;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hover-preview-details span {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .details-panel {

@@ -23,42 +23,21 @@ import {
   SelectTrigger,
   SelectValue
 } from './components/ui/select.jsx';
+import { enrichMoviesWithArtists } from './lib/artists.js';
 
 const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
 const ARTIST_MARKS_KEY = 'ultra-touch-gallery:artist-marks';
 const SIDECAR_CLEANUP_CONFIRMATION = 'remove-appledouble-sidecars';
 const HOVER_PREVIEW_DELAY_MS = 300;
+const HOVER_PREVIEW_MARGIN = 18;
+const HOVER_PREVIEW_MIN_WIDTH = 320;
+const HOVER_PREVIEW_MAX_WIDTH = 520;
 
 const MARK_TYPES = [
   { key: 'favorite', label: 'Favorite', Icon: Heart },
   { key: 'watchLater', label: 'Watch Later', Icon: Clock },
   { key: 'watched', label: 'Watched', Icon: CheckCircle }
 ];
-
-const NON_ARTIST_FOLDERS = new Set([
-  'AT',
-  'Pure Taboo',
-  'Zero Tolerance',
-  'Gold Digger',
-  'digital playground',
-  'homewreck',
-  'seduction',
-  'taboo',
-  'xxxsmall',
-  'babysitter',
-  'breed',
-  'cheat',
-  'ebony',
-  'fp',
-  'ginger',
-  'Hijab',
-  'missa',
-  'stepsibling',
-  'tame brat',
-  'xxxtrasmall',
-  'ol',
-  'Photos (2)'
-]);
 
 function readStoredObject(key) {
   try {
@@ -90,48 +69,6 @@ function formatResolution(movie) {
 function formatModified(timestamp) {
   if (!timestamp) return 'Unknown';
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(timestamp));
-}
-
-function titleCaseFromToken(token) {
-  return token
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
-    .replace(/[^a-zA-Z ]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function looksLikeArtistName(name) {
-  if (!name || NON_ARTIST_FOLDERS.has(name)) return false;
-  const words = name.split(/\s+/);
-  return words.length >= 2 && words.length <= 3 && words.every((word) => /^[A-Z][a-z]+$/.test(word));
-}
-
-function inferArtists(movie) {
-  const artists = new Set();
-  const folders = movie.folder.split('/');
-
-  for (const folder of folders) {
-    if (looksLikeArtistName(folder)) artists.add(folder);
-  }
-
-  const fileName = movie.relativePath.split('/').pop()?.replace(/\.[^.]+$/, '') || '';
-  const parts = fileName.split(/[_-]+/);
-  const sceneIndex = parts.findIndex((part) => /^s\d+$/i.test(part));
-  if (sceneIndex >= 0) {
-    for (const part of parts.slice(sceneIndex + 1)) {
-      if (/^(720p|1080p|2160p|4k|h264|h265|x264|x265)$/i.test(part)) break;
-      const name = titleCaseFromToken(part);
-      if (looksLikeArtistName(name)) artists.add(name);
-    }
-  }
-
-  return [...artists].sort((a, b) => a.localeCompare(b));
-}
-
-function movieArtists(movie) {
-  return movie.artists || inferArtists(movie);
 }
 
 function directSubfolderValue(folderPath, activeFolder) {
@@ -195,10 +132,7 @@ function App() {
   const hoverToken = useRef(0);
   const hoverVideoRef = useRef(null);
 
-  const movies = useMemo(
-    () => library.movies.map((movie) => ({ ...movie, artists: movieArtists(movie) })),
-    [library.movies]
-  );
+  const movies = useMemo(() => enrichMoviesWithArtists(library.movies), [library.movies]);
 
   const refreshLibrary = useCallback(async () => {
     const response = await fetch('/api/library');
@@ -480,17 +414,37 @@ function App() {
     }
   }
 
+  function getHoverPreviewPosition(event) {
+    const source = event.currentTarget?.getBoundingClientRect?.();
+    const margin = HOVER_PREVIEW_MARGIN;
+    const width = Math.min(
+      HOVER_PREVIEW_MAX_WIDTH,
+      Math.max(HOVER_PREVIEW_MIN_WIDTH, window.innerWidth * 0.34, source?.width || 0)
+    );
+    const height = width * (9 / 16) + 74;
+
+    if (!source || window.innerWidth <= 680) {
+      return {
+        x: Math.max(margin, Math.min(event.clientX - width / 2, window.innerWidth - width - margin)),
+        y: Math.max(margin, Math.min(event.clientY + margin, window.innerHeight - height - margin))
+      };
+    }
+
+    let left = source.right + margin;
+    if (left + width > window.innerWidth - margin) left = source.left - width - margin;
+    if (left < margin) left = Math.max(margin, window.innerWidth - width - margin);
+
+    let top = source.top + source.height / 2 - height / 2;
+    top = Math.max(margin, Math.min(top, window.innerHeight - height - margin));
+
+    return { x: left, y: top };
+  }
+
   function positionHover(event) {
+    const position = getHoverPreviewPosition(event);
     setHoverPreview((current) => {
       if (!current) return current;
-      const width = 360;
-      const height = 220;
-      const margin = 18;
-      let left = event.clientX + margin;
-      let top = event.clientY + margin;
-      if (left + width > window.innerWidth - margin) left = event.clientX - width - margin;
-      if (top + height > window.innerHeight - margin) top = event.clientY - height - margin;
-      return { ...current, x: Math.max(margin, left), y: Math.max(margin, top) };
+      return { ...current, ...position };
     });
   }
 
@@ -499,8 +453,8 @@ function App() {
     clearTimeout(hoverTimer.current);
     hoverToken.current += 1;
     const token = hoverToken.current;
-    setHoverPreview({ movie, x: event.clientX + 18, y: event.clientY + 18, preview: movie.preview || null });
-    positionHover(event);
+    const position = getHoverPreviewPosition(event);
+    setHoverPreview({ movie, ...position, preview: movie.preview || null });
 
     if (!movie.preview) {
       hoverTimer.current = window.setTimeout(() => requestPreview(movie, token), HOVER_PREVIEW_DELAY_MS);
@@ -871,13 +825,23 @@ function HoverPreview({ preview, videoRef }) {
   if (!preview) return null;
 
   const style = { left: `${preview.x}px`, top: `${preview.y}px` };
+  const hasVideo = Boolean(preview.preview);
 
   return (
-    <div className={`hover-preview visible${preview.preview ? ' video-preview' : ''}`} aria-hidden="true" style={style}>
-      {preview.preview ? (
-        <video ref={videoRef} src={preview.preview} poster={preview.movie.thumbnail} muted loop playsInline autoPlay preload="metadata" />
-      ) : null}
-      <img src={preview.movie.thumbnail} alt="" />
+    <div className={`hover-preview visible${hasVideo ? ' video-preview' : ' image-preview'}`} aria-hidden="true" style={style}>
+      <div className="hover-preview-media">
+        {hasVideo ? (
+          <video ref={videoRef} src={preview.preview} poster={preview.movie.thumbnail} muted loop playsInline autoPlay preload="metadata" />
+        ) : null}
+        <img src={preview.movie.thumbnail} alt="" />
+        <div className="hover-preview-badge">{hasVideo ? 'Live preview' : 'Preparing preview'}</div>
+      </div>
+      <div className="hover-preview-details">
+        <p>{preview.movie.title || preview.movie.relativePath}</p>
+        <span>{formatDuration(preview.movie.duration)}</span>
+        <span>{formatResolution(preview.movie)}</span>
+        <span>{formatSize(preview.movie.size)}</span>
+      </div>
     </div>
   );
 }

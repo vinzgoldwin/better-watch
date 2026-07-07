@@ -5,6 +5,7 @@ import { lstat, mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
+import { enrichMoviesWithArtists } from './src/lib/artists.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
@@ -388,6 +389,7 @@ async function loadCachedIndex() {
     const text = await readFile(INDEX_PATH, 'utf8');
     library = JSON.parse(text);
     library.directories = Array.isArray(library.directories) ? library.directories : await listLibraryDirectories();
+    library.movies = Array.isArray(library.movies) ? enrichMoviesWithArtists(library.movies) : [];
   } catch {
     library = {
       root: LIBRARY_ROOT,
@@ -479,7 +481,7 @@ async function scanLibrary() {
     root: LIBRARY_ROOT,
     generatedAt: new Date().toISOString(),
     scanning: false,
-    movies,
+    movies: enrichMoviesWithArtists(movies),
     directories,
     errors: library.errors
   };

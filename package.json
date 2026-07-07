@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
+    "artists:audit": "node scripts/audit-artists.js",
     "start": "node server.js"
   },
   "engines": {
