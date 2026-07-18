@@ -6,6 +6,13 @@ import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
+import {
+  ENGLISH_SUB_COLLECTIONS,
+  isEnglishSubtitleFile,
+  movieHasEnglishSub,
+  normalizedSubtitleKey,
+  subtitleCatalogKey
+} from './src/lib/english-subs.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
@@ -128,6 +135,71 @@ async function readFinderComment(filePath) {
     return comment.replace(/\r\n/g, '\n');
   } catch {
     return null;
+  }
+}
+
+async function readFinderTags(filePath) {
+  try {
+    const output = await run('mdls', ['-raw', '-name', 'kMDItemUserTags', filePath]);
+    return output.trim() === '(null)' ? '' : output;
+  } catch {
+    return '';
+  }
+}
+
+async function collectEnglishSubtitleKeys(dir, collection, found) {
+  let entries = [];
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('._')) continue;
+    const fullPath = join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      await collectEnglishSubtitleKeys(fullPath, collection, found);
+    } else if (entry.isFile() && isEnglishSubtitleFile(fullPath)) {
+      const key = normalizedSubtitleKey(fullPath);
+      if (key) found.add(subtitleCatalogKey(collection, key));
+    }
+  }
+}
+
+async function buildEnglishSubtitleCatalog() {
+  const keys = new Set();
+
+  for (const collection of ENGLISH_SUB_COLLECTIONS) {
+    const collectionPath = join(LIBRARY_ROOT, collection);
+    let entries = [];
+    try {
+      entries = await readdir(collectionPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !/^sub(?:$|[-_ ])/i.test(entry.name)) continue;
+      await collectEnglishSubtitleKeys(join(collectionPath, entry.name), collection, keys);
+    }
+  }
+
+  return keys;
+}
+
+async function refreshEnglishSubtitleStatus(movies) {
+  const subtitleKeys = await buildEnglishSubtitleCatalog();
+
+  for (const movie of movies) {
+    const collection = movie.relativePath.split('/')[0]?.toLowerCase();
+    const finderTags = ENGLISH_SUB_COLLECTIONS.has(collection) ? await readFinderTags(movie.path) : '';
+    movie.hasEnglishSub = movieHasEnglishSub({
+      relativePath: movie.relativePath,
+      finderTags,
+      subtitleKeys
+    });
   }
 }
 
@@ -390,6 +462,7 @@ async function loadCachedIndex() {
     library = JSON.parse(text);
     library.directories = Array.isArray(library.directories) ? library.directories : await listLibraryDirectories();
     library.movies = Array.isArray(library.movies) ? enrichMoviesWithArtists(library.movies) : [];
+    await refreshEnglishSubtitleStatus(library.movies);
   } catch {
     library = {
       root: LIBRARY_ROOT,
@@ -416,6 +489,7 @@ async function scanLibrary() {
     walkVideos(LIBRARY_ROOT),
     listLibraryDirectories()
   ]);
+  const subtitleKeys = await buildEnglishSubtitleCatalog();
   const movies = [];
 
   for (const filePath of paths) {
@@ -424,13 +498,19 @@ async function scanLibrary() {
       const id = fileHash(filePath, stats);
       const relativePath = relative(LIBRARY_ROOT, filePath);
       const cached = previous.get(filePath);
-      const description = await readFinderComment(filePath);
+      const collection = relativePath.split('/')[0]?.toLowerCase();
+      const [description, finderTags] = await Promise.all([
+        readFinderComment(filePath),
+        ENGLISH_SUB_COLLECTIONS.has(collection) ? readFinderTags(filePath) : Promise.resolve('')
+      ]);
+      const hasEnglishSub = movieHasEnglishSub({ relativePath, finderTags, subtitleKeys });
 
       if (cached?.id === id && cached.thumbnail) {
         movies.push({
           ...cached,
           preview: existsSync(join(PREVIEW_DIR, `${id}.mp4`)) ? `/previews/${id}.mp4` : null,
-          description
+          description,
+          hasEnglishSub
         });
         if (movies.length % 8 === 0) library.movies = [...movies];
         continue;
@@ -463,6 +543,7 @@ async function scanLibrary() {
         size: stats.size,
         modified: stats.mtimeMs,
         description,
+        hasEnglishSub,
         duration: probe.duration,
         width: probe.width,
         height: probe.height,

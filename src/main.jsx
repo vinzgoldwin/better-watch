@@ -669,6 +669,7 @@ function MovieCard({ movie, marks, isOpening, detailsOpen, onOpenDetails, onTogg
       >
         {movie.thumbnail ? <img src={movie.thumbnail} alt={`${movie.title} preview strip`} /> : null}
         <div className="fallback">No preview</div>
+        {movie.hasEnglishSub ? <span className="subtitle-badge">English Sub</span> : null}
       </div>
       <div className="movie-body">
         <div className="movie-heading">
@@ -727,6 +728,7 @@ function MovieDetailsPanel({ movie, marks, isOpening, onClose, onToggleMark, onO
             <p className="details-kicker">{movie.topFolder || 'Library'}</p>
             <h2>{movie.title || movie.relativePath}</h2>
             <p className="details-path">{movie.folder}</p>
+            {movie.hasEnglishSub ? <span className="subtitle-badge details-subtitle-badge">English Sub</span> : null}
           </div>
           <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
             <X aria-hidden="true" />
