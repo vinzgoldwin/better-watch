@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --canvas: #f6f2ea;
+        --paper: #fbf8f1;
+        --tile: #ece8e1;
+        --tile-deep: #d9d1c4;
+        --ink: #181715;
+        --muted: #6f695f;
+        --dim: #6f695f;
+        --line: #d9d1c4;
+        --line-strong: #bcae9e;
+        --accent: #bd1f1a;
+        --accent-dark: #981612;
+        --accent-soft: #f6ded9;
+        --green: #5d8b6b;
+        --navy: #181515;
+        --navy-soft: #252120;
+        --white: #fffdf7;
+        --shadow: 0 20px 44px rgba(57, 43, 28, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        margin: 0;
+        background: var(--canvas);
+      }
+
+      body {
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--canvas);
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .scene-ground {
+        position: absolute;
+        inset: 0;
+        background: var(--canvas);
+      }
+
+      .scene-ground.dark {
+        background: var(--navy);
+      }
+
+      .scene-grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.5;
+        background-image:
+          linear-gradient(to right, rgba(24, 23, 21, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(24, 23, 21, 0.04) 1px, transparent 1px);
+        background-size: 72px 72px;
+      }
+
+      .scene-grid.dark {
+        background-image:
+          linear-gradient(to right, rgba(251, 248, 241, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(251, 248, 241, 0.04) 1px, transparent 1px);
+      }
+
+      .paper-line {
+        position: absolute;
+        background: var(--line);
+      }
+
+      .paper-line.horizontal {
+        width: 100%;
+        height: 1px;
+      }
+
+      .paper-line.vertical {
+        width: 1px;
+        height: 100%;
+      }
+
+      .mono,
+      .eyebrow,
+      .micro,
+      .field-label,
+      .app-kicker,
+      .status-chip,
+      .meta-label,
+      .sort-menu,
+      .side-heading,
+      .ui-label {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .eyebrow,
+      .app-kicker {
+        color: var(--accent);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .display {
+        margin: 0;
+        font-size: 104px;
+        font-weight: 400;
+        letter-spacing: -0.055em;
+        line-height: 0.98;
+      }
+
+      .subhead {
+        margin: 0;
+        color: var(--muted);
+        font-size: 29px;
+        font-weight: 400;
+        letter-spacing: -0.015em;
+        line-height: 1.35;
+      }
+
+      .callout {
+        position: absolute;
+        z-index: 12;
+        width: 370px;
+      }
+
+      .callout .eyebrow {
+        display: block;
+        margin-bottom: 18px;
+      }
+
+      .callout h2 {
+        margin: 0;
+        font-size: 50px;
+        font-weight: 400;
+        letter-spacing: -0.045em;
+        line-height: 1.03;
+      }
+
+      .callout p {
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 24px;
+        line-height: 1.42;
+      }
+
+      .title-plate {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 1fr 1.05fr;
+        align-items: center;
+        gap: 40px;
+        padding: 0 170px;
+      }
+
+      .title-copy {
+        position: relative;
+        z-index: 2;
+        padding-bottom: 40px;
+      }
+
+      .title-copy .eyebrow {
+        margin-bottom: 30px;
+      }
+
+      .title-copy .display {
+        max-width: 760px;
+      }
+
+      .title-copy .subhead {
+        max-width: 580px;
+        margin-top: 34px;
+      }
+
+      .title-mark {
+        position: relative;
+        justify-self: end;
+        width: 480px;
+        height: 480px;
+        display: grid;
+        place-items: center;
+      }
+
+      .title-mark::before,
+      .title-mark::after {
+        content: "";
+        position: absolute;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+      }
+
+      .title-mark::before {
+        inset: 0;
+      }
+
+      .title-mark::after {
+        inset: 52px;
+        border-style: dashed;
+      }
+
+      .title-mark img {
+        position: relative;
+        z-index: 2;
+        width: 178px;
+        height: 178px;
+      }
+
+      .file-stack {
+        position: absolute;
+        right: 260px;
+        bottom: 168px;
+        width: 500px;
+        height: 300px;
+        opacity: 0.72;
+      }
+
+      .file-strip {
+        position: absolute;
+        right: 0;
+        width: 480px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        padding: 0 24px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--muted);
+        font-size: 20px;
+        box-shadow: 0 7px 18px rgba(57, 43, 28, 0.07);
+      }
+
+      .file-strip:nth-child(1) { top: 0; right: 42px; }
+      .file-strip:nth-child(2) { top: 84px; right: 0; }
+      .file-strip:nth-child(3) { top: 168px; right: 74px; }
+
+      .file-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        border: 1px solid rgba(189, 31, 26, 0.35);
+      }
+
+      .file-strip:nth-child(2) .file-dot { background: #e7eee5; border-color: rgba(93, 139, 107, 0.5); }
+      .file-strip:nth-child(3) .file-dot { background: #e6e0ed; border-color: rgba(119, 98, 146, 0.35); }
+
+      .micro-note {
+        position: absolute;
+        left: 170px;
+        bottom: 88px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .micro-note::before {
+        content: "";
+        display: inline-block;
+        width: 46px;
+        height: 1px;
+        margin: 0 16px 5px 0;
+        background: var(--accent);
+      }
+
+      .app-stage {
+        position: absolute;
+        inset: 0;
+        padding: 112px 140px 86px 520px;
+      }
+
+      .app-window {
+        position: relative;
+        width: 1260px;
+        height: 882px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 264px minmax(0, 1fr);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .app-rail {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        padding: 34px 22px 24px;
+        border-right: 1px solid var(--line);
+        background: rgba(251, 248, 241, 0.92);
+      }
+
+      .app-brand {
+        padding: 4px 8px 22px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .app-brand small {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .app-brand strong {
+        display: block;
+        font-size: 31px;
+        font-weight: 800;
+        letter-spacing: -0.07em;
+        line-height: 0.9;
+        text-transform: uppercase;
+      }
+
+      .app-brand em {
+        display: block;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 15px;
+        font-style: normal;
+      }
+
+      .view-nav {
+        display: grid;
+        gap: 5px;
+      }
+
+      .view-row,
+      .collection-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .view-row.active,
+      .collection-row.active {
+        border-color: var(--line);
+        background: var(--white);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .view-row .view-name,
+      .collection-row .view-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav-icon {
+        width: 18px;
+        color: currentColor;
+        font-size: 18px;
+        text-align: center;
+      }
+
+      .side-heading {
+        margin: 18px 12px 5px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .collection-list {
+        display: grid;
+        gap: 2px;
+      }
+
+      .collection-row small {
+        color: var(--dim);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      .rail-footer {
+        display: grid;
+        gap: 10px;
+        margin-top: auto;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+      }
+
+      .scan-button {
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 5px;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .scan-button.accent {
+        background: var(--accent);
+      }
+
+      .app-main {
+        min-width: 0;
+        padding: 28px 30px 32px;
+        background: var(--canvas);
+      }
+
+      .app-toolbar {
+        display: grid;
+        grid-template-columns: minmax(255px, 1.25fr) 170px 250px 220px;
+        gap: 12px;
+        align-items: end;
+        padding-bottom: 22px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field-label {
+        padding-left: 2px;
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .field-box {
+        height: 43px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 15px;
+      }
+
+      .field-box.muted {
+        color: var(--muted);
+      }
+
+      .field-box.focused {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(189, 31, 26, 0.1);
+      }
+
+      .chevron {
+        width: 0;
+        height: 0;
+        border-right: 6px solid transparent;
+        border-left: 6px solid transparent;
+        border-top: 7px solid var(--muted);
+      }
+
+      .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        padding-top: 24px;
+      }
+
+      .movie-card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--paper);
+        box-shadow: 0 1px 2px rgba(57, 43, 28, 0.06);
+      }
+
+      .movie-card.compact {
+        min-height: 256px;
+      }
+
+      .movie-art {
+        position: relative;
+        height: 126px;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background: #252120;
+      }
+
+      .movie-art::before,
+      .movie-art::after {
+        content: "";
+        position: absolute;
+      }
+
+      .movie-art::before {
+        top: 20px;
+        left: 44px;
+        width: 180px;
+        height: 180px;
+        border: 3px solid rgba(251, 248, 241, 0.28);
+        border-radius: 50%;
+      }
+
+      .movie-art::after {
+        right: 46px;
+        bottom: -12px;
+        width: 210px;
+        height: 110px;
+        border: 3px solid rgba(251, 248, 241, 0.24);
+        transform: rotate(-18deg);
+      }
+
+      .art-a { background: #3d4b4d; }
+      .art-a::before { border-color: rgba(235, 208, 174, 0.7); }
+      .art-b { background: #746b5f; }
+      .art-b::before { left: 210px; border-color: rgba(226, 230, 213, 0.7); }
+      .art-c { background: #554a66; }
+      .art-c::after { border-color: rgba(232, 215, 187, 0.65); }
+      .art-d { background: #9b745f; }
+      .art-d::before { border-color: rgba(236, 233, 210, 0.7); }
+      .art-e { background: #3e5b58; }
+      .art-e::after { border-color: rgba(218, 225, 190, 0.7); }
+      .art-f { background: #655167; }
+      .art-f::before { border-color: rgba(242, 221, 204, 0.7); }
+
+      .art-code {
+        position: absolute;
+        right: 18px;
+        bottom: 15px;
+        color: rgba(251, 248, 241, 0.75);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .movie-body {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 15px;
+        padding: 17px 18px 16px;
+      }
+
+      .movie-title {
+        overflow: hidden;
+        margin: 0;
+        font-size: 18px;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .movie-path {
+        overflow: hidden;
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .movie-marks {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .mark {
+        width: 29px;
+        height: 29px;
+        display: grid;
+        place-items: center;
+        border: 1px solid transparent;
+        border-radius: 50%;
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1;
+      }
+
+      .mark.active {
+        border-color: var(--accent-soft);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .mark.green {
+        border-color: rgba(93, 139, 107, 0.24);
+        background: #e7eee5;
+        color: var(--green);
+      }
+
+      .movie-meta {
+        display: flex;
+        gap: 24px;
+        grid-column: 1 / -1;
+        padding-top: 13px;
+        border-top: 1px solid var(--line);
+      }
+
+      .meta-item {
+        display: grid;
+        gap: 5px;
+      }
+
+      .meta-label {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .meta-value {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .play-button {
+        width: 51px;
+        height: 42px;
+        align-self: end;
+        display: grid;
+        place-items: center;
+        border-radius: 5px;
+        background: var(--accent);
+        color: var(--paper);
+        font-size: 21px;
+      }
+
+      .play-button span {
+        display: block;
+        margin-left: 3px;
+        font-size: 17px;
+      }
+
+      .status-chip {
+        position: absolute;
+        right: 26px;
+        bottom: 23px;
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 11px;
+        border: 1px solid rgba(93, 139, 107, 0.35);
+        border-radius: 999px;
+        background: #e7eee5;
+        color: #315842;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .search-typing {
+        display: inline-flex;
+        min-width: 130px;
+      }
+
+      .search-typing span {
+        display: inline-block;
+      }
+
+      .caret {
+        width: 2px;
+        height: 21px;
+        margin-left: 4px;
+        background: var(--accent);
+      }
+
+      .sort-menu {
+        position: absolute;
+        top: 84px;
+        left: 308px;
+        z-index: 8;
+        width: 212px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--paper);
+        box-shadow: 0 18px 30px rgba(57, 43, 28, 0.16);
+      }
+
+      .sort-field {
+        position: relative;
+      }
+
+      .sort-field .sort-menu {
+        top: calc(100% + 8px);
+        left: 0;
+        width: 100%;
+      }
+
+      .preview-sort-menu {
+        top: 214px;
+        left: 1085px;
+        width: 170px;
+      }
+
+      .search-sort-menu,
+      .preview-sort-menu {
+        opacity: 0;
+      }
+
+      .sort-option {
+        min-height: 41px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 15px;
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .sort-option.selected {
+        background: var(--accent);
+        color: var(--paper);
+      }
+
+      .preview-panel {
+        position: absolute;
+        top: 170px;
+        right: 54px;
+        z-index: 20;
+        width: 510px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 253, 247, 0.18);
+        border-radius: 10px;
+        background: var(--navy);
+        box-shadow: 0 26px 62px rgba(49, 40, 28, 0.32);
+      }
+
+      .preview-media {
+        position: relative;
+        height: 286px;
+        overflow: hidden;
+        background: #4a5551;
+      }
+
+      .preview-media::before,
+      .preview-media::after {
+        content: "";
+        position: absolute;
+        border: 3px solid rgba(251, 248, 241, 0.38);
+      }
+
+      .preview-media::before {
+        top: 35px;
+        left: 56px;
+        width: 230px;
+        height: 230px;
+        border-radius: 50%;
+      }
+
+      .preview-media::after {
+        right: 28px;
+        bottom: 20px;
+        width: 260px;
+        height: 114px;
+        border-color: rgba(228, 221, 190, 0.7);
+        transform: rotate(-8deg);
+      }
+
+      .preview-stamp {
+        position: absolute;
+        left: 22px;
+        bottom: 18px;
+        color: rgba(251, 248, 241, 0.82);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .preview-live {
+        position: absolute;
+        right: 18px;
+        bottom: 16px;
+        padding: 7px 10px;
+        border: 1px solid rgba(251, 248, 241, 0.22);
+        border-radius: 4px;
+        background: rgba(24, 21, 21, 0.65);
+        color: var(--paper);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .preview-details {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 15px;
+        align-items: center;
+        padding: 17px 18px 18px;
+        border-top: 1px solid rgba(251, 248, 241, 0.12);
+        color: rgba(251, 248, 241, 0.72);
+      }
+
+      .preview-details strong {
+        overflow: hidden;
+        color: var(--paper);
+        font-size: 15px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .preview-details span {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      .cursor {
+        position: absolute;
+        z-index: 30;
+        width: 26px;
+        height: 34px;
+      }
+
+      .cursor::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        border-top: 24px solid var(--ink);
+        border-right: 15px solid transparent;
+        filter: drop-shadow(0 1px 0 var(--paper));
+      }
+
+      .cursor-ring {
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        margin: -4px 0 0 -4px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        opacity: 0;
+      }
+
+      .list-rail {
+        position: absolute;
+        top: 145px;
+        right: 96px;
+        z-index: 16;
+        width: 410px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .list-rail h3 {
+        margin: 0 0 22px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .list-item {
+        display: grid;
+        grid-template-columns: 44px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        min-height: 68px;
+        border-top: 1px solid var(--line);
+      }
+
+      .list-item:first-of-type {
+        border-top: 0;
+      }
+
+      .list-mark {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 19px;
+      }
+
+      .list-item:nth-of-type(3) .list-mark { background: #eee8dc; color: #8d806f; }
+      .list-item:nth-of-type(4) .list-mark { background: #e7eee5; color: var(--green); }
+
+      .list-item strong {
+        display: block;
+        font-size: 16px;
+      }
+
+      .list-item > div > span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .list-count {
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      .details-panel {
+        position: absolute;
+        top: 126px;
+        right: 54px;
+        z-index: 18;
+        width: 478px;
+        height: 724px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        box-shadow: 0 22px 56px rgba(57, 43, 28, 0.2);
+      }
+
+      .details-art {
+        height: 156px;
+        background: #3e5b58;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .details-content {
+        padding: 25px 27px 28px;
+      }
+
+      .details-kicker {
+        margin: 0 0 9px;
+        color: var(--accent);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .details-content h3 {
+        margin: 0;
+        font-size: 29px;
+        font-weight: 750;
+        letter-spacing: -0.03em;
+      }
+
+      .details-path {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .details-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1px;
+        margin: 24px 0 0;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+
+      .detail-stat {
+        min-height: 67px;
+        padding: 12px 13px;
+        background: var(--paper);
+      }
+
+      .detail-stat small {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .detail-stat strong {
+        font-size: 16px;
+      }
+
+      .details-section {
+        margin-top: 22px;
+      }
+
+      .details-section h4 {
+        margin: 0 0 9px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .tag {
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--white);
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .details-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .details-footer {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 16px 27px 20px;
+        border-top: 1px solid var(--line);
+        background: rgba(251, 248, 241, 0.97);
+      }
+
+      .details-play {
+        height: 43px;
+        display: grid;
+        place-items: center;
+        border-radius: 5px;
+        background: var(--accent);
+        color: var(--paper);
+        font-size: 15px;
+        font-weight: 750;
+      }
+
+      .details-marks {
+        display: flex;
+        gap: 7px;
+      }
+
+      .artist-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        padding-top: 24px;
+      }
+
+      .artist-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--paper);
+      }
+
+      .artist-thumbs {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        height: 125px;
+        gap: 1px;
+        background: var(--line);
+      }
+
+      .artist-thumb {
+        position: relative;
+        overflow: hidden;
+        background: #4a5551;
+      }
+
+      .artist-thumb::before {
+        content: "";
+        position: absolute;
+        inset: 23px 17px 17px 25px;
+        border: 2px solid rgba(251, 248, 241, 0.46);
+        border-radius: 50%;
+      }
+
+      .artist-thumb:nth-child(2) { background: #746b5f; }
+      .artist-thumb:nth-child(3) { background: #554a66; }
+
+      .artist-favorite {
+        position: absolute;
+        top: 11px;
+        right: 11px;
+        z-index: 2;
+        width: 31px;
+        height: 31px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(251, 248, 241, 0.8);
+        border-radius: 50%;
+        background: rgba(251, 248, 241, 0.9);
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .artist-favorite.active {
+        border-color: var(--accent-soft);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .artist-copy {
+        padding: 17px 18px 18px;
+      }
+
+      .artist-copy h3 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 750;
+      }
+
+      .artist-copy p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .closing-plate {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+
+      .closing-ring {
+        position: absolute;
+        width: 620px;
+        height: 620px;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+      }
+
+      .closing-ring::after {
+        content: "";
+        position: absolute;
+        inset: 58px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 50%;
+      }
+
+      .closing-content {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        justify-items: center;
+        gap: 22px;
+      }
+
+      .closing-content img {
+        width: 112px;
+        height: 112px;
+      }
+
+      .closing-logo {
+        width: 112px;
+        height: 112px;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: var(--accent);
+        color: var(--paper);
+        font-size: 55px;
+        font-weight: 800;
+        letter-spacing: -0.11em;
+        line-height: 1;
+      }
+
+      .closing-content h2 {
+        margin: 0;
+        font-size: 82px;
+        font-weight: 400;
+        letter-spacing: -0.055em;
+        line-height: 1;
+      }
+
+      .closing-content p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 25px;
+      }
+
+      .closing-rule {
+        width: 230px;
+        height: 4px;
+        background: var(--accent);
+      }
+
+      .section-index {
+        position: absolute;
+        top: 45px;
+        right: 68px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 14px;
+        letter-spacing: 0.1em;
+      }
+
+      .section-index strong {
+        color: var(--ink);
+      }
+
+      .focus-frame {
+        position: absolute;
+        border: 2px solid var(--accent);
+        border-radius: 7px;
+      }
+
+      .focus-frame::before {
+        content: "";
+        position: absolute;
+        top: -14px;
+        left: -2px;
+        width: 56px;
+        height: 3px;
+        background: var(--accent);
+      }
+
+      .stat-callout {
+        position: absolute;
+        left: 116px;
+        bottom: 142px;
+        z-index: 12;
+        display: grid;
+        gap: 8px;
+      }
+
+      .stat-callout strong {
+        font-size: 34px;
+        font-weight: 400;
+        letter-spacing: -0.04em;
+      }
+
+      .stat-callout span {
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-xj04" id="root" data-composition-id="better-watch-demo" data-start="0" data-duration="52" data-width="1920" data-height="1080">
+      <audio id="better-watch-bgm" src=".media/audio/bgm/bgm_001.wav" data-start="0" data-duration="52" data-track-index="20" data-volume="0.22"></audio>
+      <section data-hf-id="hf-x6rk" id="scene-01-hook" class="scene clip" data-start="0" data-duration="5" data-track-index="1">
+        <div data-hf-id="hf-2mhk" class="scene-ground"></div>
+        <div data-hf-id="hf-kall" class="scene-grid"></div>
+        <div data-hf-id="hf-uhcu" class="paper-line horizontal" style="top: 82px"></div>
+        <div data-hf-id="hf-m81h" class="paper-line vertical" style="left: 128px"></div>
+        <div data-hf-id="hf-hky5" class="title-plate">
+          <div data-hf-id="hf-cirs" class="title-copy">
+            <span data-hf-id="hf-via9" class="eyebrow hook-eyebrow">Local library / 01</span>
+            <h1 data-hf-id="hf-u6s0" class="display hook-title"><span data-hf-id="hf-n9cx" class="hook-line">Your library,</span><span data-hf-id="hf-lky5" class="hook-line">finally in focus.</span></h1>
+            <p data-hf-id="hf-kogo" class="subhead hook-subhead">Better Watch brings the films on your drive into one quiet, searchable place.</p>
+          </div>
+          <div data-hf-id="hf-olhd" class="title-mark hook-mark"><img data-hf-id="hf-l7ar" src="assets/better-watch-mark.svg" alt="Better Watch"></div>
+        </div>
+        <div data-hf-id="hf-0iyz" class="file-stack hook-files" aria-hidden="true">
+          <div data-hf-id="hf-cs9z" class="file-strip"><span data-hf-id="hf-aeo9" class="file-dot"></span><span data-hf-id="hf-edwd">untitled_042.mov</span><span data-hf-id="hf-p6p8" class="mono">01:42:18</span></div>
+          <div data-hf-id="hf-e093" class="file-strip"><span data-hf-id="hf-mny5" class="file-dot"></span><span data-hf-id="hf-18gl">river_cut_final.mkv</span><span data-hf-id="hf-9mw2" class="mono">02:08:44</span></div>
+          <div data-hf-id="hf-dly2" class="file-strip"><span data-hf-id="hf-nuv8" class="file-dot"></span><span data-hf-id="hf-xjb8">paper_moon_07.mp4</span><span data-hf-id="hf-efda" class="mono">00:48:11</span></div>
+        </div>
+        <div data-hf-id="hf-j21i" class="micro-note hook-note">A focused layer for everything you keep</div>
+      </section>
+
+      <section data-hf-id="hf-anuj" id="scene-02-overview" class="scene clip" data-start="5" data-duration="7" data-track-index="2">
+        <div data-hf-id="hf-yawg" class="scene-ground"></div>
+        <div data-hf-id="hf-ydgd" class="scene-grid"></div>
+        <div data-hf-id="hf-uk6m" class="section-index"><strong data-hf-id="hf-de0k">02</strong> / overview</div>
+        <div data-hf-id="hf-bpxk" class="app-stage overview-stage">
+          <div data-hf-id="hf-r3c0" class="app-window overview-window">
+            <aside data-hf-id="hf-0ctj" class="app-rail overview-rail">
+              <div data-hf-id="hf-so6d" class="app-brand">
+                <small data-hf-id="hf-ikmj">External drive</small>
+                <strong data-hf-id="hf-un3j">Better<br data-hf-id="hf-x5px">Watch</strong>
+                <em data-hf-id="hf-ydnv">Ultra Touch Library</em>
+              </div>
+              <div data-hf-id="hf-agpv" class="view-nav">
+                <div data-hf-id="hf-1t72" class="view-row active"><span data-hf-id="hf-9u6b" class="view-name"><span data-hf-id="hf-arr0" class="nav-icon">▦</span>Movies</span></div>
+                <div data-hf-id="hf-vho0" class="view-row"><span data-hf-id="hf-eyx6" class="view-name"><span data-hf-id="hf-2ku3" class="nav-icon">○</span>Artists</span></div>
+              </div>
+              <div data-hf-id="hf-m8e9" class="side-heading">Collections</div>
+              <div data-hf-id="hf-6j1l" class="collection-list">
+                <div data-hf-id="hf-euvr" class="collection-row active"><span data-hf-id="hf-f2xe" class="view-name"><span data-hf-id="hf-b621" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-jp2n">1,400</small></div>
+                <div data-hf-id="hf-51gr" class="collection-row"><span data-hf-id="hf-aqwx" class="view-name"><span data-hf-id="hf-6xjx" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-4ip9">76</small></div>
+                <div data-hf-id="hf-zwy3" class="collection-row"><span data-hf-id="hf-xqlj" class="view-name"><span data-hf-id="hf-84h0" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-6i8e">73</small></div>
+                <div data-hf-id="hf-zin2" class="collection-row"><span data-hf-id="hf-7g5h" class="view-name"><span data-hf-id="hf-7q5z" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-byfi">107</small></div>
+                <div data-hf-id="hf-z4c1" class="collection-row"><span data-hf-id="hf-ghzp" class="view-name"><span data-hf-id="hf-8x32" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-o3sf">92</small></div>
+              </div>
+              <div data-hf-id="hf-j0uk" class="rail-footer"><div data-hf-id="hf-2jv6" class="scan-button">↻&#160; Rescan library</div></div>
+            </aside>
+            <main data-hf-id="hf-8evo" class="app-main overview-main">
+              <div data-hf-id="hf-kfm6" class="app-toolbar overview-toolbar">
+                <div data-hf-id="hf-0ztw" class="field"><span data-hf-id="hf-rrwu" class="field-label">Search</span><div data-hf-id="hf-7omw" class="field-box muted">Title, folder, filename</div></div>
+                <div data-hf-id="hf-bxgc" class="field"><span data-hf-id="hf-yx0u" class="field-label">Sort</span><div data-hf-id="hf-yz53" class="field-box">Name <span data-hf-id="hf-6h7y" class="chevron"></span></div></div>
+                <div data-hf-id="hf-aqj9" class="field"><span data-hf-id="hf-jwjc" class="field-label">Subfolder</span><div data-hf-id="hf-lrww" class="field-box">All subfolders (1,400) <span data-hf-id="hf-xvoy" class="chevron"></span></div></div>
+                <div data-hf-id="hf-b4ua" class="field"><span data-hf-id="hf-rgx6" class="field-label">List</span><div data-hf-id="hf-yb64" class="field-box">All lists (1,400) <span data-hf-id="hf-y9zz" class="chevron"></span></div></div>
+              </div>
+              <div data-hf-id="hf-nlmj" class="movie-grid overview-grid">
+                <article data-hf-id="hf-khmm" class="movie-card overview-card"><div data-hf-id="hf-x6ax" class="movie-art art-a"><span data-hf-id="hf-mzfm" class="art-code">scene / 01</span></div><div data-hf-id="hf-gimp" class="movie-body"><div data-hf-id="hf-yeow"><h3 data-hf-id="hf-yi84" class="movie-title">Afterglow / 01</h3><p data-hf-id="hf-qhnl" class="movie-path">afterglow / first light</p><div data-hf-id="hf-kgqt" class="movie-marks"><span data-hf-id="hf-7blv" class="mark active">♡</span><span data-hf-id="hf-tmtn" class="mark">◯</span><span data-hf-id="hf-fgow" class="mark green">✓</span></div></div><div data-hf-id="hf-lvxn" class="play-button"><span data-hf-id="hf-d7zp">▶</span></div><div data-hf-id="hf-3bqi" class="movie-meta"><div data-hf-id="hf-sswt" class="meta-item"><span data-hf-id="hf-973z" class="meta-label">Length</span><strong data-hf-id="hf-pp07" class="meta-value">01h 42m</strong></div><div data-hf-id="hf-1fu9" class="meta-item"><span data-hf-id="hf-y32s" class="meta-label">Quality</span><strong data-hf-id="hf-3ceg" class="meta-value">4K</strong></div><div data-hf-id="hf-2mrc" class="meta-item"><span data-hf-id="hf-8g86" class="meta-label">Size</span><strong data-hf-id="hf-08uh" class="meta-value">3.8 GB</strong></div></div></div></article>
+                <article data-hf-id="hf-jr4y" class="movie-card overview-card"><div data-hf-id="hf-14ey" class="movie-art art-b"><span data-hf-id="hf-ndqn" class="art-code">scene / 02</span></div><div data-hf-id="hf-091h" class="movie-body"><div data-hf-id="hf-y7yw"><h3 data-hf-id="hf-kxsp" class="movie-title">River Cuts / 04</h3><p data-hf-id="hf-8tgc" class="movie-path">river cuts / field notes</p><div data-hf-id="hf-lnh5" class="movie-marks"><span data-hf-id="hf-2ntx" class="mark">♡</span><span data-hf-id="hf-p3pp" class="mark active">◯</span><span data-hf-id="hf-1gjz" class="mark">✓</span></div></div><div data-hf-id="hf-nc23" class="play-button"><span data-hf-id="hf-2cix">▶</span></div><div data-hf-id="hf-u48e" class="movie-meta"><div data-hf-id="hf-28gb" class="meta-item"><span data-hf-id="hf-0u2n" class="meta-label">Length</span><strong data-hf-id="hf-cafy" class="meta-value">02h 08m</strong></div><div data-hf-id="hf-08x6" class="meta-item"><span data-hf-id="hf-u0q4" class="meta-label">Quality</span><strong data-hf-id="hf-imjo" class="meta-value">1080p</strong></div><div data-hf-id="hf-zum5" class="meta-item"><span data-hf-id="hf-shbe" class="meta-label">Size</span><strong data-hf-id="hf-50md" class="meta-value">2.1 GB</strong></div></div></div></article>
+                <article data-hf-id="hf-u6m9" class="movie-card overview-card compact"><div data-hf-id="hf-52iz" class="movie-art art-c"><span data-hf-id="hf-ns1o" class="art-code">scene / 03</span></div><div data-hf-id="hf-1fyk" class="movie-body"><div data-hf-id="hf-x11t"><h3 data-hf-id="hf-xtkk" class="movie-title">Paper Moon / 07</h3><p data-hf-id="hf-05ib" class="movie-path">paper moon / archive</p><div data-hf-id="hf-mue8" class="movie-marks"><span data-hf-id="hf-9to9" class="mark">♡</span><span data-hf-id="hf-0mqz" class="mark">◯</span><span data-hf-id="hf-1flb" class="mark">✓</span></div></div><div data-hf-id="hf-mxr2" class="play-button"><span data-hf-id="hf-3jg0">▶</span></div><div data-hf-id="hf-uijf" class="movie-meta"><div data-hf-id="hf-11j8" class="meta-item"><span data-hf-id="hf-0frm" class="meta-label">Length</span><strong data-hf-id="hf-b1as" class="meta-value">48m</strong></div><div data-hf-id="hf-0n87" class="meta-item"><span data-hf-id="hf-stt1" class="meta-label">Quality</span><strong data-hf-id="hf-0hgc" class="meta-value">1080p</strong></div><div data-hf-id="hf-50li" class="meta-item"><span data-hf-id="hf-svmf" class="meta-label">Size</span><strong data-hf-id="hf-9s9d" class="meta-value">1.2 GB</strong></div></div></div></article>
+                <article data-hf-id="hf-dxcl" class="movie-card overview-card compact"><div data-hf-id="hf-hl1g" class="movie-art art-d"><span data-hf-id="hf-o6cp" class="art-code">scene / 04</span></div><div data-hf-id="hf-11nj" class="movie-body"><div data-hf-id="hf-xfcu"><h3 data-hf-id="hf-465b" class="movie-title">Northline / 02</h3><p data-hf-id="hf-22tk" class="movie-path">northline / nights</p><div data-hf-id="hf-mg37" class="movie-marks"><span data-hf-id="hf-b0lc" class="mark">♡</span><span data-hf-id="hf-08fy" class="mark">◯</span><span data-hf-id="hf-9np4" class="mark green">✓</span></div></div><div data-hf-id="hf-mjg1" class="play-button"><span data-hf-id="hf-354z">▶</span></div><div data-hf-id="hf-uwug" class="movie-meta"><div data-hf-id="hf-4mah" class="meta-item"><span data-hf-id="hf-01gl" class="meta-label">Length</span><strong data-hf-id="hf-g8kq" class="meta-value">01h 07m</strong></div><div data-hf-id="hf-jknn" class="meta-item"><span data-hf-id="hf-t842" class="meta-label">Quality</span><strong data-hf-id="hf-zzeo" class="meta-value">4K</strong></div><div data-hf-id="hf-jyyo" class="meta-item"><span data-hf-id="hf-t9xg" class="meta-label">Size</span><strong data-hf-id="hf-uug0" class="meta-value">2.8 GB</strong></div></div></div></article>
+              </div>
+            </main>
+          </div>
+        </div>
+        <div data-hf-id="hf-owhv" class="callout overview-callout" style="left: 68px; bottom: 44px"><span data-hf-id="hf-ac3m" class="eyebrow">The surface</span><h2 data-hf-id="hf-qzw5">One calm surface<br data-hf-id="hf-rsrt">for every film.</h2></div>
+      </section>
+
+      <section data-hf-id="hf-wurb" id="scene-03-search" class="scene clip" data-start="12" data-duration="8" data-track-index="3">
+        <div data-hf-id="hf-x3zd" class="scene-ground"></div>
+        <div data-hf-id="hf-zkdg" class="scene-grid"></div>
+        <div data-hf-id="hf-iiz9" class="section-index"><strong data-hf-id="hf-czpj">03</strong> / search</div>
+        <div data-hf-id="hf-xcp5" class="app-stage search-stage">
+          <div data-hf-id="hf-cr1b" class="app-window search-window">
+            <aside data-hf-id="hf-12kp" class="app-rail">
+              <div data-hf-id="hf-jzy1" class="app-brand"><small data-hf-id="hf-2763">External drive</small><strong data-hf-id="hf-wgb3">Better<br data-hf-id="hf-szow">Watch</strong><em data-hf-id="hf-4vpn">Ultra Touch Library</em></div>
+              <div data-hf-id="hf-hrmr" class="view-nav"><div data-hf-id="hf-2wpe" class="view-row active"><span data-hf-id="hf-9xmr" class="view-name"><span data-hf-id="hf-oi9g" class="nav-icon">▦</span>Movies</span></div><div data-hf-id="hf-0ruw" class="view-row"><span data-hf-id="hf-dssu" class="view-name"><span data-hf-id="hf-h70b" class="nav-icon">○</span>Artists</span></div></div>
+              <div data-hf-id="hf-bvh1" class="side-heading">Collections</div>
+              <div data-hf-id="hf-jnx9" class="collection-list"><div data-hf-id="hf-g8uv" class="collection-row active"><span data-hf-id="hf-qy8m" class="view-name"><span data-hf-id="hf-8is1" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-b5cf">1,400</small></div><div data-hf-id="hf-yq10" class="collection-row"><span data-hf-id="hf-ds5x" class="view-name"><span data-hf-id="hf-9pp4" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-ulpd">76</small></div><div data-hf-id="hf-ybpz" class="collection-row"><span data-hf-id="hf-syvb" class="view-name"><span data-hf-id="hf-9be3" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-8gr6">73</small></div><div data-hf-id="hf-xxey" class="collection-row"><span data-hf-id="hf-6x95" class="view-name"><span data-hf-id="hf-aib6" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-trma">107</small></div><div data-hf-id="hf-xj3x" class="collection-row"><span data-hf-id="hf-hjd5" class="view-name"><span data-hf-id="hf-a405" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-pgen">92</small></div></div>
+              <div data-hf-id="hf-8wf8" class="rail-footer"><div data-hf-id="hf-szfa" class="scan-button">↻&#160; Rescan library</div></div>
+            </aside>
+            <main data-hf-id="hf-ws89" class="app-main">
+              <div data-hf-id="hf-6jsr" class="app-toolbar search-toolbar">
+                <div data-hf-id="hf-d4df" class="field"><span data-hf-id="hf-yu4y" class="field-label">Search</span><div data-hf-id="hf-ggyv" class="field-box focused"><span data-hf-id="hf-5q7n" class="search-typing"><span data-hf-id="hf-ry5l">r</span><span data-hf-id="hf-wbiw">i</span><span data-hf-id="hf-qcxh">v</span><span data-hf-id="hf-xwr0">e</span><span data-hf-id="hf-t02l">r</span><span data-hf-id="hf-uuxe" class="caret"></span></span><span data-hf-id="hf-kzj0">✕</span></div></div>
+                 <div data-hf-id="hf-diog" class="field sort-field"><span data-hf-id="hf-w2wi" class="field-label">Sort</span><div data-hf-id="hf-z4zr" class="field-box">Name <span data-hf-id="hf-yob0" class="chevron"></span></div><div data-hf-id="hf-uahn" class="sort-menu search-sort-menu"><div data-hf-id="hf-m3ap" class="sort-option selected"><span data-hf-id="hf-ks85">✓&#160; Name</span><span data-hf-id="hf-uckh"></span></div><div data-hf-id="hf-wfh6" class="sort-option">Folder</div><div data-hf-id="hf-pdu6" class="sort-option">Duration</div><div data-hf-id="hf-ytob" class="sort-option">Size</div><div data-hf-id="hf-tlb8" class="sort-option">Newest</div></div></div>
+                <div data-hf-id="hf-cbrd" class="field"><span data-hf-id="hf-018w" class="field-label">Subfolder</span><div data-hf-id="hf-9zts" class="field-box">All subfolders (92) <span data-hf-id="hf-z2m1" class="chevron"></span></div></div>
+                <div data-hf-id="hf-cq2e" class="field"><span data-hf-id="hf-xd0u" class="field-label">List</span><div data-hf-id="hf-5rj8" class="field-box">All lists (92) <span data-hf-id="hf-zgx2" class="chevron"></span></div></div>
+              </div>
+              <div data-hf-id="hf-am58" class="movie-grid search-grid">
+                <article data-hf-id="hf-fj19" class="movie-card search-card"><div data-hf-id="hf-xsji" class="movie-art art-b"><span data-hf-id="hf-hglo" class="art-code">river / 01</span></div><div data-hf-id="hf-28km" class="movie-body"><div data-hf-id="hf-w8fr"><h3 data-hf-id="hf-7x7x" class="movie-title">River Cuts / 04</h3><p data-hf-id="hf-96ac" class="movie-path">river cuts / field notes</p><div data-hf-id="hf-kgk2" class="movie-marks"><span data-hf-id="hf-amab" class="mark">♡</span><span data-hf-id="hf-9wzl" class="mark active">◯</span><span data-hf-id="hf-11aa" class="mark">✓</span></div></div><div data-hf-id="hf-m550" class="play-button"><span data-hf-id="hf-15lu">▶</span></div><div data-hf-id="hf-s4p9" class="movie-meta"><div data-hf-id="hf-is1l" class="meta-item"><span data-hf-id="hf-2tls" class="meta-label">Length</span><strong data-hf-id="hf-2gua" class="meta-value">02h 08m</strong></div><div data-hf-id="hf-j6cm" class="meta-item"><span data-hf-id="hf-v7n7" class="meta-label">Quality</span><strong data-hf-id="hf-zaj9" class="meta-value">1080p</strong></div><div data-hf-id="hf-hzfj" class="meta-item"><span data-hf-id="hf-to8h" class="meta-label">Size</span><strong data-hf-id="hf-8ou1" class="meta-value">2.1 GB</strong></div></div></div></article>
+                <article data-hf-id="hf-o1m9" class="movie-card search-card"><div data-hf-id="hf-icp9" class="movie-art art-e"><span data-hf-id="hf-g9ol" class="art-code">river / 02</span></div><div data-hf-id="hf-1u9l" class="movie-body"><div data-hf-id="hf-wmqs"><h3 data-hf-id="hf-gvv2" class="movie-title">River Mouth / 01</h3><p data-hf-id="hf-dpmm" class="movie-path">river cuts / tide studies</p><div data-hf-id="hf-k291" class="movie-marks"><span data-hf-id="hf-8mr6" class="mark">♡</span><span data-hf-id="hf-zu4x" class="mark">◯</span><span data-hf-id="hf-8gs1" class="mark green">✓</span></div></div><div data-hf-id="hf-lqtz" class="play-button"><span data-hf-id="hf-0rat">▶</span></div><div data-hf-id="hf-sj0a" class="movie-meta"><div data-hf-id="hf-idqk" class="meta-item"><span data-hf-id="hf-2far" class="meta-label">Length</span><strong data-hf-id="hf-j84o" class="meta-value">57m</strong></div><div data-hf-id="hf-h6th" class="meta-item"><span data-hf-id="hf-vly8" class="meta-label">Quality</span><strong data-hf-id="hf-yshl" class="meta-value">4K</strong></div><div data-hf-id="hf-hl4i" class="meta-item"><span data-hf-id="hf-u2ji" class="meta-label">Size</span><strong data-hf-id="hf-w83s" class="meta-value">1.7 GB</strong></div></div></div></article>
+              </div>
+            </main>
+          </div>
+        </div>
+        <div data-hf-id="hf-w4p6" class="callout search-callout" style="left: 68px; bottom: 42px"><span data-hf-id="hf-9azy" class="eyebrow">Search / sort / filter</span><h2 data-hf-id="hf-ac9n">Find the<br data-hf-id="hf-sldv">right cut.</h2></div>
+         <div data-hf-id="hf-hcqi" class="focus-frame search-focus" style="left: 808px; top: 158px; width: 272px; height: 54px"></div>
+      </section>
+
+      <section data-hf-id="hf-0a2x" id="scene-04-preview" class="scene clip" data-start="20" data-duration="7" data-track-index="4">
+        <div data-hf-id="hf-xiae" class="scene-ground"></div>
+        <div data-hf-id="hf-z62f" class="scene-grid"></div>
+        <div data-hf-id="hf-545f" class="section-index"><strong data-hf-id="hf-e6mm">04</strong> / preview</div>
+        <div data-hf-id="hf-m25d" class="app-stage preview-stage">
+          <div data-hf-id="hf-uora" class="app-window preview-window" data-layout-ignore="true">
+            <aside data-hf-id="hf-g859" class="app-rail"><div data-hf-id="hf-l6v4" class="app-brand"><small data-hf-id="hf-1sv2">External drive</small><strong data-hf-id="hf-w202">Better<br data-hf-id="hf-qluq">Watch</strong><em data-hf-id="hf-4hem">Ultra Touch Library</em></div><div data-hf-id="hf-hdbq" class="view-nav"><div data-hf-id="hf-3b0f" class="view-row active"><span data-hf-id="hf-9jbq" class="view-name"><span data-hf-id="hf-nbcd" class="nav-icon">▦</span>Movies</span></div><div data-hf-id="hf-zkxt" class="view-row"><span data-hf-id="hf-e73v" class="view-name"><span data-hf-id="hf-gspa" class="nav-icon">○</span>Artists</span></div></div><div data-hf-id="hf-d2e4" class="side-heading">Collections</div><div data-hf-id="hf-kuuc" class="collection-list"><div data-hf-id="hf-fuju" class="collection-row active"><span data-hf-id="hf-rcjn" class="view-name"><span data-hf-id="hf-oz9z" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-ar1e">1,400</small></div><div data-hf-id="hf-3hpc" class="collection-row"><span data-hf-id="hf-ez30" class="view-name"><span data-hf-id="hf-pdl0" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-vsmg">76</small></div><div data-hf-id="hf-33eb" class="collection-row"><span data-hf-id="hf-skka" class="view-name"><span data-hf-id="hf-o6nx" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-8v27">73</small></div><div data-hf-id="hf-7fj5" class="collection-row"><span data-hf-id="hf-c65c" class="view-name"><span data-hf-id="hf-okyy" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-u5xb">107</small></div><div data-hf-id="hf-7tu6" class="collection-row"><span data-hf-id="hf-iqa8" class="view-name"><span data-hf-id="hf-qki3" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-p23m">92</small></div></div><div data-hf-id="hf-7pi5" class="rail-footer"><div data-hf-id="hf-tdqb" class="scan-button">↻&#160; Rescan library</div></div></aside>
+            <main data-hf-id="hf-uw9p" class="app-main"><div data-hf-id="hf-ajsr" class="app-toolbar"><div data-hf-id="hf-8cp3" class="field"><span data-hf-id="hf-z8fz" class="field-label">Search</span><div data-hf-id="hf-rya8" class="field-box muted">Title, folder, filename</div></div><div data-hf-id="hf-8r04" class="field"><span data-hf-id="hf-wh7j" class="field-label">Sort</span><div data-hf-id="hf-yqoq" class="field-box">Name <span data-hf-id="hf-zv83" class="chevron"></span></div></div><div data-hf-id="hf-gthg" class="field"><span data-hf-id="hf-yubt" class="field-label">Subfolder</span><div data-hf-id="hf-s1go" class="field-box">All subfolders (1,400) <span data-hf-id="hf-09j4" class="chevron"></span></div></div><div data-hf-id="hf-gf6f" class="field"><span data-hf-id="hf-xrbv" class="field-label">List</span><div data-hf-id="hf-zqjo" class="field-box">All lists (1,400) <span data-hf-id="hf-uaxp" class="chevron"></span></div></div></div><div data-hf-id="hf-f96l" class="movie-grid"><article data-hf-id="hf-9wd8" class="movie-card preview-source"><div data-hf-id="hf-cidd" class="movie-art art-e"><span data-hf-id="hf-kr9u" class="art-code">hover / source</span></div><div data-hf-id="hf-316o" class="movie-body"><div data-hf-id="hf-vftp"><h3 data-hf-id="hf-9450" class="movie-title">River Cuts / 04</h3><p data-hf-id="hf-7zd9" class="movie-path">river cuts / field notes</p><div data-hf-id="hf-l964" class="movie-marks"><span data-hf-id="hf-by0z" class="mark active">♡</span><span data-hf-id="hf-zftw" class="mark">◯</span><span data-hf-id="hf-0mz9" class="mark">✓</span></div></div><div data-hf-id="hf-lciy" class="play-button"><span data-hf-id="hf-1y7w">▶</span></div><div data-hf-id="hf-sxbb" class="movie-meta"><div data-hf-id="hf-ge7f" class="meta-item"><span data-hf-id="hf-20zq" class="meta-label">Length</span><strong data-hf-id="hf-2v5b" class="meta-value">02h 08m</strong></div><div data-hf-id="hf-gsig" class="meta-item"><span data-hf-id="hf-uf15" class="meta-label">Quality</span><strong data-hf-id="hf-z6sm" class="meta-value">4K</strong></div><div data-hf-id="hf-nh20" class="meta-item"><span data-hf-id="hf-uguj" class="meta-label">Size</span><strong data-hf-id="hf-9vr4" class="meta-value">2.1 GB</strong></div></div></div></article><article data-hf-id="hf-5bcq" class="movie-card"><div data-hf-id="hf-ftkb" class="movie-art art-c"><span data-hf-id="hf-yc6s" class="art-code">scene / 03</span></div><div data-hf-id="hf-2mvn" class="movie-body"><div data-hf-id="hf-vu4q"><h3 data-hf-id="hf-b8cs" class="movie-title">Paper Moon / 07</h3><p data-hf-id="hf-dy3n" class="movie-path">paper moon / archive</p><div data-hf-id="hf-kuv3" class="movie-marks"><span data-hf-id="hf-88g5" class="mark">♡</span><span data-hf-id="hf-z1iv" class="mark">◯</span><span data-hf-id="hf-3f4g" class="mark">✓</span></div></div><div data-hf-id="hf-ky7x" class="play-button"><span data-hf-id="hf-1jwv">▶</span></div><div data-hf-id="hf-tbmc" class="movie-meta"><div data-hf-id="hf-n2qz" class="meta-item"><span data-hf-id="hf-1mop" class="meta-label">Length</span><strong data-hf-id="hf-g3fw" class="meta-value">48m</strong></div><div data-hf-id="hf-mofy" class="meta-item"><span data-hf-id="hf-utc6" class="meta-label">Quality</span><strong data-hf-id="hf-zoua" class="meta-value">1080p</strong></div><div data-hf-id="hf-ma4x" class="meta-item"><span data-hf-id="hf-uv5k" class="meta-label">Size</span><strong data-hf-id="hf-32yt" class="meta-value">1.2 GB</strong></div></div></div></article></div></main>
+          </div>
+           <div class="sort-menu preview-sort-menu" data-layout-allow-overlap="true" data-layout-allow-occlusion="true" data-layout-allow-overflow="true"><div class="sort-option selected"><span>✓&#160; Name</span><span></span></div><div class="sort-option">Folder</div><div class="sort-option">Duration</div><div class="sort-option">Size</div><div class="sort-option">Newest</div></div>
+           <div data-hf-id="hf-bwb4" class="preview-panel hover-panel" data-layout-allow-overlap="true" data-layout-allow-occlusion="true" data-layout-allow-overflow="true"><div data-hf-id="hf-jpdz" class="preview-media"><span data-hf-id="hf-26ym" class="preview-stamp">river cuts / field notes</span><span data-hf-id="hf-zvys" class="preview-live">Live preview</span></div><div data-hf-id="hf-s53l" class="preview-details"><strong data-hf-id="hf-wc9o">River Cuts / 04</strong><span data-hf-id="hf-fisq">02h 08m</span><span data-hf-id="hf-6znw">4K</span><span data-hf-id="hf-eh1t">2.1 GB</span></div></div>
+          <div data-hf-id="hf-s5l1" class="cursor preview-cursor"><span data-hf-id="hf-aizi" class="cursor-ring"></span></div>
+        </div>
+        <div data-hf-id="hf-2d42" class="callout preview-callout" style="left: 68px; bottom: 42px"><span data-hf-id="hf-cu6l" class="eyebrow">Hover to inspect</span><h2 data-hf-id="hf-0b2v">Preview before<br data-hf-id="hf-q7jp">you play.</h2></div>
+      </section>
+
+      <section data-hf-id="hf-t6ii" id="scene-05-lists" class="scene clip" data-start="27" data-duration="8" data-track-index="5">
+        <div data-hf-id="hf-wbdb" class="scene-ground"></div>
+        <div data-hf-id="hf-0czi" class="scene-grid"></div>
+        <div data-hf-id="hf-ppaq" class="section-index"><strong data-hf-id="hf-dsbl">05</strong> / lists</div>
+        <div data-hf-id="hf-jjsa" class="app-stage lists-stage">
+          <div data-hf-id="hf-h5hf" class="app-window lists-window" data-layout-ignore="true">
+            <aside data-hf-id="hf-hf2c" class="app-rail"><div data-hf-id="hf-ksk3" class="app-brand"><small data-hf-id="hf-1ek1">External drive</small><strong data-hf-id="hf-vnp1">Better<br data-hf-id="hf-regs">Watch</strong><em data-hf-id="hf-433l">Ultra Touch Library</em></div><div data-hf-id="hf-gz0p" class="view-nav"><div data-hf-id="hf-3pbg" class="view-row active"><span data-hf-id="hf-950p" class="view-name"><span data-hf-id="hf-npne" class="nav-icon">▦</span>Movies</span></div><div data-hf-id="hf-zz8u" class="view-row"><span data-hf-id="hf-elew" class="view-name"><span data-hf-id="hf-gee9" class="nav-icon">○</span>Artists</span></div></div><div data-hf-id="hf-co33" class="side-heading">Collections</div><div data-hf-id="hf-kgjb" class="collection-list"><div data-hf-id="hf-fg8t" class="collection-row active"><span data-hf-id="hf-rquo" class="view-name"><span data-hf-id="hf-qyt4" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-acqd">1,400</small></div><div data-hf-id="hf-8857" class="collection-row"><span data-hf-id="hf-ekrz" class="view-name"><span data-hf-id="hf-prw1" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-vebf">76</small></div><div data-hf-id="hf-8mg8" class="collection-row"><span data-hf-id="hf-s699" class="view-name"><span data-hf-id="hf-q672" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-99d8">73</small></div><div data-hf-id="hf-5ub1" class="collection-row"><span data-hf-id="hf-brub" class="view-name"><span data-hf-id="hf-w7pb" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-uk8c">107</small></div><div data-hf-id="hf-68m2" class="collection-row"><span data-hf-id="hf-ibz7" class="view-name"><span data-hf-id="hf-wm0c" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-onsl">92</small></div></div><div data-hf-id="hf-83t6" class="rail-footer"><div data-hf-id="hf-iarc" class="scan-button accent">↻&#160; Rescan library</div></div></aside>
+            <main data-hf-id="hf-w36s" class="app-main"><div data-hf-id="hf-bz3v" class="app-toolbar"><div data-hf-id="hf-g0ve" class="field"><span data-hf-id="hf-zmr0" class="field-label">Search</span><div data-hf-id="hf-qrd5" class="field-box muted">Title, folder, filename</div></div><div data-hf-id="hf-fmkd" class="field"><span data-hf-id="hf-wvik" class="field-label">Sort</span><div data-hf-id="hf-ycdp" class="field-box">Name <span data-hf-id="hf-up8q" class="chevron"></span></div></div><div data-hf-id="hf-iepk" class="field"><span data-hf-id="hf-z8mu" class="field-label">Subfolder</span><div data-hf-id="hf-qujl" class="field-box">All subfolders (1,400) <span data-hf-id="hf-tacm" class="chevron"></span></div></div><div data-hf-id="hf-i0ej" class="field"><span data-hf-id="hf-y5mw" class="field-label">List</span><div data-hf-id="hf-dc5e" class="field-box">Favorites (86) <span data-hf-id="hf-sw1l" class="chevron"></span></div></div></div><div data-hf-id="hf-adzl" class="movie-grid"><article data-hf-id="hf-mfno" class="movie-card lists-card"><div data-hf-id="hf-rf31" class="movie-art art-a"><span data-hf-id="hf-3fq3" class="art-code">saved / 01</span></div><div data-hf-id="hf-xgwa" class="movie-body"><div data-hf-id="hf-1043"><h3 data-hf-id="hf-2hvg" class="movie-title">Afterglow / 01</h3><p data-hf-id="hf-s9o5" class="movie-path">afterglow / first light</p><div data-hf-id="hf-ivby" class="movie-marks"><span data-hf-id="hf-bjpy" class="mark active">♡</span><span data-hf-id="hf-b3wo" class="mark active">◯</span><span data-hf-id="hf-30tf" class="mark">✓</span></div></div><div data-hf-id="hf-qwtc" class="play-button"><span data-hf-id="hf-zkdq">▶</span></div><div data-hf-id="hf-wwdl" class="movie-meta"><div data-hf-id="hf-lvtw" class="meta-item"><span data-hf-id="hf-y1xg" class="meta-label">Length</span><strong data-hf-id="hf-vcgn" class="meta-value">01h 42m</strong></div><div data-hf-id="hf-lhiv" class="meta-item"><span data-hf-id="hf-qfyv" class="meta-label">Quality</span><strong data-hf-id="hf-xzvj" class="meta-value">4K</strong></div><div data-hf-id="hf-l37u" class="meta-item"><span data-hf-id="hf-v9gl" class="meta-label">Size</span><strong data-hf-id="hf-87gd" class="meta-value">3.8 GB</strong></div></div></div></article><article data-hf-id="hf-1jry" class="movie-card"><div data-hf-id="hf-nj7g" class="movie-art art-d"><span data-hf-id="hf-31f2" class="art-code">saved / 02</span></div><div data-hf-id="hf-x2l9" class="movie-body"><div data-hf-id="hf-1ef4"><h3 data-hf-id="hf-1qjj" class="movie-title">Northline / 02</h3><p data-hf-id="hf-s9q8" class="movie-path">northline / nights</p><div data-hf-id="hf-ih0x" class="movie-marks"><span data-hf-id="hf-9fd8" class="mark">♡</span><span data-hf-id="hf-yn7u" class="mark">◯</span><span data-hf-id="hf-8v32" class="mark green">✓</span></div></div><div data-hf-id="hf-qiib" class="play-button"><span data-hf-id="hf-z62p">▶</span></div><div data-hf-id="hf-xaom" class="movie-meta"><div data-hf-id="hf-kowt" class="meta-item"><span data-hf-id="hf-xnmf" class="meta-label">Length</span><strong data-hf-id="hf-e6ni" class="meta-value">01h 07m</strong></div><div data-hf-id="hf-qni8" class="meta-item"><span data-hf-id="hf-qu9w" class="meta-label">Quality</span><strong data-hf-id="hf-ye6k" class="meta-value">4K</strong></div><div data-hf-id="hf-q977" class="meta-item"><span data-hf-id="hf-vnrm" class="meta-label">Size</span><strong data-hf-id="hf-h7rs" class="meta-value">2.8 GB</strong></div></div></div></article></div></main>
+          </div>
+          <div data-hf-id="hf-t2wl" class="list-rail lists-panel" data-layout-allow-overlap="true" data-layout-allow-occlusion="true"><h3 data-hf-id="hf-7wrd">Keep your lists close.</h3><div data-hf-id="hf-9ni8" class="list-item"><span data-hf-id="hf-o81g" class="list-mark">♡</span><div data-hf-id="hf-c4s8"><strong data-hf-id="hf-4427">Favorites</strong><span data-hf-id="hf-a9zo">Return to what matters</span></div><span data-hf-id="hf-9xkz" class="list-count">086</span></div><div data-hf-id="hf-cn5k" class="list-item"><span data-hf-id="hf-0fhy" class="list-mark">◯</span><div data-hf-id="hf-bqh7"><strong data-hf-id="hf-uv1z">Watch Later</strong><span data-hf-id="hf-fh23">Keep the next cut nearby</span></div><span data-hf-id="hf-pllf" class="list-count">024</span></div><div data-hf-id="hf-bg8h" class="list-item"><span data-hf-id="hf-tq4q" class="list-mark">✓</span><div data-hf-id="hf-bc66"><strong data-hf-id="hf-q0lk">Watched</strong><span data-hf-id="hf-thzi">Know where you left off</span></div><span data-hf-id="hf-rv96" class="list-count">319</span></div></div>
+        </div>
+        <div data-hf-id="hf-0cw3" class="callout lists-callout" style="left: 68px; bottom: 42px"><span data-hf-id="hf-0kdy" class="eyebrow">Three simple marks</span><h2 data-hf-id="hf-gybm">Remember what<br data-hf-id="hf-r05r">matters.</h2></div>
+      </section>
+
+      <section data-hf-id="hf-y58p" id="scene-06-details" class="scene clip" data-start="35" data-duration="7" data-track-index="6">
+        <div data-hf-id="hf-wpoc" class="scene-ground"></div>
+        <div data-hf-id="hf-zyoh" class="scene-grid"></div>
+        <div data-hf-id="hf-nx01" class="section-index"><strong data-hf-id="hf-ez8o">06</strong> / details</div>
+        <div data-hf-id="hf-k2vz" class="app-stage details-stage">
+          <div data-hf-id="hf-iwk0" class="app-window details-window" data-layout-ignore="true">
+            <aside data-hf-id="hf-h0rb" class="app-rail"><div data-hf-id="hf-it0y" class="app-brand"><small data-hf-id="hf-1090">External drive</small><strong data-hf-id="hf-yfu8">Better<br data-hf-id="hf-p0mm">Watch</strong><em data-hf-id="hf-3osk">Ultra Touch Library</em></div><div data-hf-id="hf-gkpo" class="view-nav"><div data-hf-id="hf-43mh" class="view-row active"><span data-hf-id="hf-8qpo" class="view-name"><span data-hf-id="hf-pp6j" class="nav-icon">▦</span>Movies</span></div><div data-hf-id="hf-ysbr" class="view-row"><span data-hf-id="hf-bt9p" class="view-name"><span data-hf-id="hf-g038" class="nav-icon">○</span>Artists</span></div></div><div data-hf-id="hf-dv06" class="side-heading">Collections</div><div data-hf-id="hf-lnge" class="collection-list"><div data-hf-id="hf-i8e0" class="collection-row active"><span data-hf-id="hf-oyph" class="view-name"><span data-hf-id="hf-5lh8" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-d4vk">1,400</small></div><div data-hf-id="hf-6mx3" class="collection-row"><span data-hf-id="hf-frp2" class="view-name"><span data-hf-id="hf-5767" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-tesa">76</small></div><div data-hf-id="hf-7184" class="collection-row"><span data-hf-id="hf-uyeg" class="view-name"><span data-hf-id="hf-4sv6" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-9no9">73</small></div><div data-hf-id="hf-alzd" class="collection-row"><span data-hf-id="hf-5qc2" class="view-name"><span data-hf-id="hf-4ek5" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-uyjd">107</small></div><div data-hf-id="hf-b0ae" class="collection-row"><span data-hf-id="hf-gcg2" class="view-name"><span data-hf-id="hf-76pc" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-rfxs">92</small></div></div><div data-hf-id="hf-a3cb" class="rail-footer"><div data-hf-id="hf-ts1c" class="scan-button">↻&#160; Rescan library</div></div></aside>
+            <main data-hf-id="hf-vovr" class="app-main"><div data-hf-id="hf-bksu" class="app-toolbar"><div data-hf-id="hf-hm3i" class="field"><span data-hf-id="hf-0121" class="field-label">Search</span><div data-hf-id="hf-r5o6" class="field-box muted">Title, folder, filename</div></div><div data-hf-id="hf-h7sh" class="field"><span data-hf-id="hf-x9tl" class="field-label">Sort</span><div data-hf-id="hf-14iw" class="field-box">Name <span data-hf-id="hf-u2yo" class="chevron"></span></div></div><div data-hf-id="hf-jzxo" class="field"><span data-hf-id="hf-y1pr" class="field-label">Subfolder</span><div data-hf-id="hf-r8um" class="field-box">All subfolders (1,400) <span data-hf-id="hf-tonn" class="chevron"></span></div></div><div data-hf-id="hf-jlmn" class="field"><span data-hf-id="hf-rbil" class="field-label">List</span><div data-hf-id="hf-yjml" class="field-box">All lists (1,400) <span data-hf-id="hf-rp4i" class="chevron"></span></div></div></div><div data-hf-id="hf-bkwo" class="movie-grid"><article data-hf-id="hf-a8bi" class="movie-card details-source"><div data-hf-id="hf-sm04" class="movie-art art-a"><span data-hf-id="hf-3s0d" class="art-code">selected / 01</span></div><div data-hf-id="hf-7pgv" class="movie-body"><div data-hf-id="hf-axv5"><h3 data-hf-id="hf-1ayd" class="movie-title">Afterglow / 01</h3><p data-hf-id="hf-tgl8" class="movie-path">afterglow / first light</p><div data-hf-id="hf-zamj" class="movie-marks"><span data-hf-id="hf-b5ex" class="mark active">♡</span><span data-hf-id="hf-y8wt" class="mark">◯</span><span data-hf-id="hf-2mie" class="mark">✓</span></div></div><div data-hf-id="hf-hyqp" class="play-button"><span data-hf-id="hf-oyaj">▶</span></div><div data-hf-id="hf-lcai" class="movie-meta"><div data-hf-id="hf-5bj5" class="meta-item"><span data-hf-id="hf-wz31" class="meta-label">Length</span><strong data-hf-id="hf-uy5m" class="meta-value">01h 42m</strong></div><div data-hf-id="hf-5pu6" class="meta-item"><span data-hf-id="hf-qpsk" class="meta-label">Quality</span><strong data-hf-id="hf-x79h" class="meta-value">4K</strong></div><div data-hf-id="hf-6457" class="meta-item"><span data-hf-id="hf-244u" class="meta-label">Size</span><strong data-hf-id="hf-9edg" class="meta-value">3.8 GB</strong></div></div></div></article><article data-hf-id="hf-1y2z" class="movie-card"><div data-hf-id="hf-ff9a" class="movie-art art-c"><span data-hf-id="hf-x59p" class="art-code">scene / 03</span></div><div data-hf-id="hf-83rw" class="movie-body"><div data-hf-id="hf-ajk4"><h3 data-hf-id="hf-a1fp" class="movie-title">Paper Moon / 07</h3><p data-hf-id="hf-djsm" class="movie-path">paper moon / archive</p><div data-hf-id="hf-zoxk" class="movie-marks"><span data-hf-id="hf-9127" class="mark">♡</span><span data-hf-id="hf-47i8" class="mark">◯</span><span data-hf-id="hf-287d" class="mark">✓</span></div></div><div data-hf-id="hf-id1q" class="play-button"><span data-hf-id="hf-pclk">▶</span></div><div data-hf-id="hf-kxzh" class="movie-meta"><div data-hf-id="hf-6ig8" class="meta-item"><span data-hf-id="hf-xde2" class="meta-label">Length</span><strong data-hf-id="hf-ewit" class="meta-value">48m</strong></div><div data-hf-id="hf-3qb1" class="meta-item"><span data-hf-id="hf-qbhj" class="meta-label">Quality</span><strong data-hf-id="hf-1odf" class="meta-value">1080p</strong></div><div data-hf-id="hf-44m2" class="meta-item"><span data-hf-id="hf-1ptt" class="meta-label">Size</span><strong data-hf-id="hf-49vw" class="meta-value">1.2 GB</strong></div></div></div></article></div></main>
+          </div>
+          <div data-hf-id="hf-4whz" class="details-panel details-drawer" data-layout-allow-overlap="true" data-layout-allow-occlusion="true"><div data-hf-id="hf-akw2" class="details-art"></div><div data-hf-id="hf-ipzu" class="details-content"><p data-hf-id="hf-vj3d" class="details-kicker">Afterglow / collection</p><h3 data-hf-id="hf-08tt">Afterglow / 01</h3><p data-hf-id="hf-vrwb" class="details-path">afterglow / first light</p><div data-hf-id="hf-pvao" class="details-stats"><div data-hf-id="hf-qk4a" class="detail-stat"><small data-hf-id="hf-4dfw">Duration</small><strong data-hf-id="hf-921e">01h 42m</strong></div><div data-hf-id="hf-p75q" class="detail-stat"><small data-hf-id="hf-vk11">Quality</small><strong data-hf-id="hf-typv">4K</strong></div><div data-hf-id="hf-plgr" class="detail-stat"><small data-hf-id="hf-70kd">Size</small><strong data-hf-id="hf-onny">3.8 GB</strong></div><div data-hf-id="hf-pzrs" class="detail-stat"><small data-hf-id="hf-8bg3">Modified</small><strong data-hf-id="hf-sbmi">May 18, 2026</strong></div></div><div data-hf-id="hf-ugwg" class="details-section"><h4 data-hf-id="hf-0m8z">Artists</h4><div data-hf-id="hf-dpvb" class="tag-row"><span data-hf-id="hf-r84a" class="tag">Mara Vale</span><span data-hf-id="hf-ploj" class="tag">Jon Bell</span></div></div><div data-hf-id="hf-ymlk" class="details-section"><h4 data-hf-id="hf-5xu5">Description</h4><p data-hf-id="hf-vnh4" class="details-copy">A patient study of light moving across water, cut in four quiet movements.</p></div></div><div data-hf-id="hf-0ytm" class="details-footer"><div data-hf-id="hf-ey67" class="details-play">▶&#160; Play</div><div data-hf-id="hf-txan" class="details-marks"><span data-hf-id="hf-ar3w" class="mark active">♡</span><span data-hf-id="hf-3t77" class="mark">◯</span><span data-hf-id="hf-yng4" class="mark">✓</span></div></div></div>
+        </div>
+        <div data-hf-id="hf-ul24" class="callout details-callout" style="left: 68px; bottom: 42px"><span data-hf-id="hf-rej4" class="eyebrow">Open the full picture</span><h2 data-hf-id="hf-3mp9">Everything you need,<br data-hf-id="hf-ombl">at a glance.</h2></div>
+      </section>
+
+      <section data-hf-id="hf-q9de" id="scene-07-artists" class="scene clip" data-start="42" data-duration="6" data-track-index="7">
+        <div data-hf-id="hf-vir9" class="scene-ground"></div>
+        <div data-hf-id="hf-15lk" class="scene-grid"></div>
+        <div data-hf-id="hf-qa6r" class="section-index"><strong data-hf-id="hf-ekxn">07</strong> / artists</div>
+        <div data-hf-id="hf-uh6l" class="app-stage artists-stage">
+          <div data-hf-id="hf-oxpj" class="app-window artists-window">
+            <aside data-hf-id="hf-i7oe" class="app-rail"><div data-hf-id="hf-iepx" class="app-brand"><small data-hf-id="hf-0lxz">External drive</small><strong data-hf-id="hf-y1j7">Better<br data-hf-id="hf-qsyj">Watch</strong><em data-hf-id="hf-3ahj">Ultra Touch Library</em></div><div data-hf-id="hf-g6en" class="view-nav"><div data-hf-id="hf-z6ms" class="view-row"><span data-hf-id="hf-8cen" class="view-name"><span data-hf-id="hf-q3hk" class="nav-icon">▦</span>Movies</span></div><div data-hf-id="hf-4hxi" class="view-row active"><span data-hf-id="hf-c7kq" class="view-name"><span data-hf-id="hf-fls7" class="nav-icon">○</span>Artists</span></div></div><div data-hf-id="hf-dgp5" class="side-heading">Collections</div><div data-hf-id="hf-l95d" class="collection-list"><div data-hf-id="hf-hu2z" class="collection-row active"><span data-hf-id="hf-pd0i" class="view-name"><span data-hf-id="hf-6seb" class="nav-icon">□</span>All Films</span><small data-hf-id="hf-cqkj">1,400</small></div><div data-hf-id="hf-876y" class="collection-row"><span data-hf-id="hf-fde1" class="view-name"><span data-hf-id="hf-6e3a" class="nav-icon">□</span>Afterglow</span><small data-hf-id="hf-t0h9">76</small></div><div data-hf-id="hf-7svx" class="collection-row"><span data-hf-id="hf-uk3f" class="view-name"><span data-hf-id="hf-5zs9" class="nav-icon">□</span>Northline</span><small data-hf-id="hf-a1za">73</small></div><div data-hf-id="hf-8zt0" class="collection-row"><span data-hf-id="hf-5c11" class="view-name"><span data-hf-id="hf-2f10" class="nav-icon">□</span>Paper Moon</span><small data-hf-id="hf-vcue">107</small></div><div data-hf-id="hf-8lhz" class="collection-row"><span data-hf-id="hf-fy51" class="view-name"><span data-hf-id="hf-20pz" class="nav-icon">□</span>River Cuts</span><small data-hf-id="hf-r1mr">92</small></div></div><div data-hf-id="hf-ahnc" class="rail-footer"><div data-hf-id="hf-re76" class="scan-button">↻&#160; Rescan library</div></div></aside>
+            <main data-hf-id="hf-wvsu" class="app-main"><div data-hf-id="hf-b6ht" class="app-toolbar"><div data-hf-id="hf-gz27" class="field"><span data-hf-id="hf-ba9m" class="field-label">Search artists</span><div data-hf-id="hf-g61x" class="field-box muted">Artist name</div></div><div data-hf-id="hf-hdd8" class="field"><span data-hf-id="hf-lv16" class="field-label">Sort artists</span><div data-hf-id="hf-0q7v" class="field-box">Name <span data-hf-id="hf-rath" class="chevron"></span></div></div><div data-hf-id="hf-g6g5" class="field"><span data-hf-id="hf-rptm" class="field-label">List</span><div data-hf-id="hf-7qw7" class="field-box">All artists <span data-hf-id="hf-shqk" class="chevron"></span></div></div><div data-hf-id="hf-gkr6" class="field"><span data-hf-id="hf-vvcq" class="field-label">Scope</span><div data-hf-id="hf-l7yg" class="field-box">All films <span data-hf-id="hf-s3fj" class="chevron"></span></div></div></div><div data-hf-id="hf-ebty" class="artist-grid"><article data-hf-id="hf-cm4r" class="artist-card"><div data-hf-id="hf-n261" class="artist-thumbs"><div data-hf-id="hf-dy72" class="artist-thumb"></div><div data-hf-id="hf-7k8y" class="artist-thumb"></div><div data-hf-id="hf-7yjz" class="artist-thumb"></div></div><span data-hf-id="hf-dnao" class="artist-favorite active">★</span><div data-hf-id="hf-9vxh" class="artist-copy"><h3 data-hf-id="hf-sq6r">Mara Vale</h3><p data-hf-id="hf-fnun">7 films</p></div></article><article data-hf-id="hf-s7sb" class="artist-card"><div data-hf-id="hf-c6tp" class="artist-thumbs"><div data-hf-id="hf-8yfm" class="artist-thumb" style="background:#9b745f"></div><div data-hf-id="hf-kxc1" class="artist-thumb" style="background:#3e5b58"></div><div data-hf-id="hf-gf13" class="artist-thumb" style="background:#746b5f"></div></div><span data-hf-id="hf-t6w8" class="artist-favorite">★</span><div data-hf-id="hf-c2m1" class="artist-copy"><h3 data-hf-id="hf-qd44">Jon Bell</h3><p data-hf-id="hf-esk5">5 films</p></div></article><article data-hf-id="hf-rtha" class="artist-card"><div data-hf-id="hf-ddqs" class="artist-thumbs"><div data-hf-id="hf-ipl0" class="artist-thumb" style="background:#554a66"></div><div data-hf-id="hf-v5sa" class="artist-thumb" style="background:#4a5551"></div><div data-hf-id="hf-kcn3" class="artist-thumb" style="background:#655167"></div></div><span data-hf-id="hf-jo68" class="artist-favorite">★</span><div data-hf-id="hf-d9j4" class="artist-copy"><h3 data-hf-id="hf-hqf5">June Hart</h3><p data-hf-id="hf-42b7">3 films</p></div></article><article data-hf-id="hf-rf69" class="artist-card"><div data-hf-id="hf-czfr" class="artist-thumbs"><div data-hf-id="hf-wufr" class="artist-thumb" style="background:#746b5f"></div><div data-hf-id="hf-e26u" class="artist-thumb" style="background:#9b745f"></div><div data-hf-id="hf-sz14" class="artist-thumb" style="background:#3d4b4d"></div></div><span data-hf-id="hf-ih95" class="artist-favorite">★</span><div data-hf-id="hf-cv83" class="artist-copy"><h3 data-hf-id="hf-lh64">Owen Grey</h3><p data-hf-id="hf-jz4h">9 films</p></div></article><article data-hf-id="hf-r0v8" class="artist-card"><div data-hf-id="hf-e6cu" class="artist-thumbs"><div data-hf-id="hf-54np" class="artist-thumb" style="background:#3e5b58"></div><div data-hf-id="hf-pk3j" class="artist-thumb" style="background:#655167"></div><div data-hf-id="hf-ro70" class="artist-thumb" style="background:#554a66"></div></div><span data-hf-id="hf-ivk6" class="artist-favorite">★</span><div data-hf-id="hf-avoy" class="artist-copy"><h3 data-hf-id="hf-6mxi">Nia Sol</h3><p data-hf-id="hf-upo2">4 films</p></div></article><article data-hf-id="hf-qmk7" class="artist-card"><div data-hf-id="hf-ds1t" class="artist-thumbs"><div data-hf-id="hf-eghv" class="artist-thumb" style="background:#9b745f"></div><div data-hf-id="hf-edv4" class="artist-thumb" style="background:#3d4b4d"></div><div data-hf-id="hf-lt5a" class="artist-thumb" style="background:#4a5551"></div></div><span data-hf-id="hf-hon3" class="artist-favorite">★</span><div data-hf-id="hf-ahdx" class="artist-copy"><h3 data-hf-id="hf-5amb">Rin Park</h3><p data-hf-id="hf-7w5w">6 films</p></div></article></div></main>
+          </div>
+        </div>
+        <div data-hf-id="hf-ct52" class="callout artists-callout" style="left: 68px; bottom: 42px"><span data-hf-id="hf-wl1r" class="eyebrow">A visual index</span><h2 data-hf-id="hf-x4xh">Browse by artist,<br data-hf-id="hf-r79k">not just by folder.</h2></div>
+      </section>
+
+      <section data-hf-id="hf-qxm6" id="scene-08-close" class="scene clip" data-start="48" data-duration="4" data-track-index="8">
+        <div data-hf-id="hf-vx2a" class="scene-ground"></div>
+        <div data-hf-id="hf-0raj" class="scene-grid"></div>
+        <div data-hf-id="hf-tv3m" class="closing-plate">
+          <div data-hf-id="hf-ztnf" class="closing-ring close-ring"></div>
+          <div data-hf-id="hf-ianl" class="closing-content close-content"><div data-hf-id="hf-rh1x" class="closing-logo" aria-label="Better Watch">B</div><h2 data-hf-id="hf-cdpz">Watch what you own.</h2><div data-hf-id="hf-rek8" class="closing-rule"></div><p data-hf-id="hf-hf1b">A better way to keep your library close.</p></div>
+        </div>
+        <div data-hf-id="hf-tetn" class="micro-note close-note" style="left: 170px; bottom: 88px">Better Watch / local library, clearer</div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo("#better-watch-bgm", { volume: 0 }, { volume: 0.22, duration: 1.2, ease: "power2.out" }, 0);
+      tl.to("#better-watch-bgm", { volume: 0, duration: 1.4, ease: "power2.in" }, 50.6);
+
+      const from = (selector, vars, duration, at, ease = "power3.out") => {
+        tl.fromTo(selector, vars, { ...Object.fromEntries(Object.keys(vars).map((key) => [key, 0])), duration, ease }, at);
+      };
+
+      const reveal = (selector, at, duration = 0.65, y = 26, ease = "power3.out") => {
+        tl.fromTo(selector, { opacity: 0, y }, { opacity: 1, y: 0, duration, ease }, at);
+      };
+
+      const fade = (selector, at, duration = 0.6, ease = "power3.out") => {
+        tl.fromTo(selector, { opacity: 0 }, { opacity: 1, duration, ease }, at);
+      };
+
+      const scaleIn = (selector, at, duration = 0.8, scale = 0.86, ease = "power3.out") => {
+        tl.fromTo(selector, { opacity: 0, scale }, { opacity: 1, scale: 1, duration, ease }, at);
+      };
+
+      const staggerReveal = (selector, at, each = 0.08, duration = 0.55) => {
+        tl.fromTo(selector, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration, ease: "power3.out", stagger: each }, at);
+      };
+
+      // 01 / scattered files resolve into the promise.
+      staggerReveal(".hook-eyebrow", 0.25, 0, 0.5);
+      staggerReveal(".hook-line", 0.7, 0.16, 0.7);
+      reveal(".hook-subhead", 1.55, 0.75, 18);
+      tl.fromTo(".hook-files .file-strip", { opacity: 0, x: 150, rotation: 4 }, { opacity: 1, x: 0, rotation: 0, duration: 0.8, ease: "power3.out", stagger: 0.18 }, 0.15);
+      scaleIn(".hook-mark", 2.0, 1.0, 0.78);
+      reveal(".hook-note", 3.45, 0.55, 10);
+      // 02 / the product surface arrives in layers.
+      reveal(".overview-window", 5.08, 0.8, 34);
+      reveal(".overview-callout", 5.55, 0.7, 24);
+      staggerReveal(".overview-rail > *", 5.45, 0.1, 0.5);
+      staggerReveal(".overview-toolbar .field", 5.85, 0.08, 0.5);
+      staggerReveal(".overview-card", 6.25, 0.13, 0.65);
+      fade(".overview-card .movie-meta", 6.75, 0.5);
+      fade(".overview-card .play-button", 7.15, 0.45);
+      tl.fromTo(".overview-window", { x: 16 }, { x: 0, duration: 0.7, ease: "power3.out" }, 5.08);
+
+      // 03 / search and sort are a single cause-and-effect sequence.
+      reveal(".search-window", 12.05, 0.7, 30);
+      reveal(".search-callout", 12.35, 0.6, 22);
+      staggerReveal(".search-window .app-rail > *", 12.2, 0.08, 0.45);
+      staggerReveal(".search-toolbar .field", 12.45, 0.08, 0.45);
+      tl.fromTo(".search-typing span", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out", stagger: 0.12 }, 12.8);
+       staggerReveal(".search-card", 15.05, 0.12, 0.55);
+      scaleIn(".search-focus", 15.7, 0.5, 0.98);
+      reveal(".search-callout h2", 16.0, 0.45, 10);
+
+      // 04 / hover preview expands from the selected card.
+      reveal(".preview-window", 20.05, 0.65, 26);
+      reveal(".preview-callout", 20.3, 0.6, 22);
+       staggerReveal(".preview-window .app-rail > *", 20.2, 0.08, 0.42);
+       staggerReveal(".preview-window .app-toolbar .field", 20.4, 0.08, 0.4);
+       staggerReveal(".preview-window .movie-card", 20.75, 0.1, 0.5);
+       reveal(".preview-sort-menu", 20.85, 0.45, -8);
+       tl.fromTo(".preview-sort-menu .sort-option", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power3.out", stagger: 0.09 }, 21.0);
+       tl.to(".preview-sort-menu", { opacity: 0, y: -8, duration: 0.35, ease: "power2.in" }, 21.75);
+       tl.fromTo(".preview-cursor", { opacity: 0, x: 280, y: 380 }, { opacity: 1, x: 606, y: 402, duration: 1.0, ease: "power3.inOut" }, 20.7);
+      tl.fromTo(".cursor-ring", { opacity: 0, scale: 0.6 }, { opacity: 0.9, scale: 1.2, duration: 0.45, ease: "power2.out" }, 21.55);
+      tl.to(".cursor-ring", { opacity: 0, duration: 0.35, ease: "power2.out" }, 22.0);
+      scaleIn(".hover-panel", 21.75, 0.9, 0.9);
+      reveal(".hover-panel .preview-details", 22.45, 0.6, 18);
+      reveal(".hover-panel .preview-live", 23.1, 0.45, 8);
+      tl.fromTo(".preview-panel", { x: 18 }, { x: 0, duration: 0.7, ease: "power3.out" }, 21.75);
+
+      // 05 / marks accumulate into a personal workflow.
+      reveal(".lists-window", 27.05, 0.65, 30);
+      reveal(".lists-callout", 27.3, 0.6, 22);
+      staggerReveal(".lists-window .app-rail > *", 27.25, 0.08, 0.42);
+      staggerReveal(".lists-window .app-toolbar .field", 27.5, 0.08, 0.4);
+      staggerReveal(".lists-window .movie-card", 27.85, 0.12, 0.55);
+      scaleIn(".lists-panel", 28.2, 0.8, 0.92);
+      staggerReveal(".lists-panel .list-item", 29.0, 0.2, 0.5);
+      tl.fromTo(".lists-panel .list-mark", { scale: 0.7, opacity: 0.3 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power3.out", stagger: 0.22 }, 29.55);
+      reveal(".lists-panel h3", 30.0, 0.5, 12);
+      tl.fromTo(".lists-window .collection-row.active", { color: "#6f695f" }, { color: "#bd1f1a", duration: 0.45, ease: "power2.out" }, 32.2);
+
+      // 06 / inspector panel keeps source and metadata co-visible.
+      reveal(".details-window", 35.05, 0.65, 28);
+      reveal(".details-callout", 35.3, 0.6, 22);
+      staggerReveal(".details-window .app-rail > *", 35.2, 0.08, 0.42);
+      staggerReveal(".details-window .app-toolbar .field", 35.4, 0.08, 0.4);
+      staggerReveal(".details-window .movie-card", 35.75, 0.12, 0.55);
+      scaleIn(".details-drawer", 36.0, 0.9, 0.9);
+      reveal(".details-drawer .details-content", 36.45, 0.55, 14);
+      staggerReveal(".details-drawer .detail-stat", 37.0, 0.12, 0.45);
+      staggerReveal(".details-drawer .details-section", 38.0, 0.16, 0.45);
+      reveal(".details-drawer .details-footer", 39.25, 0.45, 12);
+      tl.fromTo(".details-drawer .details-play", { scale: 0.95 }, { scale: 1, duration: 0.5, ease: "power3.out" }, 39.65);
+
+      // 07 / artists becomes a visual index.
+      reveal(".artists-window", 42.05, 0.65, 30);
+      reveal(".artists-callout", 42.3, 0.6, 22);
+      staggerReveal(".artists-window .app-rail > *", 42.2, 0.08, 0.42);
+      staggerReveal(".artists-window .app-toolbar .field", 42.4, 0.08, 0.4);
+      staggerReveal(".artists-window .artist-card", 42.9, 0.12, 0.6);
+      tl.fromTo(".artists-window .artist-favorite", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out", stagger: 0.12 }, 44.0);
+      tl.fromTo(".artists-window .artist-card:first-child", { borderColor: "#d9d1c4" }, { borderColor: "#bd1f1a", duration: 0.45, ease: "power2.out" }, 46.1);
+
+      // 08 / a quiet, held close.
+      fade(".close-ring", 48.05, 0.8);
+      scaleIn(".closing-logo", 48.2, 0.8, 0.84);
+      reveal(".close-content h2", 48.75, 0.75, 18);
+      reveal(".closing-rule", 49.45, 0.55, 10);
+      reveal(".close-content p", 49.8, 0.55, 10);
+      reveal(".close-note", 50.6, 0.5, 8);
+
+      window.__timelines["better-watch-demo"] = tl;
+    </script>
+  </body>
+</html>

@@ -24,6 +24,8 @@ import {
   SelectValue
 } from './components/ui/select.jsx';
 import { enrichMoviesWithArtists } from './lib/artists.js';
+import { buildSubfolderOptions, movieMatchesSubfolder } from './lib/folders.js';
+import { FolderPicker } from './components/folder-picker.jsx';
 
 const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
 const ARTIST_MARKS_KEY = 'ultra-touch-gallery:artist-marks';
@@ -69,22 +71,6 @@ function formatResolution(movie) {
 function formatModified(timestamp) {
   if (!timestamp) return 'Unknown';
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(timestamp));
-}
-
-function directSubfolderValue(folderPath, activeFolder) {
-  const parts = folderPath.split('/').filter(Boolean);
-  if (!parts.length) return null;
-  if (activeFolder === 'All Films') return parts[0];
-  if (parts[0] !== activeFolder || parts.length < 2) return null;
-  return `${activeFolder}/${parts[1]}`;
-}
-
-function subfolderLabel(value) {
-  return value.split('/').pop() || value;
-}
-
-function movieMatchesSubfolder(movie, activeSubfolder) {
-  return activeSubfolder === 'All Subfolders' || movie.folder === activeSubfolder || movie.folder.startsWith(`${activeSubfolder}/`);
 }
 
 function SelectField({ label, value, options, onChange, className }) {
@@ -168,29 +154,10 @@ function App() {
     });
   }, [movies]);
 
-  const subfolderOptions = useMemo(() => {
-    const folders = new Map();
-    const counts = new Map();
-
-    for (const directory of library.directories || []) {
-      const value = directSubfolderValue(directory, activeFolder);
-      if (value) folders.set(value, subfolderLabel(value));
-    }
-
-    for (const movie of movies) {
-      if (activeFolder !== 'All Films' && movie.topFolder !== activeFolder) continue;
-      const value = directSubfolderValue(movie.folder, activeFolder);
-      if (!value) continue;
-      folders.set(value, subfolderLabel(value));
-      counts.set(value, (counts.get(value) || 0) + 1);
-    }
-
-    const options = [...folders.entries()]
-      .map(([value, label]) => ({ value, label: `${label} (${counts.get(value) || 0})` }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-
-    return [{ value: 'All Subfolders', label: `All Subfolders (${options.length})` }, ...options];
-  }, [activeFolder, library.directories, movies]);
+  const subfolderOptions = useMemo(
+    () => buildSubfolderOptions(library.directories || [], movies, activeFolder),
+    [activeFolder, library.directories, movies]
+  );
 
   useEffect(() => {
     if (!subfolderOptions.some((option) => option.value === activeSubfolder)) {
@@ -564,7 +531,7 @@ function App() {
                       { value: 'modified', label: 'Newest' }
                     ]}
                   />
-                  <SelectField label="Subfolder" className="subfolder" value={activeSubfolder} onChange={(value) => {
+                  <FolderPicker value={activeSubfolder} onChange={(value) => {
                     setActiveSubfolder(value);
                     setActiveArtist('All Artists');
                   }} options={subfolderOptions} />

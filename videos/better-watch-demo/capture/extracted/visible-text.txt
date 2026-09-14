@@ -1,0 +1,9 @@
+Better Watch / Ultra Touch Library
+
+A local film library for external drives.
+Find videos by title, folder, or filename. Sort by name, folder, duration, size, or newest.
+Filter by subfolder, artist, and list. Hover for a live preview. Open details for duration,
+quality, size, modified date, artists, and description. Mark films as Favorite, Watch Later,
+or Watched. Browse the Artists view and jump back into a filtered film collection.
+
+The demo uses sanitized neutral preview artwork and fictional titles for share-safe output.
