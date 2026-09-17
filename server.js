@@ -6,6 +6,7 @@ import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
+import { embeddedDescription } from './src/lib/descriptions.js';
 import {
   ENGLISH_SUB_COLLECTIONS,
   isEnglishSubtitleFile,
@@ -347,7 +348,7 @@ async function probeVideo(filePath) {
     '-select_streams',
     'v:0',
     '-show_entries',
-    'stream=width,height:format=duration',
+    'stream=width,height:format=duration:format_tags=description,comment',
     '-of',
     'json',
     filePath
@@ -357,7 +358,8 @@ async function probeVideo(filePath) {
   return {
     duration: parseDuration(parsed.format?.duration),
     width: stream.width || null,
-    height: stream.height || null
+    height: stream.height || null,
+    embeddedDescription: embeddedDescription(parsed.format?.tags)
   };
 }
 
@@ -499,16 +501,35 @@ async function scanLibrary() {
       const relativePath = relative(LIBRARY_ROOT, filePath);
       const cached = previous.get(filePath);
       const collection = relativePath.split('/')[0]?.toLowerCase();
-      const [description, finderTags] = await Promise.all([
+      const [finderComment, finderTags] = await Promise.all([
         readFinderComment(filePath),
         ENGLISH_SUB_COLLECTIONS.has(collection) ? readFinderTags(filePath) : Promise.resolve('')
       ]);
       const hasEnglishSub = movieHasEnglishSub({ relativePath, finderTags, subtitleKeys });
 
-      if (cached?.id === id && cached.thumbnail) {
+      const unchanged = cached?.id === id;
+      let probe = { duration: null, width: null, height: null };
+      let failed = null;
+
+      // Reuse embedded metadata only while the file is unchanged. Older indexes
+      // are probed once; a successful empty result is cached too.
+      if (!unchanged || !cached.thumbnail || (!finderComment && !Object.hasOwn(cached, 'embeddedDescription'))) {
+        try {
+          probe = await probeVideo(filePath);
+        } catch (error) {
+          failed = `Probe failed: ${error.message}`;
+        }
+      }
+      const embedded = Object.hasOwn(probe, 'embeddedDescription')
+        ? probe.embeddedDescription
+        : unchanged ? cached.embeddedDescription : undefined;
+      const description = finderComment || embedded || null;
+
+      if (unchanged && cached.thumbnail) {
         movies.push({
           ...cached,
           preview: existsSync(join(PREVIEW_DIR, `${id}.mp4`)) ? `/previews/${id}.mp4` : null,
+          embeddedDescription: embedded,
           description,
           hasEnglishSub
         });
@@ -516,15 +537,7 @@ async function scanLibrary() {
         continue;
       }
 
-      let probe = { duration: null, width: null, height: null };
       let thumbnail = null;
-      let failed = null;
-
-      try {
-        probe = await probeVideo(filePath);
-      } catch (error) {
-        failed = `Probe failed: ${error.message}`;
-      }
 
       try {
         thumbnail = await generateThumb(filePath, id, probe.duration);
@@ -543,6 +556,7 @@ async function scanLibrary() {
         size: stats.size,
         modified: stats.mtimeMs,
         description,
+        embeddedDescription: embedded,
         hasEnglishSub,
         duration: probe.duration,
         width: probe.width,

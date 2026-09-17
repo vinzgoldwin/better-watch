@@ -7,13 +7,11 @@ import {
   Folder,
   Grid2X2,
   Heart,
-  Info,
   Play,
   RefreshCw,
   Star,
   Trash2,
-  User,
-  X
+  User
 } from 'lucide-react';
 import {
   Select,
@@ -68,11 +66,6 @@ function formatResolution(movie) {
   return `${movie.height}p`;
 }
 
-function formatModified(timestamp) {
-  if (!timestamp) return 'Unknown';
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(timestamp));
-}
-
 function SelectField({ label, value, options, onChange, className }) {
   return (
     <div className={`select ${className || ''}`.trim()}>
@@ -112,7 +105,6 @@ function App() {
   const [cleanupStatus, setCleanupStatus] = useState('');
   const [cleanupBusy, setCleanupBusy] = useState(false);
   const [openingMovieId, setOpeningMovieId] = useState(null);
-  const [descriptionOpenId, setDescriptionOpenId] = useState(null);
   const [hoverPreview, setHoverPreview] = useState(null);
   const hoverTimer = useRef(null);
   const hoverToken = useRef(0);
@@ -301,27 +293,6 @@ function App() {
         return a.name.localeCompare(b.name);
       });
   }, [artistMarks, artistSearch, artistSort, artistList, artistSummaries]);
-
-  const selectedMovie = useMemo(
-    () => movies.find((movie) => movie.id === descriptionOpenId) || null,
-    [descriptionOpenId, movies]
-  );
-
-  useEffect(() => {
-    if (!descriptionOpenId) return undefined;
-
-    function closeOnEscape(event) {
-      if (event.key === 'Escape') setDescriptionOpenId(null);
-    }
-
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [descriptionOpenId]);
-
-  useEffect(() => {
-    if (selectedMovie || !descriptionOpenId) return;
-    setDescriptionOpenId(null);
-  }, [descriptionOpenId, selectedMovie]);
 
   function chooseFolder(folder) {
     setActiveFolder(folder);
@@ -547,8 +518,6 @@ function App() {
                     movie={movie}
                     marks={movieMarks[movie.id] || {}}
                     isOpening={openingMovieId === movie.id}
-                    detailsOpen={descriptionOpenId === movie.id}
-                    onOpenDetails={() => setDescriptionOpenId(movie.id)}
                     onToggleMark={(markKey) => toggleMovieMark(movie.id, markKey)}
                     onOpen={() => openMovie(movie)}
                     onHoverStart={showHoverPreview}
@@ -613,21 +582,13 @@ function App() {
       </div>
 
       <HoverPreview preview={hoverPreview} videoRef={hoverVideoRef} />
-      <MovieDetailsPanel
-        movie={selectedMovie}
-        marks={selectedMovie ? movieMarks[selectedMovie.id] || {} : {}}
-        isOpening={selectedMovie ? openingMovieId === selectedMovie.id : false}
-        onClose={() => setDescriptionOpenId(null)}
-        onToggleMark={(markKey) => selectedMovie && toggleMovieMark(selectedMovie.id, markKey)}
-        onOpen={() => selectedMovie && openMovie(selectedMovie)}
-      />
     </>
   );
 }
 
-function MovieCard({ movie, marks, isOpening, detailsOpen, onOpenDetails, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
+function MovieCard({ movie, marks, isOpening, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
   return (
-    <article className={`movie${detailsOpen ? ' selected' : ''}`}>
+    <article className="movie">
       <div
         className={`thumb${movie.thumbnail ? '' : ' missing'}`}
         onMouseEnter={(event) => onHoverStart(event, movie)}
@@ -644,14 +605,19 @@ function MovieCard({ movie, marks, isOpening, detailsOpen, onOpenDetails, onTogg
             <h3>{movie.title || movie.relativePath}</h3>
             <p className="path">{movie.folder}</p>
           </div>
-          {movie.description ? (
-            <div className="description-slot">
-              <button className="description-trigger" type="button" aria-label="Show details" aria-expanded={detailsOpen} onClick={onOpenDetails}>
-                <Info aria-hidden="true" />
-              </button>
-            </div>
-          ) : null}
         </div>
+        {movie.description?.trim() ? (
+          <details className="movie-description">
+            <summary>
+              <span className="description-preview">{movie.description}</span>
+              <span className="description-expand">Read description</span>
+              <span className="description-collapse">Hide description</span>
+            </summary>
+            <p>{movie.description}</p>
+          </details>
+        ) : (
+          <p className="description-empty">No description available.</p>
+        )}
         <div className="marks" aria-label="Movie lists">
           {MARK_TYPES.map(({ key, label, Icon }) => (
             <button
@@ -677,87 +643,6 @@ function MovieCard({ movie, marks, isOpening, detailsOpen, onOpenDetails, onTogg
         </button>
       </div>
     </article>
-  );
-}
-
-function MovieDetailsPanel({ movie, marks, isOpening, onClose, onToggleMark, onOpen }) {
-  if (!movie) return null;
-
-  return (
-    <aside className="details-panel" aria-label="Movie details">
-      <div className="details-media">
-        {movie.thumbnail ? <img src={movie.thumbnail} alt={`${movie.title} preview strip`} /> : <div className="details-fallback">No preview</div>}
-      </div>
-
-      <div className="details-content">
-        <div className="details-header">
-          <div>
-            <p className="details-kicker">{movie.topFolder || 'Library'}</p>
-            <h2>{movie.title || movie.relativePath}</h2>
-            <p className="details-path">{movie.folder}</p>
-            {movie.hasEnglishSub ? <span className="subtitle-badge details-subtitle-badge">English Sub</span> : null}
-          </div>
-          <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
-            <X aria-hidden="true" />
-          </button>
-        </div>
-
-        <dl className="details-stats">
-          <div>
-            <dt>Duration</dt>
-            <dd>{formatDuration(movie.duration)}</dd>
-          </div>
-          <div>
-            <dt>Quality</dt>
-            <dd>{formatResolution(movie)}</dd>
-          </div>
-          <div>
-            <dt>Size</dt>
-            <dd>{formatSize(movie.size)}</dd>
-          </div>
-          <div>
-            <dt>Modified</dt>
-            <dd>{formatModified(movie.modified)}</dd>
-          </div>
-        </dl>
-
-        {movie.artists?.length ? (
-          <div className="details-section">
-            <h3>Artists</h3>
-            <div className="details-tags">
-              {movie.artists.map((artist) => <span key={artist}>{artist}</span>)}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="details-section details-description">
-          <h3>Description</h3>
-          <p>{movie.description || 'No description available.'}</p>
-        </div>
-
-        <div className="details-actions">
-          <button className="details-play" type="button" disabled={isOpening} onClick={onOpen}>
-            {isOpening ? <RefreshCw aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {isOpening ? 'Opening...' : 'Play'}
-          </button>
-          <div className="details-marks" aria-label="Movie lists">
-            {MARK_TYPES.map(({ key, label, Icon }) => (
-              <button
-                key={key}
-                className={`mark${marks[key] ? ' active' : ''}`}
-                type="button"
-                title={label}
-                aria-label={label}
-                aria-pressed={Boolean(marks[key])}
-                onClick={() => onToggleMark(key)}
-              >
-                <Icon aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </aside>
   );
 }
 
