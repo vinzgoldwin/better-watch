@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync } from 'node:fs';
-import { lstat, mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, readFile, realpath, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
 import { embeddedDescription } from './src/lib/descriptions.js';
+import { readReleaseDate } from './src/lib/release-date.js';
 import {
   ENGLISH_SUB_COLLECTIONS,
   isEnglishSubtitleFile,
@@ -37,6 +38,8 @@ const IGNORED_DIRS = new Set([
   'Start_Here_Mac.app',
   'Seagate'
 ]);
+
+let deletingMovie = false;
 
 let library = {
   root: LIBRARY_ROOT,
@@ -169,10 +172,11 @@ async function collectEnglishSubtitleKeys(dir, collection, found) {
   }
 }
 
-async function buildEnglishSubtitleCatalog() {
+async function buildEnglishSubtitleCatalog(scope = '') {
   const keys = new Set();
 
   for (const collection of ENGLISH_SUB_COLLECTIONS) {
+    if (scope && scope.split('/')[0].toLowerCase() !== collection) continue;
     const collectionPath = join(LIBRARY_ROOT, collection);
     let entries = [];
     try {
@@ -348,7 +352,7 @@ async function probeVideo(filePath) {
     '-select_streams',
     'v:0',
     '-show_entries',
-    'stream=width,height:format=duration:format_tags=description,comment',
+    'stream=width,height:format=duration:format_tags=description,comment,date,release_date,year',
     '-of',
     'json',
     filePath
@@ -359,7 +363,8 @@ async function probeVideo(filePath) {
     duration: parseDuration(parsed.format?.duration),
     width: stream.width || null,
     height: stream.height || null,
-    embeddedDescription: embeddedDescription(parsed.format?.tags)
+    embeddedDescription: embeddedDescription(parsed.format?.tags),
+    releaseDate: readReleaseDate(parsed.format?.tags)
   };
 }
 
@@ -477,22 +482,35 @@ async function loadCachedIndex() {
   }
 }
 
-async function scanLibrary() {
-  if (library.scanning) return library;
+function pathWithin(path, scope) {
+  return !scope || path === scope || path.startsWith(`${scope}/`);
+}
 
+async function scanLibrary(scope = '') {
+  if (library.scanning || deletingMovie) return library;
+
+  const scanRoot = resolve(LIBRARY_ROOT, scope);
+  // Validate accessibility before changing the visible index.
+  await readdir(scanRoot);
+  if (library.scanning || deletingMovie) return library;
   const previous = new Map(library.movies.map((movie) => [movie.path, movie]));
+  const retained = library.movies.filter((movie) => !pathWithin(movie.relativePath, scope));
+  const previousDirectories = library.directories || [];
   library.scanning = true;
   library.generatedAt = new Date().toISOString();
-  library.movies = [];
+  library.movies = retained;
   library.errors = [];
 
   await mkdir(THUMB_DIR, { recursive: true });
-  const [paths, directories] = await Promise.all([
-    walkVideos(LIBRARY_ROOT),
-    listLibraryDirectories()
+  const [paths, scannedDirectories] = await Promise.all([
+    walkVideos(scanRoot),
+    walkDirectories(scanRoot)
   ]);
-  const subtitleKeys = await buildEnglishSubtitleCatalog();
-  const movies = [];
+  const directories = previousDirectories.filter((directory) => !pathWithin(directory, scope));
+  if (scope) directories.push(scope);
+  directories.push(...scannedDirectories);
+  const subtitleKeys = await buildEnglishSubtitleCatalog(scope);
+  const movies = [...retained];
 
   for (const filePath of paths) {
     try {
@@ -513,7 +531,7 @@ async function scanLibrary() {
 
       // Reuse embedded metadata only while the file is unchanged. Older indexes
       // are probed once; a successful empty result is cached too.
-      if (!unchanged || !cached.thumbnail || (!finderComment && !Object.hasOwn(cached, 'embeddedDescription'))) {
+      if (!unchanged || !cached.thumbnail || !Object.hasOwn(cached, 'releaseDate') || (!finderComment && !Object.hasOwn(cached, 'embeddedDescription'))) {
         try {
           probe = await probeVideo(filePath);
         } catch (error) {
@@ -523,6 +541,9 @@ async function scanLibrary() {
       const embedded = Object.hasOwn(probe, 'embeddedDescription')
         ? probe.embeddedDescription
         : unchanged ? cached.embeddedDescription : undefined;
+      const releaseDate = Object.hasOwn(probe, 'releaseDate')
+        ? probe.releaseDate
+        : unchanged ? cached.releaseDate : undefined;
       const description = finderComment || embedded || null;
 
       if (unchanged && cached.thumbnail) {
@@ -531,6 +552,7 @@ async function scanLibrary() {
           preview: existsSync(join(PREVIEW_DIR, `${id}.mp4`)) ? `/previews/${id}.mp4` : null,
           embeddedDescription: embedded,
           description,
+          releaseDate,
           hasEnglishSub
         });
         if (movies.length % 8 === 0) library.movies = [...movies];
@@ -556,6 +578,7 @@ async function scanLibrary() {
         size: stats.size,
         modified: stats.mtimeMs,
         description,
+        releaseDate,
         embeddedDescription: embedded,
         hasEnglishSub,
         duration: probe.duration,
@@ -571,13 +594,23 @@ async function scanLibrary() {
     }
   }
 
+  // An unreadable subtree is not evidence that its cached files were deleted.
+  const indexedPaths = new Set(movies.map((movie) => movie.path));
+  for (const movie of previous.values()) {
+    if (!indexedPaths.has(movie.path) && library.errors.some((error) => pathWithin(movie.path, error.path))) {
+      movies.push(movie);
+    }
+  }
+  for (const directory of previousDirectories) {
+    if (library.errors.some((error) => pathWithin(join(LIBRARY_ROOT, directory), error.path))) directories.push(directory);
+  }
   movies.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
   library = {
     root: LIBRARY_ROOT,
     generatedAt: new Date().toISOString(),
     scanning: false,
     movies: enrichMoviesWithArtists(movies),
-    directories,
+    directories: [...new Set(directories)].sort((a, b) => a.localeCompare(b)),
     errors: library.errors
   };
 
@@ -636,19 +669,31 @@ async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
   if (url.pathname === '/api/library' && request.method === 'GET') {
-    sendJson(response, 200, {
-      ...library,
-      directories: await listLibraryDirectories()
-    });
+    sendJson(response, 200, library);
     return;
   }
 
   if (url.pathname === '/api/rescan' && request.method === 'POST') {
-    scanLibrary().catch((error) => {
-      library.scanning = false;
-      library.errors.push({ path: LIBRARY_ROOT, message: error.message });
-    });
-    sendJson(response, 202, { scanning: true });
+    try {
+      const { folder = '' } = await readJsonBody(request);
+      if (typeof folder !== 'string' || !isInsideLibraryRoot(resolve(LIBRARY_ROOT, folder))) {
+        sendJson(response, 400, { error: 'Choose a folder within the library.' });
+        return;
+      }
+      const scanRoot = resolve(LIBRARY_ROOT, folder);
+      await readdir(scanRoot);
+      if (library.scanning || deletingMovie) {
+        sendJson(response, 409, { error: 'A scan is already running.' });
+        return;
+      }
+      scanLibrary(relative(LIBRARY_ROOT, scanRoot)).catch((error) => {
+        library.scanning = false;
+        library.errors.push({ path: scanRoot, message: error.message });
+      });
+      sendJson(response, 202, { scanning: true });
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
     return;
   }
 
@@ -663,6 +708,53 @@ async function handleApi(request, response) {
       sendJson(response, 200, await cleanupAppleDoubleSidecars());
     } catch (error) {
       sendJson(response, 400, { error: error.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/movie' && request.method === 'DELETE') {
+    let locked = false;
+    try {
+      const { id, confirm } = await readJsonBody(request);
+      if (confirm !== 'delete-from-disk') {
+        sendJson(response, 400, { error: 'Permanent deletion confirmation is required.' });
+        return;
+      }
+      if (library.scanning || deletingMovie) {
+        sendJson(response, 409, { error: 'Wait for the current scan or deletion to finish.' });
+        return;
+      }
+      const movie = library.movies.find((item) => item.id === id);
+      if (!movie) {
+        sendJson(response, 404, { error: 'Movie not found.' });
+        return;
+      }
+      // Serialize deletion with scans so a scan cannot restore a deleted entry.
+      deletingMovie = locked = true;
+      const root = await realpath(LIBRARY_ROOT);
+      const path = await realpath(movie.path);
+      const withinRoot = relative(root, path);
+      const stats = await lstat(movie.path);
+      if (!withinRoot || withinRoot === '..' || withinRoot.startsWith('../') || !stats.isFile()) {
+        throw new Error('Only video files within the library can be deleted.');
+      }
+      if (fileHash(movie.path, stats) !== movie.id) {
+        throw new Error('The video has changed. Rescan before deleting it.');
+      }
+      await unlink(movie.path);
+      library.movies = library.movies.filter((item) => item.id !== id);
+      library.generatedAt = new Date().toISOString();
+      try {
+        await writeFile(INDEX_PATH, JSON.stringify(library, null, 2));
+      } catch (error) {
+        sendJson(response, 200, { deleted: true, warning: `Video deleted, but the index could not be saved: ${error.message}` });
+        return;
+      }
+      sendJson(response, 200, { deleted: true });
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    } finally {
+      if (locked) deletingMovie = false;
     }
     return;
   }

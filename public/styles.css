@@ -706,8 +706,7 @@ h2 {
   white-space: nowrap;
 }
 
-.movie-description,
-.description-empty {
+.movie-description {
   grid-column: 1 / -1;
   grid-row: 2;
   min-width: 0;
@@ -727,20 +726,12 @@ h2 {
   outline-offset: 3px;
 }
 
-.description-preview,
 .movie-description p {
   margin: 0;
   font-size: 14px;
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.description-preview {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
 }
 
 .description-expand,
@@ -757,15 +748,13 @@ h2 {
 }
 
 .description-collapse,
-.movie-description[open] .description-expand,
-.movie-description[open] .description-preview {
+.movie-description[open] .description-expand {
   display: none;
 }
 
-.description-empty {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
+.movie-body:not(:has(.movie-description)) .marks,
+.movie-body:not(:has(.movie-description)) .open {
+  grid-row: 2;
 }
 
 .marks {
@@ -1141,3 +1130,7 @@ h2 {
 
 
 }
+
+.delete-video { margin-left: auto; }
+.delete-video:hover { color: #ef7777; }
+.delete-video:disabled { opacity: 0.4; cursor: not-allowed; }

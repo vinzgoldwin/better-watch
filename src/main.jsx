@@ -23,6 +23,7 @@ import {
 } from './components/ui/select.jsx';
 import { enrichMoviesWithArtists } from './lib/artists.js';
 import { buildSubfolderOptions, movieMatchesSubfolder } from './lib/folders.js';
+import { compareReleaseDates, formatReleaseDate } from './lib/release-date.js';
 import { FolderPicker } from './components/folder-picker.jsx';
 
 const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
@@ -103,7 +104,10 @@ function App() {
   const [movieMarks, setMovieMarks] = useState(() => readStoredObject(MARKS_KEY));
   const [artistMarks, setArtistMarks] = useState(() => readStoredObject(ARTIST_MARKS_KEY));
   const [cleanupStatus, setCleanupStatus] = useState('');
+  const [scanError, setScanError] = useState('');
+  const scanFolder = activeSubfolder !== 'All Subfolders' ? activeSubfolder : activeFolder !== 'All Films' ? activeFolder : '';
   const [cleanupBusy, setCleanupBusy] = useState(false);
+  const [deletingMovieId, setDeletingMovieId] = useState(null);
   const [openingMovieId, setOpeningMovieId] = useState(null);
   const [hoverPreview, setHoverPreview] = useState(null);
   const hoverTimer = useRef(null);
@@ -244,6 +248,7 @@ function App() {
         return [movie.title, movie.relativePath, movie.folder].join(' ').toLowerCase().includes(query);
       })
       .toSorted((a, b) => {
+        if (sortValue === 'releaseNewest' || sortValue === 'releaseOldest') return compareReleaseDates(a, b, sortValue === 'releaseOldest');
         if (sortValue === 'duration') return (b.duration || 0) - (a.duration || 0);
         if (sortValue === 'size') return (b.size || 0) - (a.size || 0);
         if (sortValue === 'modified') return direction * ((a.modified || 0) - (b.modified || 0));
@@ -318,6 +323,32 @@ function App() {
       if (!next[name]) delete next[name];
       return next;
     });
+  }
+
+  async function deleteMovie(movie) {
+    hideHoverPreview();
+    if (!window.confirm(`Permanently delete this video from disk?\n\n${movie.path}\n\nThis cannot be undone.`)) return;
+    setDeletingMovieId(movie.id);
+    try {
+      const response = await fetch('/api/movie', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: movie.id, confirm: 'delete-from-disk' })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not delete the video.');
+      setLibrary((current) => ({ ...current, movies: current.movies.filter((item) => item.id !== movie.id) }));
+      setMovieMarks((current) => {
+        const next = { ...current };
+        delete next[movie.id];
+        return next;
+      });
+      if (result.warning) window.alert(result.warning);
+    } catch (error) {
+      window.alert(error.message);
+    } finally {
+      setDeletingMovieId(null);
+    }
   }
 
   async function openMovie(movie) {
@@ -407,9 +438,21 @@ function App() {
   }
 
   async function rescanLibrary() {
+    setScanError('');
     setLibrary((current) => ({ ...current, scanning: true }));
-    await fetch('/api/rescan', { method: 'POST' });
-    window.setTimeout(refreshLibrary, 700);
+    try {
+      const response = await fetch('/api/rescan', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ folder: scanFolder })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not start scan.');
+      window.setTimeout(refreshLibrary, 700);
+    } catch (error) {
+      setScanError(error.message);
+      setLibrary((current) => ({ ...current, scanning: false }));
+    }
   }
 
   async function cleanupSidecars() {
@@ -468,10 +511,11 @@ function App() {
           </nav>
 
           <div className="sidebar-footer">
-            <button className="rescan" type="button" disabled={library.scanning} onClick={rescanLibrary}>
+            <button className="rescan" type="button" title={scanFolder ? `Rescan ${scanFolder} and its subfolders` : 'Rescan the entire library'} disabled={library.scanning} onClick={rescanLibrary}>
               <RefreshCw aria-hidden="true" />
-              {library.scanning ? 'Scanning...' : 'Rescan Library'}
+              {library.scanning ? 'Scanning...' : scanFolder ? 'Rescan Folder' : 'Rescan Library'}
             </button>
+            {scanError ? <p className="cleanup-status" role="alert">{scanError}</p> : null}
             <button className="cleanup" type="button" disabled={cleanupBusy} onClick={cleanupSidecars}>
               {cleanupBusy ? <RefreshCw aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
               {cleanupBusy ? 'Cleaning...' : 'Clean Sidecars'}
@@ -499,7 +543,9 @@ function App() {
                       { value: 'folder', label: 'Folder' },
                       { value: 'duration', label: 'Duration' },
                       { value: 'size', label: 'Size' },
-                      { value: 'modified', label: 'Newest' }
+                      { value: 'modified', label: 'Newest' },
+                      { value: 'releaseNewest', label: 'Newest release' },
+                      { value: 'releaseOldest', label: 'Oldest release' }
                     ]}
                   />
                   <FolderPicker value={activeSubfolder} onChange={(value) => {
@@ -518,6 +564,9 @@ function App() {
                     movie={movie}
                     marks={movieMarks[movie.id] || {}}
                     isOpening={openingMovieId === movie.id}
+                    deleteDisabled={library.scanning || deletingMovieId !== null}
+                    isDeleting={deletingMovieId === movie.id}
+                    onDelete={() => deleteMovie(movie)}
                     onToggleMark={(markKey) => toggleMovieMark(movie.id, markKey)}
                     onOpen={() => openMovie(movie)}
                     onHoverStart={showHoverPreview}
@@ -586,7 +635,7 @@ function App() {
   );
 }
 
-function MovieCard({ movie, marks, isOpening, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
+function MovieCard({ movie, marks, isOpening, deleteDisabled, isDeleting, onDelete, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
   return (
     <article className="movie">
       <div
@@ -609,15 +658,12 @@ function MovieCard({ movie, marks, isOpening, onToggleMark, onOpen, onHoverStart
         {movie.description?.trim() ? (
           <details className="movie-description">
             <summary>
-              <span className="description-preview">{movie.description}</span>
               <span className="description-expand">Read description</span>
               <span className="description-collapse">Hide description</span>
             </summary>
             <p>{movie.description}</p>
           </details>
-        ) : (
-          <p className="description-empty">No description available.</p>
-        )}
+        ) : null}
         <div className="marks" aria-label="Movie lists">
           {MARK_TYPES.map(({ key, label, Icon }) => (
             <button
@@ -632,8 +678,12 @@ function MovieCard({ movie, marks, isOpening, onToggleMark, onOpen, onHoverStart
               <Icon aria-hidden="true" />
             </button>
           ))}
+          <button className="mark delete-video" type="button" title="Permanently delete from disk" aria-label={isDeleting ? 'Deleting video' : 'Delete video from disk'} disabled={deleteDisabled} onClick={onDelete}>
+            <Trash2 aria-hidden="true" />
+          </button>
         </div>
         <dl className="meta">
+          {movie.releaseDate ? <div><dd><time dateTime={movie.releaseDate}>{formatReleaseDate(movie.releaseDate)}</time></dd></div> : null}
           <div><dd>{formatDuration(movie.duration)}</dd></div>
           <div><dd>{formatResolution(movie)}</dd></div>
           <div><dd>{formatSize(movie.size)}</dd></div>
