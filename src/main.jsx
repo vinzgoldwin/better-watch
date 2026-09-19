@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { MovieBrowser } from './components/movie-browser.jsx';
+import { relativeMovieFolder } from './lib/gallery.js';
 import { createRoot } from 'react-dom/client';
 import {
   CheckCircle,
   Clock,
-  Film,
-  Folder,
   Grid2X2,
   Heart,
-  Play,
   RefreshCw,
   Star,
   Trash2,
@@ -23,17 +22,14 @@ import {
 } from './components/ui/select.jsx';
 import { enrichMoviesWithArtists } from './lib/artists.js';
 import { buildSubfolderOptions, movieMatchesSubfolder } from './lib/folders.js';
-import { compareReleaseDates, formatReleaseDate } from './lib/release-date.js';
+import { compareReleaseDates } from './lib/release-date.js';
 import { FolderPicker } from './components/folder-picker.jsx';
+import { CategoryPicker } from './components/category-picker.jsx';
+import { buildCategoryOptions, matchesCategories } from './lib/categories.js';
 
 const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
 const ARTIST_MARKS_KEY = 'ultra-touch-gallery:artist-marks';
 const SIDECAR_CLEANUP_CONFIRMATION = 'remove-appledouble-sidecars';
-const HOVER_PREVIEW_DELAY_MS = 300;
-const HOVER_PREVIEW_MARGIN = 18;
-const HOVER_PREVIEW_MIN_WIDTH = 320;
-const HOVER_PREVIEW_MAX_WIDTH = 520;
-
 const MARK_TYPES = [
   { key: 'favorite', label: 'Favorite', Icon: Heart },
   { key: 'watchLater', label: 'Watch Later', Icon: Clock },
@@ -46,25 +42,6 @@ function readStoredObject(key) {
   } catch {
     return {};
   }
-}
-
-function formatDuration(seconds) {
-  if (!seconds) return 'Unknown';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return h ? `${h}h ${m}m` : `${m}m`;
-}
-
-function formatSize(bytes) {
-  if (!bytes) return 'Unknown';
-  const gb = bytes / 1024 / 1024 / 1024;
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  return `${(bytes / 1024 / 1024).toFixed(0)} MB`;
-}
-
-function formatResolution(movie) {
-  if (!movie.width || !movie.height) return movie.extension || 'Video';
-  return `${movie.height}p`;
 }
 
 function SelectField({ label, value, options, onChange, className }) {
@@ -95,6 +72,7 @@ function App() {
   const [activeFolder, setActiveFolder] = useState('All Films');
   const [activeSubfolder, setActiveSubfolder] = useState('All Subfolders');
   const [activeArtist, setActiveArtist] = useState('All Artists');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [activeMarkFilter, setActiveMarkFilter] = useState('all');
   const [sortValue, setSortValue] = useState('name');
   const [search, setSearch] = useState('');
@@ -109,10 +87,6 @@ function App() {
   const [cleanupBusy, setCleanupBusy] = useState(false);
   const [deletingMovieId, setDeletingMovieId] = useState(null);
   const [openingMovieId, setOpeningMovieId] = useState(null);
-  const [hoverPreview, setHoverPreview] = useState(null);
-  const hoverTimer = useRef(null);
-  const hoverToken = useRef(0);
-  const hoverVideoRef = useRef(null);
 
   const movies = useMemo(() => enrichMoviesWithArtists(library.movies), [library.movies]);
 
@@ -151,7 +125,7 @@ function App() {
   }, [movies]);
 
   const subfolderOptions = useMemo(
-    () => buildSubfolderOptions(library.directories || [], movies, activeFolder),
+    () => buildSubfolderOptions(library.directories || [], movies, activeFolder).map((option) => ({ ...option, label: option.value === 'All Subfolders' ? option.label : relativeMovieFolder(option.value, activeFolder).split('/').join(' / ') })),
     [activeFolder, library.directories, movies]
   );
 
@@ -160,44 +134,6 @@ function App() {
       setActiveSubfolder('All Subfolders');
     }
   }, [activeSubfolder, subfolderOptions]);
-
-  const artistOptions = useMemo(() => {
-    const counts = new Map();
-    counts.set('All Artists', 0);
-    counts.set('Unknown Artist', 0);
-
-    for (const movie of movies) {
-      if (activeFolder !== 'All Films' && movie.topFolder !== activeFolder) continue;
-      if (!movieMatchesSubfolder(movie, activeSubfolder)) continue;
-      counts.set('All Artists', counts.get('All Artists') + 1);
-
-      if (!movie.artists.length) {
-        counts.set('Unknown Artist', counts.get('Unknown Artist') + 1);
-        continue;
-      }
-
-      for (const artist of movie.artists) {
-        counts.set(artist, (counts.get(artist) || 0) + 1);
-      }
-    }
-
-    return [...counts.entries()]
-      .filter(([artist, count]) => artist === 'All Artists' || count > 0)
-      .sort((a, b) => {
-        if (a[0] === 'All Artists') return -1;
-        if (b[0] === 'All Artists') return 1;
-        if (a[0] === 'Unknown Artist') return 1;
-        if (b[0] === 'Unknown Artist') return -1;
-        return a[0].localeCompare(b[0]);
-      })
-      .map(([artist, count]) => ({ value: artist, label: `${artist} (${count})` }));
-  }, [activeFolder, activeSubfolder, movies]);
-
-  useEffect(() => {
-    if (!artistOptions.some((option) => option.value === activeArtist)) {
-      setActiveArtist('All Artists');
-    }
-  }, [activeArtist, artistOptions]);
 
   const markCounts = useMemo(() => {
     const counts = { all: movies.length, favorite: 0, watchLater: 0, watched: 0, notWatched: 0 };
@@ -226,9 +162,8 @@ function App() {
     }));
   }, [markCounts]);
 
-  const filteredMovies = useMemo(() => {
+  const categoryScopeMovies = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const direction = sortValue === 'modified' ? -1 : 1;
 
     return movies
       .filter((movie) => {
@@ -246,7 +181,15 @@ function App() {
         if (!markMatch) return false;
         if (!query) return true;
         return [movie.title, movie.relativePath, movie.folder].join(' ').toLowerCase().includes(query);
-      })
+      });
+  }, [activeArtist, activeFolder, activeMarkFilter, activeSubfolder, movieMarks, movies, search]);
+
+  const categoryOptions = useMemo(() => buildCategoryOptions(categoryScopeMovies), [categoryScopeMovies]);
+
+  const filteredMovies = useMemo(() => {
+    const selected = selectedCategories.map((category) => category.value);
+    const direction = sortValue === 'modified' ? -1 : 1;
+    return categoryScopeMovies.filter((movie) => matchesCategories(movie, selected))
       .toSorted((a, b) => {
         if (sortValue === 'releaseNewest' || sortValue === 'releaseOldest') return compareReleaseDates(a, b, sortValue === 'releaseOldest');
         if (sortValue === 'duration') return (b.duration || 0) - (a.duration || 0);
@@ -255,7 +198,7 @@ function App() {
         if (sortValue === 'folder') return a.folder.localeCompare(b.folder) || a.title.localeCompare(b.title);
         return a.title.localeCompare(b.title);
       });
-  }, [activeArtist, activeFolder, activeMarkFilter, activeSubfolder, movieMarks, movies, search, sortValue]);
+  }, [categoryScopeMovies, selectedCategories, sortValue]);
 
   const artistSummaries = useMemo(() => {
     const summaries = new Map();
@@ -300,6 +243,7 @@ function App() {
   }, [artistMarks, artistSearch, artistSort, artistList, artistSummaries]);
 
   function chooseFolder(folder) {
+    setSelectedCategories([]);
     setActiveFolder(folder);
     setActiveSubfolder('All Subfolders');
     setActiveArtist('All Artists');
@@ -326,7 +270,6 @@ function App() {
   }
 
   async function deleteMovie(movie) {
-    hideHoverPreview();
     if (!window.confirm(`Permanently delete this video from disk?\n\n${movie.path}\n\nThis cannot be undone.`)) return;
     setDeletingMovieId(movie.id);
     try {
@@ -362,79 +305,6 @@ function App() {
     } finally {
       setOpeningMovieId(null);
     }
-  }
-
-  async function requestPreview(movie, token) {
-    try {
-      const response = await fetch('/api/preview', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: movie.id })
-      });
-      const result = await response.json();
-      if (!response.ok || !result.preview || token !== hoverToken.current) return;
-      setLibrary((current) => ({
-        ...current,
-        movies: current.movies.map((item) => (item.id === movie.id ? { ...item, preview: result.preview } : item))
-      }));
-      setHoverPreview((current) => (current?.movie.id === movie.id ? { ...current, preview: result.preview } : current));
-    } catch {
-      setHoverPreview((current) => (current?.movie.id === movie.id ? { ...current, preview: null } : current));
-    }
-  }
-
-  function getHoverPreviewPosition(event) {
-    const source = event.currentTarget?.getBoundingClientRect?.();
-    const margin = HOVER_PREVIEW_MARGIN;
-    const width = Math.min(
-      HOVER_PREVIEW_MAX_WIDTH,
-      Math.max(HOVER_PREVIEW_MIN_WIDTH, window.innerWidth * 0.34, source?.width || 0)
-    );
-    const height = width * (9 / 16) + 74;
-
-    if (!source || window.innerWidth <= 680) {
-      return {
-        x: Math.max(margin, Math.min(event.clientX - width / 2, window.innerWidth - width - margin)),
-        y: Math.max(margin, Math.min(event.clientY + margin, window.innerHeight - height - margin))
-      };
-    }
-
-    let left = source.right + margin;
-    if (left + width > window.innerWidth - margin) left = source.left - width - margin;
-    if (left < margin) left = Math.max(margin, window.innerWidth - width - margin);
-
-    let top = source.top + source.height / 2 - height / 2;
-    top = Math.max(margin, Math.min(top, window.innerHeight - height - margin));
-
-    return { x: left, y: top };
-  }
-
-  function positionHover(event) {
-    const position = getHoverPreviewPosition(event);
-    setHoverPreview((current) => {
-      if (!current) return current;
-      return { ...current, ...position };
-    });
-  }
-
-  function showHoverPreview(event, movie) {
-    if (!movie.thumbnail) return;
-    clearTimeout(hoverTimer.current);
-    hoverToken.current += 1;
-    const token = hoverToken.current;
-    const position = getHoverPreviewPosition(event);
-    setHoverPreview({ movie, ...position, preview: movie.preview || null });
-
-    if (!movie.preview) {
-      hoverTimer.current = window.setTimeout(() => requestPreview(movie, token), HOVER_PREVIEW_DELAY_MS);
-    }
-  }
-
-  function hideHoverPreview() {
-    clearTimeout(hoverTimer.current);
-    hoverToken.current += 1;
-    hoverVideoRef.current?.pause();
-    setHoverPreview(null);
   }
 
   async function rescanLibrary() {
@@ -483,8 +353,7 @@ function App() {
       <div className="shell">
         <aside className="sidebar">
           <div>
-            <p className="eyebrow">External Drive</p>
-            <h1>Ultra Touch Library</h1>
+            <h1>Ultra Touch</h1>
           </div>
 
           <nav className="view-switcher" aria-label="Views">
@@ -498,19 +367,7 @@ function App() {
             </button>
           </nav>
 
-          <nav className="collections" aria-label="Collections">
-            {collectionCounts.map(([folder, count]) => (
-              <button key={folder} className={`collection${folder === activeFolder ? ' active' : ''}`} type="button" onClick={() => chooseFolder(folder)}>
-                <span>
-                  <Folder aria-hidden="true" />
-                  {folder}
-                </span>
-                <small>{count}</small>
-              </button>
-            ))}
-          </nav>
-
-          <div className="sidebar-footer">
+          <details className="sidebar-footer"><summary>Library tools</summary>
             <button className="rescan" type="button" title={scanFolder ? `Rescan ${scanFolder} and its subfolders` : 'Rescan the entire library'} disabled={library.scanning} onClick={rescanLibrary}>
               <RefreshCw aria-hidden="true" />
               {library.scanning ? 'Scanning...' : scanFolder ? 'Rescan Folder' : 'Rescan Library'}
@@ -521,17 +378,28 @@ function App() {
               {cleanupBusy ? 'Cleaning...' : 'Clean Sidecars'}
             </button>
             <p className="cleanup-status" aria-live="polite">{cleanupStatus}</p>
-          </div>
+          </details>
         </aside>
 
         <main className="content">
           {activeView === 'movies' ? (
             <>
-              <header className="toolbar">
+              <header className="toolbar movie-toolbar">
+                <div className="collection-location">
+                  <SelectField label="Collection" className="collection-select" value={activeFolder} onChange={chooseFolder}
+                    options={collectionCounts.map(([value]) => ({ value, label: value }))} />
+                  <span className="path-divider" aria-hidden="true">/</span>
+                  <FolderPicker value={activeSubfolder} onChange={(value) => {
+                    setActiveSubfolder(value);
+                    setActiveArtist('All Artists');
+                    setSelectedCategories([]);
+                  }} options={subfolderOptions} />
+                  <span className="result-count">{filteredMovies.length.toLocaleString()} films</span>
+                </div>
                 <div className="controls">
                   <label className="search">
                     <span>Search</span>
-                    <input value={search} type="search" placeholder="Title, folder, filename" onChange={(event) => setSearch(event.target.value)} />
+                    <input value={search} type="search" placeholder="Search films" onChange={(event) => setSearch(event.target.value)} />
                   </label>
 
                   <SelectField
@@ -548,35 +416,18 @@ function App() {
                       { value: 'releaseOldest', label: 'Oldest release' }
                     ]}
                   />
-                  <FolderPicker value={activeSubfolder} onChange={(value) => {
-                    setActiveSubfolder(value);
-                    setActiveArtist('All Artists');
-                  }} options={subfolderOptions} />
-                  <SelectField label="Artist" className="artist-filter" value={activeArtist} onChange={setActiveArtist} options={artistOptions} />
+
+                  <CategoryPicker value={selectedCategories} onChange={setSelectedCategories} options={categoryOptions} />
                   <SelectField label="List" className="list-filter" value={activeMarkFilter} onChange={setActiveMarkFilter} options={markOptions} />
                 </div>
               </header>
 
-              <section className="grid" aria-live="polite">
-                {filteredMovies.length ? filteredMovies.map((movie) => (
-                  <MovieCard
-                    key={movie.id}
-                    movie={movie}
-                    marks={movieMarks[movie.id] || {}}
-                    isOpening={openingMovieId === movie.id}
-                    deleteDisabled={library.scanning || deletingMovieId !== null}
-                    isDeleting={deletingMovieId === movie.id}
-                    onDelete={() => deleteMovie(movie)}
-                    onToggleMark={(markKey) => toggleMovieMark(movie.id, markKey)}
-                    onOpen={() => openMovie(movie)}
-                    onHoverStart={showHoverPreview}
-                    onHoverMove={positionHover}
-                    onHoverEnd={hideHoverPreview}
-                  />
-                )) : (
-                  <div className="empty">{library.scanning ? 'Indexing movies...' : 'No films match this view.'}</div>
-                )}
-              </section>
+              {activeArtist !== 'All Artists' ? <p className="artist-scope">{activeArtist} <button type="button" onClick={() => setActiveArtist('All Artists')}>Clear artist</button></p> : null}
+              <MovieBrowser
+                key={JSON.stringify([activeFolder, activeSubfolder, activeArtist, activeMarkFilter, sortValue, search, selectedCategories.map((item) => item.value)])}
+                movies={filteredMovies} collection={activeFolder} subfolder={activeSubfolder}
+                movieMarks={movieMarks} onToggleMark={toggleMovieMark} onOpen={openMovie} onDelete={deleteMovie}
+                openingId={openingMovieId} deletingId={deletingMovieId} scanning={library.scanning} />
             </>
           ) : (
             <section className="artist-view">
@@ -618,6 +469,7 @@ function App() {
                     onFavorite={() => toggleArtistFavorite(artist.name)}
                     onOpen={() => {
                       setActiveArtist(artist.name);
+                      setSelectedCategories([]);
                       setActiveView('movies');
                     }}
                   />
@@ -630,69 +482,7 @@ function App() {
         </main>
       </div>
 
-      <HoverPreview preview={hoverPreview} videoRef={hoverVideoRef} />
     </>
-  );
-}
-
-function MovieCard({ movie, marks, isOpening, deleteDisabled, isDeleting, onDelete, onToggleMark, onOpen, onHoverStart, onHoverMove, onHoverEnd }) {
-  return (
-    <article className="movie">
-      <div
-        className={`thumb${movie.thumbnail ? '' : ' missing'}`}
-        onMouseEnter={(event) => onHoverStart(event, movie)}
-        onMouseMove={onHoverMove}
-        onMouseLeave={onHoverEnd}
-      >
-        {movie.thumbnail ? <img src={movie.thumbnail} alt={`${movie.title} preview strip`} /> : null}
-        <div className="fallback">No preview</div>
-        {movie.hasEnglishSub ? <span className="subtitle-badge">English Sub</span> : null}
-      </div>
-      <div className="movie-body">
-        <div className="movie-heading">
-          <div className="movie-copy">
-            <h3>{movie.title || movie.relativePath}</h3>
-            <p className="path">{movie.folder}</p>
-          </div>
-        </div>
-        {movie.description?.trim() ? (
-          <details className="movie-description">
-            <summary>
-              <span className="description-expand">Read description</span>
-              <span className="description-collapse">Hide description</span>
-            </summary>
-            <p>{movie.description}</p>
-          </details>
-        ) : null}
-        <div className="marks" aria-label="Movie lists">
-          {MARK_TYPES.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              className={`mark${marks[key] ? ' active' : ''}`}
-              type="button"
-              title={label}
-              aria-label={label}
-              aria-pressed={Boolean(marks[key])}
-              onClick={() => onToggleMark(key)}
-            >
-              <Icon aria-hidden="true" />
-            </button>
-          ))}
-          <button className="mark delete-video" type="button" title="Permanently delete from disk" aria-label={isDeleting ? 'Deleting video' : 'Delete video from disk'} disabled={deleteDisabled} onClick={onDelete}>
-            <Trash2 aria-hidden="true" />
-          </button>
-        </div>
-        <dl className="meta">
-          {movie.releaseDate ? <div><dd><time dateTime={movie.releaseDate}>{formatReleaseDate(movie.releaseDate)}</time></dd></div> : null}
-          <div><dd>{formatDuration(movie.duration)}</dd></div>
-          <div><dd>{formatResolution(movie)}</dd></div>
-          <div><dd>{formatSize(movie.size)}</dd></div>
-        </dl>
-        <button className="open" type="button" aria-label={isOpening ? 'Opening in IINA' : 'Open in IINA'} title="Open in IINA" disabled={isOpening} onClick={onOpen}>
-          {isOpening ? <RefreshCw aria-hidden="true" /> : <Play aria-hidden="true" />}
-        </button>
-      </div>
-    </article>
   );
 }
 
@@ -708,7 +498,7 @@ function ArtistCard({ artist, favorite, onFavorite, onOpen }) {
         <div className="artist-thumbs">
           {previewImages.length ? previewImages.map((thumbnail, index) => (
             <div className="artist-thumb" key={thumbnail}>
-              <img src={thumbnail} alt={`${artist.name} preview ${index + 1}`} />
+              <img loading="lazy" decoding="async" src={`${thumbnail}?quality=hd`} alt={`${artist.name} preview ${index + 1}`} />
             </div>
           )) : (
             <div className="artist-thumb missing">
@@ -722,31 +512,6 @@ function ArtistCard({ artist, favorite, onFavorite, onOpen }) {
         </div>
       </button>
     </article>
-  );
-}
-
-function HoverPreview({ preview, videoRef }) {
-  if (!preview) return null;
-
-  const style = { left: `${preview.x}px`, top: `${preview.y}px` };
-  const hasVideo = Boolean(preview.preview);
-
-  return (
-    <div className={`hover-preview visible${hasVideo ? ' video-preview' : ' image-preview'}`} aria-hidden="true" style={style}>
-      <div className="hover-preview-media">
-        {hasVideo ? (
-          <video ref={videoRef} src={preview.preview} poster={preview.movie.thumbnail} muted loop playsInline autoPlay preload="metadata" />
-        ) : null}
-        <img src={preview.movie.thumbnail} alt="" />
-        <div className="hover-preview-badge">{hasVideo ? 'Live preview' : 'Preparing preview'}</div>
-      </div>
-      <div className="hover-preview-details">
-        <p>{preview.movie.title || preview.movie.relativePath}</p>
-        <span>{formatDuration(preview.movie.duration)}</span>
-        <span>{formatResolution(preview.movie)}</span>
-        <span>{formatSize(preview.movie.size)}</span>
-      </div>
-    </div>
   );
 }
 

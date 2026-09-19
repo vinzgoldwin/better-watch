@@ -1,13 +1,15 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync } from 'node:fs';
-import { lstat, mkdir, open, readdir, readFile, realpath, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
 import { embeddedDescription } from './src/lib/descriptions.js';
 import { readReleaseDate } from './src/lib/release-date.js';
+import { previewStart } from './src/lib/gallery.js';
+import { readCategories } from './src/lib/categories.js';
 import {
   ENGLISH_SUB_COLLECTIONS,
   isEnglishSubtitleFile,
@@ -19,7 +21,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
 const LIBRARY_ROOT = process.env.LIBRARY_ROOT || '/Volumes/Ultra Touch';
-const CACHE_DIR = join(__dirname, '.cache');
+const CACHE_DIR = process.env.CACHE_DIR || join(LIBRARY_ROOT, '.better-watch-cache');
 const THUMB_DIR = join(CACHE_DIR, 'thumbs');
 const PREVIEW_DIR = join(CACHE_DIR, 'previews');
 const INDEX_PATH = join(CACHE_DIR, 'index.json');
@@ -352,7 +354,7 @@ async function probeVideo(filePath) {
     '-select_streams',
     'v:0',
     '-show_entries',
-    'stream=width,height:format=duration:format_tags=description,comment,date,release_date,year',
+    'stream=width,height:format=duration:format_tags=description,comment,date,release_date,year,genre',
     '-of',
     'json',
     filePath
@@ -364,19 +366,25 @@ async function probeVideo(filePath) {
     width: stream.width || null,
     height: stream.height || null,
     embeddedDescription: embeddedDescription(parsed.format?.tags),
-    releaseDate: readReleaseDate(parsed.format?.tags)
+    releaseDate: readReleaseDate(parsed.format?.tags),
+    categories: readCategories(parsed.format?.tags)
   };
 }
 
-async function generateThumb(filePath, id, duration) {
-  const outPath = join(THUMB_DIR, `${id}.jpg`);
-  if (existsSync(outPath)) return `/thumbs/${id}.jpg`;
+function generateThumb(filePath, id, duration) {
+  return queueMedia(`thumb:${id}`, () => buildThumb(filePath, id, duration));
+}
 
-  const safeDuration = duration && duration > 30 ? duration : 90;
-  const start = Math.max(2, Math.floor(safeDuration * 0.12));
-  const middle = Math.max(start + 1, Math.floor(safeDuration * 0.5));
-  const late = Math.max(middle + 1, Math.floor(safeDuration * 0.78));
-  const frames = [start, middle, late].map((time, index) => join(THUMB_DIR, `${id}-${index}.jpg`));
+async function buildThumb(filePath, id, duration) {
+  await mkdir(THUMB_DIR, { recursive: true });
+  const outPath = join(THUMB_DIR, `${id}-hd-v3.jpg`);
+  if (existsSync(outPath)) return `/thumbs/${id}-hd-v3.jpg`;
+
+  const safeDuration = duration > 0 ? duration : 1;
+  const start = Math.floor(safeDuration * 0.12);
+  const middle = Math.floor(safeDuration * 0.5);
+  const late = Math.floor(safeDuration * 0.78);
+  const frames = [start, middle, late].map((time, index) => join(THUMB_DIR, `${id}-hd-v3-${index}.jpg`));
 
   for (const [index, time] of [start, middle, late].entries()) {
     await run('ffmpeg', [
@@ -391,9 +399,9 @@ async function generateThumb(filePath, id, duration) {
       '-frames:v',
       '1',
       '-vf',
-      'scale=320:180:force_original_aspect_ratio=increase,crop=320:180',
+      "crop=w='trunc(min(iw,ih*16/9)/2)*2':h='trunc(min(ih,iw*9/16)/2)*2',scale=w='min(1280,iw)':h='min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
       '-q:v',
-      '4',
+      '3',
       frames[index]
     ]);
   }
@@ -412,23 +420,44 @@ async function generateThumb(filePath, id, duration) {
     '-filter_complex',
     '[0:v][1:v][2:v]hstack=inputs=3',
     '-q:v',
-    '4',
-    outPath
+    '3',
+    `${outPath}.partial.jpg`
   ]);
 
+  await rename(`${outPath}.partial.jpg`, outPath);
   await Promise.all(frames.map((frame) => rm(frame, { force: true })));
 
-  return `/thumbs/${id}.jpg`;
+  return `/thumbs/${id}-hd-v3.jpg`;
 }
 
-async function generatePreview(filePath, id, duration) {
-  await mkdir(PREVIEW_DIR, { recursive: true });
-  const outPath = join(PREVIEW_DIR, `${id}.mp4`);
-  if (existsSync(outPath)) return `/previews/${id}.mp4`;
+const previewJobs = new Map();
+let previewQueue = Promise.resolve();
 
+function generatePreview(filePath, id, duration, moment) {
+  return queueMedia(`preview:${id}:${moment ?? 'legacy'}`, () => buildPreview(filePath, id, duration, moment));
+}
+
+function queueMedia(key, build) {
+  if (previewJobs.has(key)) return previewJobs.get(key);
+  // Rapid selections should not launch competing encoders against the external drive.
+  const job = previewQueue.then(build);
+  previewJobs.set(key, job);
+  previewQueue = job.catch(() => {});
+  job.finally(() => previewJobs.delete(key)).catch(() => {});
+  return job;
+}
+
+async function buildPreview(filePath, id, duration, moment) {
+  await mkdir(PREVIEW_DIR, { recursive: true });
+  // Version the cache so older low-resolution clips are regenerated on demand.
+  const filename = moment === undefined ? `${id}-hd-v3.mp4` : `${id}-moment-${moment}-hd-v3.mp4`;
+  const outPath = join(PREVIEW_DIR, filename);
+  if (existsSync(outPath)) return `/previews/${filename}`;
+
+  const tempPath = join(PREVIEW_DIR, `${filename}.partial.mp4`);
   const safeDuration = duration && duration > PREVIEW_DURATION_SECONDS + 4 ? duration : null;
   const latestStart = safeDuration ? Math.max(0, safeDuration - PREVIEW_DURATION_SECONDS - 1) : 0;
-  const start = safeDuration ? Math.min(Math.max(2, Math.floor(safeDuration * 0.22)), latestStart) : 0;
+  const start = moment === undefined ? (safeDuration ? Math.min(Math.max(2, Math.floor(safeDuration * 0.22)), latestStart) : 0) : previewStart(duration, moment, PREVIEW_DURATION_SECONDS);
 
   try {
     await run('ffmpeg', [
@@ -442,25 +471,35 @@ async function generatePreview(filePath, id, duration) {
       filePath,
       '-t',
       String(PREVIEW_DURATION_SECONDS),
-      '-an',
+      '-map',
+      '0:v:0',
+      '-map',
+      '0:a:0?',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '96k',
+      '-ac',
+      '2',
       '-vf',
-      'scale=480:270:force_original_aspect_ratio=increase,crop=480:270,format=yuv420p',
+      "scale=w='min(1280,iw)':h='min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=24,format=yuv420p",
       '-c:v',
       'libx264',
       '-preset',
       'veryfast',
       '-crf',
-      '28',
+      '23',
       '-movflags',
       '+faststart',
-      outPath
+      tempPath
     ]);
+    await rename(tempPath, outPath);
   } catch (error) {
-    await rm(outPath, { force: true });
+    await rm(tempPath, { force: true });
     throw error;
   }
 
-  return `/previews/${id}.mp4`;
+  return `/previews/${filename}`;
 }
 
 async function loadCachedIndex() {
@@ -531,7 +570,7 @@ async function scanLibrary(scope = '') {
 
       // Reuse embedded metadata only while the file is unchanged. Older indexes
       // are probed once; a successful empty result is cached too.
-      if (!unchanged || !cached.thumbnail || !Object.hasOwn(cached, 'releaseDate') || (!finderComment && !Object.hasOwn(cached, 'embeddedDescription'))) {
+      if (!unchanged || !cached.thumbnail || !Object.hasOwn(cached, 'categories') || !Object.hasOwn(cached, 'releaseDate') || (!finderComment && !Object.hasOwn(cached, 'embeddedDescription'))) {
         try {
           probe = await probeVideo(filePath);
         } catch (error) {
@@ -545,6 +584,7 @@ async function scanLibrary(scope = '') {
         ? probe.releaseDate
         : unchanged ? cached.releaseDate : undefined;
       const description = finderComment || embedded || null;
+      const categories = probe.categories ?? (unchanged ? cached.categories : undefined);
 
       if (unchanged && cached.thumbnail) {
         movies.push({
@@ -553,6 +593,7 @@ async function scanLibrary(scope = '') {
           embeddedDescription: embedded,
           description,
           releaseDate,
+          categories,
           hasEnglishSub
         });
         if (movies.length % 8 === 0) library.movies = [...movies];
@@ -579,6 +620,7 @@ async function scanLibrary(scope = '') {
         modified: stats.mtimeMs,
         description,
         releaseDate,
+        categories,
         embeddedDescription: embedded,
         hasEnglishSub,
         duration: probe.duration,
@@ -623,7 +665,20 @@ async function serveStatic(request, response) {
   const requestPath = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
 
   if (requestPath.startsWith('/thumbs/')) {
-    const thumbPath = resolve(THUMB_DIR, requestPath.replace('/thumbs/', ''));
+    let thumbPath = resolve(THUMB_DIR, requestPath.replace('/thumbs/', ''));
+    if (url.searchParams.get('quality') === 'hd') {
+      const movie = library.movies.find((item) => item.thumbnail === requestPath);
+      if (movie) {
+        try {
+          const upgraded = await generateThumb(movie.path, movie.id, movie.duration);
+          thumbPath = join(THUMB_DIR, basename(upgraded));
+        } catch {
+          response.writeHead(503, { 'cache-control': 'no-store' });
+          response.end('Thumbnail generation failed');
+          return;
+        }
+      }
+    }
     if (!thumbPath.startsWith(resolve(THUMB_DIR)) || !existsSync(thumbPath)) {
       response.writeHead(404);
       response.end('Not found');
@@ -761,16 +816,19 @@ async function handleApi(request, response) {
 
   if (url.pathname === '/api/preview' && request.method === 'POST') {
     try {
-      const { id } = await readJsonBody(request);
+      const { id, moment } = await readJsonBody(request);
+      if (moment !== undefined) previewStart(0, moment);
       const movie = library.movies.find((item) => item.id === id);
       if (!movie) {
         sendJson(response, 404, { error: 'Movie not found' });
         return;
       }
 
-      const preview = await generatePreview(movie.path, movie.id, movie.duration);
-      movie.preview = preview;
-      await writeFile(INDEX_PATH, JSON.stringify(library, null, 2));
+      const preview = await generatePreview(movie.path, movie.id, movie.duration, moment);
+      if (moment === undefined) {
+        movie.preview = preview;
+        await writeFile(INDEX_PATH, JSON.stringify(library, null, 2));
+      }
       sendJson(response, 200, { preview });
     } catch (error) {
       sendJson(response, 400, { error: error.message });
@@ -799,6 +857,8 @@ async function handleApi(request, response) {
   sendJson(response, 404, { error: 'Not found' });
 }
 
+// Require the library to be present; never create a substitute mount directory.
+await stat(LIBRARY_ROOT);
 await mkdir(CACHE_DIR, { recursive: true });
 await loadCachedIndex();
 if (!library.generatedAt) {

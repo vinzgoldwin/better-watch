@@ -35,7 +35,7 @@ test('video deletion removes only the confirmed, unchanged file and persists the
     const added = await movie('Cinema/Drama/Deep/added.mp4');
     await mkdir(join(root, 'Cinema/Drama/Empty'), { recursive: true });
     await writeFile(join(app, '.cache/index.json'), JSON.stringify({ root, generatedAt: 'old', scanning: false, errors: [], movies: [retained, removed, unreadable, sibling, other], directories: ['Cinema', 'Cinema/Drama', 'Cinema/Drama/Deleted', 'Cinema/Drama/Locked', 'Cinema/Drama Extras', 'Other'] }));
-    child = spawn(process.execPath, ['server.js'], { cwd: app, env: { ...process.env, LIBRARY_ROOT: root, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    child = spawn(process.execPath, ['server.js'], { cwd: app, env: { ...process.env, LIBRARY_ROOT: root, CACHE_DIR: join(app, '.cache'), PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Server startup timed out')), 10000);
       child.stdout.on('data', () => { clearTimeout(timeout); resolve(); });
