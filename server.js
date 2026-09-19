@@ -8,6 +8,9 @@ import http from 'node:http';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
 import { embeddedDescription } from './src/lib/descriptions.js';
 import { readReleaseDate } from './src/lib/release-date.js';
+import { MediaQueue } from './src/lib/media-queue.js';
+import { streamFile } from './src/lib/stream-file.js';
+import { PlaybackSubtitles } from './src/lib/playback-subtitles.js';
 import { previewStart } from './src/lib/gallery.js';
 import { readCategories } from './src/lib/categories.js';
 import {
@@ -20,11 +23,14 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || '127.0.0.1';
+const REMOTE_PLAYBACK = process.env.REMOTE_PLAYBACK === '1';
 const LIBRARY_ROOT = process.env.LIBRARY_ROOT || '/Volumes/Ultra Touch';
 const CACHE_DIR = process.env.CACHE_DIR || join(LIBRARY_ROOT, '.better-watch-cache');
 const THUMB_DIR = join(CACHE_DIR, 'thumbs');
 const PREVIEW_DIR = join(CACHE_DIR, 'previews');
 const INDEX_PATH = join(CACHE_DIR, 'index.json');
+const playbackSubtitles = new PlaybackSubtitles(LIBRARY_ROOT);
 const PUBLIC_DIR = join(__dirname, 'public');
 const PREVIEW_DURATION_SECONDS = 6;
 
@@ -371,8 +377,33 @@ async function probeVideo(filePath) {
   };
 }
 
-function generateThumb(filePath, id, duration) {
-  return queueMedia(`thumb:${id}`, () => buildThumb(filePath, id, duration));
+async function cachedMedia(path) {
+  try { return (await stat(path)).isFile(); }
+  catch (error) { if (error.code === 'ENOENT') return false; throw error; }
+}
+
+async function generateThumb(filePath, id, duration, options) {
+  const filename = `${id}-hd-v3.jpg`;
+  if (await cachedMedia(join(THUMB_DIR, filename))) return `/thumbs/${filename}`;
+  return mediaQueue.enqueue(`thumb:${id}`, () => buildThumb(filePath, id, duration), options);
+}
+
+async function generateCover(movie, width, options) {
+  const filename = `${movie.id}-cover-${width}-v1.jpg`;
+  const path = join(THUMB_DIR, filename);
+  if (await cachedMedia(path)) return path;
+  return mediaQueue.enqueue(`cover:${movie.id}:${width}`, async () => {
+    await mkdir(THUMB_DIR, { recursive: true });
+    const strip = join(THUMB_DIR, `${movie.id}-hd-v3.jpg`);
+    const hasStrip = await cachedMedia(strip);
+    const input = hasStrip ? ['-i', strip] : ['-ss', String(Math.floor((movie.duration || 0) * 0.5)), '-i', movie.path];
+    const crop = hasStrip ? 'crop=iw/3:ih:iw/3:0' : "crop=w='trunc(min(iw,ih*16/9)/2)*2':h='trunc(min(ih,iw*9/16)/2)*2'";
+    try {
+      await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...input, '-frames:v', '1', '-vf', `${crop},scale=w='min(${width},iw)':h=-2`, '-q:v', '3', `${path}.partial.jpg`]);
+      await rename(`${path}.partial.jpg`, path);
+    } finally { await rm(`${path}.partial.jpg`, { force: true }); }
+    return path;
+  }, options);
 }
 
 async function buildThumb(filePath, id, duration) {
@@ -430,21 +461,12 @@ async function buildThumb(filePath, id, duration) {
   return `/thumbs/${id}-hd-v3.jpg`;
 }
 
-const previewJobs = new Map();
-let previewQueue = Promise.resolve();
+const mediaQueue = new MediaQueue();
 
-function generatePreview(filePath, id, duration, moment) {
-  return queueMedia(`preview:${id}:${moment ?? 'legacy'}`, () => buildPreview(filePath, id, duration, moment));
-}
-
-function queueMedia(key, build) {
-  if (previewJobs.has(key)) return previewJobs.get(key);
-  // Rapid selections should not launch competing encoders against the external drive.
-  const job = previewQueue.then(build);
-  previewJobs.set(key, job);
-  previewQueue = job.catch(() => {});
-  job.finally(() => previewJobs.delete(key)).catch(() => {});
-  return job;
+async function generatePreview(filePath, id, duration, moment, signal) {
+  const filename = moment === undefined ? `${id}-hd-v3.mp4` : `${id}-moment-${moment}-hd-v3.mp4`;
+  if (await cachedMedia(join(PREVIEW_DIR, filename))) return `/previews/${filename}`;
+  return mediaQueue.enqueue(`preview:${id}:${moment ?? 'legacy'}`, () => buildPreview(filePath, id, duration, moment), { priority: 2, signal });
 }
 
 async function buildPreview(filePath, id, duration, moment) {
@@ -508,7 +530,7 @@ async function loadCachedIndex() {
     library = JSON.parse(text);
     library.directories = Array.isArray(library.directories) ? library.directories : await listLibraryDirectories();
     library.movies = Array.isArray(library.movies) ? enrichMoviesWithArtists(library.movies) : [];
-    await refreshEnglishSubtitleStatus(library.movies);
+    if (library.movies.some((movie) => movie.hasEnglishSub === undefined)) await refreshEnglishSubtitleStatus(library.movies);
   } catch {
     library = {
       root: LIBRARY_ROOT,
@@ -666,13 +688,23 @@ async function serveStatic(request, response) {
 
   if (requestPath.startsWith('/thumbs/')) {
     let thumbPath = resolve(THUMB_DIR, requestPath.replace('/thumbs/', ''));
-    if (url.searchParams.get('quality') === 'hd') {
+    const quality = url.searchParams.get('quality');
+    if (quality === 'hd' || quality === 'cover') {
       const movie = library.movies.find((item) => item.thumbnail === requestPath);
       if (movie) {
         try {
-          const upgraded = await generateThumb(movie.path, movie.id, movie.duration);
-          thumbPath = join(THUMB_DIR, basename(upgraded));
+          const controller = new AbortController();
+          response.once('close', () => controller.abort());
+          if (quality === 'cover') {
+            const width = url.searchParams.get('width') === '960' ? 960 : 480;
+            thumbPath = await generateCover(movie, width, { signal: controller.signal });
+          } else {
+            const upgraded = await generateThumb(movie.path, movie.id, movie.duration, { priority: 1, signal: controller.signal });
+            thumbPath = join(THUMB_DIR, basename(upgraded));
+          }
+          if (response.destroyed) return;
         } catch {
+          if (response.destroyed) return;
           response.writeHead(503, { 'cache-control': 'no-store' });
           response.end('Thumbnail generation failed');
           return;
@@ -698,8 +730,7 @@ async function serveStatic(request, response) {
       return;
     }
 
-    response.writeHead(200, { 'content-type': 'video/mp4', 'cache-control': 'public, max-age=31536000' });
-    createReadStream(previewPath).pipe(response);
+    await streamFile(request, response, previewPath, { contentType: 'video/mp4', cacheControl: 'public, max-age=31536000' });
     return;
   }
 
@@ -723,6 +754,43 @@ async function serveStatic(request, response) {
 async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
+  if (url.pathname.startsWith('/api/subtitles/') && ['GET', 'HEAD'].includes(request.method)) {
+    try {
+      if (url.pathname.startsWith('/api/subtitles/file/')) {
+        const path = await playbackSubtitles.file(url.pathname.slice('/api/subtitles/file/'.length));
+        await streamFile(request, response, path);
+      } else {
+        const movie = library.movies.find(item => item.id === url.pathname.slice('/api/subtitles/'.length));
+        if (!movie) throw new Error('Movie not found');
+        sendJson(response, 200, { tracks: await playbackSubtitles.tracks(movie) });
+      }
+    } catch (error) {
+      if (!response.headersSent) sendJson(response, 404, { error: error.message });
+      else response.destroy(error);
+    }
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/stream/') && ['GET', 'HEAD'].includes(request.method)) {
+    const movie = library.movies.find((item) => item.id === url.pathname.slice('/api/stream/'.length));
+    if (!movie) { sendJson(response, 404, { error: 'Movie not found' }); return; }
+    try {
+      const path = await realpath(movie.path);
+      const root = await realpath(LIBRARY_ROOT);
+      if (!path.startsWith(root + '/')) throw new Error('Video is outside the library');
+      await streamFile(request, response, path);
+    } catch (error) {
+      if (!response.headersSent) sendJson(response, 404, { error: error.message });
+      else response.destroy(error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/library/status' && request.method === 'GET') {
+    sendJson(response, 200, { scanning: library.scanning, generatedAt: library.generatedAt });
+    return;
+  }
+
   if (url.pathname === '/api/library' && request.method === 'GET') {
     sendJson(response, 200, library);
     return;
@@ -741,6 +809,7 @@ async function handleApi(request, response) {
         sendJson(response, 409, { error: 'A scan is already running.' });
         return;
       }
+      playbackSubtitles.clear();
       scanLibrary(relative(LIBRARY_ROOT, scanRoot)).catch((error) => {
         library.scanning = false;
         library.errors.push({ path: scanRoot, message: error.message });
@@ -824,13 +893,17 @@ async function handleApi(request, response) {
         return;
       }
 
-      const preview = await generatePreview(movie.path, movie.id, movie.duration, moment);
+      const controller = new AbortController();
+      response.once('close', () => controller.abort());
+      const preview = await generatePreview(movie.path, movie.id, movie.duration, moment, controller.signal);
+      if (response.destroyed) return;
       if (moment === undefined) {
         movie.preview = preview;
         await writeFile(INDEX_PATH, JSON.stringify(library, null, 2));
       }
       sendJson(response, 200, { preview });
     } catch (error) {
+      if (response.destroyed) return;
       sendJson(response, 400, { error: error.message });
     }
     return;
@@ -845,6 +918,10 @@ async function handleApi(request, response) {
         return;
       }
 
+      if (REMOTE_PLAYBACK) {
+        sendJson(response, 200, { ok: true, stream: `/api/stream/${movie.id}` });
+        return;
+      }
       const opener = spawn('open', ['-a', 'IINA', movie.path], { detached: true, stdio: 'ignore' });
       opener.unref();
       sendJson(response, 200, { ok: true });
@@ -877,7 +954,7 @@ const server = http.createServer((request, response) => {
   serveStatic(request, response);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`Ultra Touch Gallery: http://localhost:${PORT}`);
   console.log(`Library root: ${LIBRARY_ROOT}`);
 });

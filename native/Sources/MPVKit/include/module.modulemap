@@ -1,0 +1,4 @@
+module MPVKit {
+    header "MPVKit.h"
+    export *
+}

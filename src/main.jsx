@@ -94,14 +94,38 @@ function App() {
     const response = await fetch('/api/library');
     const nextLibrary = await response.json();
     setLibrary(nextLibrary);
-    if (nextLibrary.scanning) {
-      window.setTimeout(refreshLibrary, 2500);
-    }
   }, []);
 
   useEffect(() => {
     refreshLibrary();
   }, [refreshLibrary]);
+
+  useEffect(() => {
+    if (!library.scanning) return;
+    const controller = new AbortController();
+    let timer;
+    async function poll() {
+      try {
+        const response = await fetch('/api/library/status', { signal: controller.signal });
+        if (!response.ok) throw new Error('Could not check scan status.');
+        const status = await response.json();
+        if (!status.scanning) {
+          const result = await fetch('/api/library', { signal: controller.signal });
+          if (!result.ok) throw new Error('Could not refresh the library.');
+          const next = await result.json();
+          if (controller.signal.aborted) return;
+          setLibrary(next);
+          if (!next.scanning) return;
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setScanError(error.message);
+      }
+      timer = window.setTimeout(poll, 2500);
+    }
+    timer = window.setTimeout(poll, 700);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [library.scanning]);
 
   useEffect(() => {
     localStorage.setItem(MARKS_KEY, JSON.stringify(movieMarks));
@@ -297,11 +321,19 @@ function App() {
   async function openMovie(movie) {
     setOpeningMovieId(movie.id);
     try {
-      await fetch('/api/open', {
+      const response = await fetch('/api/open', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ id: movie.id })
       });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not open video');
+      if (result.stream) {
+        const url = new URL(result.stream, window.location.origin);
+        window.location.href = `iina://weblink?url=${encodeURIComponent(url.href)}`;
+      }
+    } catch (error) {
+      window.alert(error.message);
     } finally {
       setOpeningMovieId(null);
     }
@@ -318,7 +350,7 @@ function App() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not start scan.');
-      window.setTimeout(refreshLibrary, 700);
+
     } catch (error) {
       setScanError(error.message);
       setLibrary((current) => ({ ...current, scanning: false }));
@@ -353,7 +385,6 @@ function App() {
       <div className="shell">
         <aside className="sidebar">
           <div>
-            <h1>Ultra Touch</h1>
           </div>
 
           <nav className="view-switcher" aria-label="Views">
@@ -377,6 +408,14 @@ function App() {
               {cleanupBusy ? <RefreshCw aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
               {cleanupBusy ? 'Cleaning...' : 'Clean Sidecars'}
             </button>
+            <button className="cleanup" type="button" onClick={() => {
+              const url = URL.createObjectURL(new Blob([JSON.stringify(movieMarks, null, 2)], { type: 'application/json' }));
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'better-watch-movie-lists.json';
+              link.click();
+              window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }}>Export Movie Lists</button>
             <p className="cleanup-status" aria-live="polite">{cleanupStatus}</p>
           </details>
         </aside>
@@ -498,7 +537,7 @@ function ArtistCard({ artist, favorite, onFavorite, onOpen }) {
         <div className="artist-thumbs">
           {previewImages.length ? previewImages.map((thumbnail, index) => (
             <div className="artist-thumb" key={thumbnail}>
-              <img loading="lazy" decoding="async" src={`${thumbnail}?quality=hd`} alt={`${artist.name} preview ${index + 1}`} />
+              <img loading="lazy" decoding="async" src={`${thumbnail}?quality=cover&width=480`} srcSet={`${thumbnail}?quality=cover&width=480 480w, ${thumbnail}?quality=cover&width=960 960w`} sizes="(max-width: 650px) 45vw, 260px" alt={`${artist.name} preview ${index + 1}`} />
             </div>
           )) : (
             <div className="artist-thumb missing">

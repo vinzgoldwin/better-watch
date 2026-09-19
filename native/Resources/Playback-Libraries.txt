@@ -1,0 +1,12 @@
+Better Watch embeds libmpv and its codec/rendering dependencies.
+This local build copies the arm64 libmpv dependency closure supplied with IINA.
+IINA is a build source only; it is not launched or loaded by the installed app.
+
+libmpv: https://github.com/mpv-player/mpv
+FFmpeg: https://ffmpeg.org
+IINA binary build scripts and dependency sources: https://github.com/iina/iina
+The vendored mpv API headers are from v0.38.0 and retain their license notices.
+
+The original binary distributor acknowledgements are included as
+Playback-Distributor-Credits.rtf. See the upstream projects for complete licenses
+and corresponding sources before distributing builds beyond this personal app.

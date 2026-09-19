@@ -22,6 +22,8 @@ export function isEnglishSubtitleFile(filePath) {
   if (!SUBTITLE_EXTENSIONS.has(extname(filePath).toLowerCase())) return false;
 
   const name = basename(filePath).toLowerCase();
+  // Whisper outputs retain the source language before the explicit translation suffix.
+  if (/\.ja\.whisperjav(?:\.[^.]+)*\.english\.(?:ass|srt|ssa|sub|vtt)$/.test(name)) return true;
   return !/(?:^|[._-])ja(?:[._-]|$)|kimi-source/.test(name);
 }
 

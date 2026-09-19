@@ -1,0 +1,20 @@
+[Unit]
+Description=Better Watch library
+StartLimitIntervalSec=60
+StartLimitBurst=2
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kevin/Projects/better-watch
+Environment=HOST=127.0.0.1
+Environment=PORT=3300
+Environment=REMOTE_PLAYBACK=1
+Environment="LIBRARY_ROOT=/Volumes/Ultra Touch"
+Environment=PATH=/home/kevin/.local/share/better-watch-media/bin:/usr/bin:/bin
+ExecStartPre=/usr/bin/sudo -n /usr/local/sbin/better-watch-drive mount
+ExecStart=/usr/bin/node /home/kevin/Projects/better-watch/server.js
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=60
+TimeoutStopSec=30
+Nice=5

@@ -1,6 +1,7 @@
-import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle, Clock, Heart, Play, Trash2, X } from 'lucide-react';
-import { PREVIEW_MOMENTS, previewRowEnd, previewStart, relativeMovieFolder } from '../lib/gallery.js';
+import { PREVIEW_MOMENTS, previewStart, relativeMovieFolder } from '../lib/gallery.js';
 import { formatReleaseDate } from '../lib/release-date.js';
 
 const PAGE_SIZE = 24;
@@ -11,22 +12,9 @@ const timestamp = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(
 export function MovieBrowser({ movies, collection, subfolder, movieMarks, onToggleMark, onOpen, onDelete, openingId, deletingId, scanning }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [selectedId, setSelectedId] = useState(null);
-  const [columns, setColumns] = useState(4);
-  const gridRef = useRef(null);
   const sentinelRef = useRef(null);
-  const tileRefs = useRef(new Map());
-  const anchor = useRef(null);
   const visible = movies.slice(0, limit);
   const selectedIndex = visible.findIndex((movie) => movie.id === selectedId);
-  const rowEnd = previewRowEnd(selectedIndex, columns, visible.length);
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    const observer = new ResizeObserver(() => setColumns(getComputedStyle(grid).gridTemplateColumns.split(' ').length));
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     if (limit >= movies.length) return;
     const observer = new IntersectionObserver((entries) => {
@@ -36,62 +24,59 @@ export function MovieBrowser({ movies, collection, subfolder, movieMarks, onTogg
     return () => observer.disconnect();
   }, [limit, movies.length]);
 
-  // Keep the chosen tile in place when moving a preview from an earlier row.
-  useLayoutEffect(() => {
-    if (!anchor.current) return;
-    const { id, top } = anchor.current;
-    const tile = tileRefs.current.get(id);
-    if (tile) window.scrollBy(0, tile.getBoundingClientRect().top - top);
-    anchor.current = null;
-  }, [selectedId]);
-
-  function select(id) {
-    const tile = tileRefs.current.get(id);
-    if (tile) anchor.current = { id, top: tile.getBoundingClientRect().top };
-    setSelectedId((current) => current === id ? null : id);
-  }
-
   function close() {
-    select(selectedId);
-    tileRefs.current.get(selectedId)?.focus({ preventScroll: true });
+    setSelectedId(null);
   }
 
   return <>
-    <section className="movie-grid" ref={gridRef} aria-label="Movies" onKeyDown={(event) => {
-      if (event.key === 'Escape' && selectedId) { event.stopPropagation(); close(); }
-    }}>
-      {visible.map((movie, index) => <Fragment key={movie.id}>
-        <button ref={(node) => { if (node) tileRefs.current.set(movie.id, node); else tileRefs.current.delete(movie.id); }}
+    <section className="movie-grid" aria-label="Movies">
+      {visible.map((movie) => <button key={movie.id}
           type="button" className="movie-tile" aria-expanded={selectedId === movie.id}
-          aria-controls={selectedId === movie.id ? 'movie-preview' : undefined} onClick={() => select(movie.id)}>
+          aria-controls={selectedId === movie.id ? 'movie-preview' : undefined} onClick={() => setSelectedId(movie.id)}>
           <span className="movie-cover">
-            {movie.thumbnail ? <img loading="lazy" decoding="async" src={`${movie.thumbnail}?quality=hd`} alt="" /> : <span className="cover-missing">No preview</span>}
+            {movie.thumbnail ? <img loading="lazy" decoding="async" src={`${movie.thumbnail}?quality=cover&width=480`} srcSet={`${movie.thumbnail}?quality=cover&width=480 480w, ${movie.thumbnail}?quality=cover&width=960 960w`} sizes="(max-width: 650px) calc((100vw - 42px) / 2), (max-width: 1050px) calc((100vw - 92px) / 3), (min-width: 1800px) 422px, calc((100vw - 110px) / 4)" alt="" /> : <span className="cover-missing">No preview</span>}
             <span className="cover-duration">{durationLabel(movie.duration)}</span>
             {movie.hasEnglishSub && <span className="cover-subtitle">English Sub</span>}
             {movieMarks[movie.id]?.watched && <span className="cover-watched" aria-label="Watched"><CheckCircle aria-hidden="true" /></span>}
           </span>
           <span className="movie-title">{movie.title || movie.relativePath}</span>
           <span className="movie-caption">{[relativeMovieFolder(movie.folder, collection, subfolder), movie.releaseDate?.slice(0, 4)].filter(Boolean).join(' · ')}</span>
-        </button>
-        {index === rowEnd && <MoviePreview key={selectedId} movie={visible[selectedIndex]} marks={movieMarks[selectedId] || {}}
+        </button>)}
+      {!movies.length && <div className="empty">{scanning ? 'Indexing movies...' : 'No films match this view.'}</div>}
+    </section>
+    {selectedIndex >= 0 && <MoviePreview key={selectedId} movie={visible[selectedIndex]} marks={movieMarks[selectedId] || {}}
           folder={relativeMovieFolder(visible[selectedIndex].folder, collection, subfolder)}
           onClose={close} onOpen={() => onOpen(visible[selectedIndex])} onDelete={() => onDelete(visible[selectedIndex])}
           onToggleMark={(key) => onToggleMark(selectedId, key)} opening={openingId === selectedId}
           deleting={deletingId === selectedId} deleteDisabled={scanning || deletingId !== null}
-          arrow={`${((selectedIndex % columns) + 0.5) / columns * 100}%`} />}
-      </Fragment>)}
-      {!movies.length && <div className="empty">{scanning ? 'Indexing movies...' : 'No films match this view.'}</div>}
-    </section>
+          />}
     {limit < movies.length && <div className="movie-sentinel" ref={sentinelRef} aria-hidden="true" />}
   </>;
 }
 
-function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDelete, onToggleMark, opening, deleting, deleteDisabled, arrow }) {
-  const [moment, setMoment] = useState(1);
+function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDelete, onToggleMark, opening, deleting, deleteDisabled }) {
+  const [moment, setMoment] = useState(0);
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
+  const attachVideo = useCallback((video) => {
+    videoRef.current = video;
+    if (video) video.volume = 0.4;
+  }, []);
+  const dialogRef = useRef(null);
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    const opener = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialog.showModal();
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, []);
   const previews = useRef(new Map());
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
@@ -140,8 +125,7 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       const target = event.target;
-      // The opening card keeps focus. Also allow arrows inside the preview,
-      // but leave filter widgets and editable fields to their own keyboard controls.
+      // Leave editable fields and filter widgets to their own keyboard controls.
       if (target.closest?.('input, textarea, select, [contenteditable="true"], [role="combobox"], [role="listbox"]')) return;
       if (target !== document.body && !target.closest?.('#movie-preview, [aria-controls="movie-preview"]')) return;
       event.preventDefault();
@@ -152,11 +136,18 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
     return () => window.removeEventListener('keydown', handleArrow);
   }, []);
 
-  return <section id="movie-preview" className="movie-expanded" aria-label={`Preview ${movie.title}`} style={{ '--preview-arrow': arrow }}>
-    <button className="preview-collapse" type="button" onClick={onClose} aria-label="Collapse preview"><X aria-hidden="true" /> Collapse</button>
+  return createPortal(<dialog ref={dialogRef} id="movie-preview" className="movie-dialog" aria-labelledby="preview-title"
+    onCancel={(event) => { event.preventDefault(); onClose(); }}
+    onClick={(event) => {
+      if (event.target !== event.currentTarget) return;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) onClose();
+    }}>
+    <div className="movie-expanded">
+    <button className="preview-collapse" type="button" onClick={onClose} autoFocus aria-label="Close preview"><X aria-hidden="true" /> Close</button>
     <div className="preview-visual">
       <div className="preview-screen" style={{ '--moment-position': `${moment * 50}%` }}>
-        {preview ? <video key={preview} ref={videoRef} src={preview} muted loop playsInline autoPlay controls preload="metadata" onError={() => { setPreview(null); setError('Preview could not be played.'); }} />
+        {preview ? <video key={preview} ref={attachVideo} src={preview} playsInline autoPlay controls preload="metadata" onError={() => { setPreview(null); setError('Preview could not be played.'); }} />
           : movie.thumbnail ? <img src={`${movie.thumbnail}?quality=hd`} alt={`${movie.title} sampled frame`} /> : <span className="cover-missing">No preview</span>}
       </div>
       {busy && <p className="preview-loading" role="status">Preparing preview...</p>}
@@ -165,10 +156,12 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
       </div>
     </div>
     <div className="preview-info">
-      <h2>{movie.title || movie.relativePath}</h2>
-      {folder && <p className="preview-folder">{folder}</p>}
-      <p className="preview-meta">{[movie.releaseDate?.slice(0, 4), durationLabel(movie.duration), movie.height ? `${movie.height}p` : movie.extension].filter(Boolean).join(' · ')}</p>
-      {movie.categories?.length > 0 && <p className="preview-categories" aria-label="Categories">{movie.categories.join(' · ')}</p>}
+      <h2 id="preview-title">{(movie.title || movie.relativePath).replace(/\s*\[HD\]\s*$/i, '')}</h2>
+      <div className="preview-metadata">
+        <p className="preview-meta">{[movie.releaseDate?.slice(0, 4), durationLabel(movie.duration), movie.height ? `${movie.height}p` : movie.extension].filter(Boolean).join(' · ')}</p>
+        {folder && <p className="preview-folder">{folder.split('/').join(' / ')}</p>}
+        {movie.categories?.length > 0 && <ul className="preview-categories" aria-label="Categories">{movie.categories.map((category) => <li key={category}>{category}</li>)}</ul>}
+      </div>
       <div className="preview-actions">
         <button className="play-movie" type="button" onClick={onOpen} disabled={opening}><Play aria-hidden="true" />{opening ? 'Opening...' : 'Play in IINA'}</button>
       </div>
@@ -177,5 +170,6 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
       <details className="preview-file"><summary>File details</summary><p>{[movie.releaseDate && formatReleaseDate(movie.releaseDate), movie.size >= 1073741824 ? `${(movie.size / 1073741824).toFixed(1)} GB` : `${Math.round(movie.size / 1048576)} MB`].filter(Boolean).join(' · ')}</p><p>{movie.relativePath}</p><button className="delete-movie" type="button" onClick={onDelete} disabled={deleteDisabled}><Trash2 aria-hidden="true" />{deleting ? 'Deleting...' : 'Delete from disk'}</button></details>
       {error && <p role="alert" className="preview-error">{error}</p>}
     </div>
-  </section>;
+    </div>
+  </dialog>, document.body);
 }
