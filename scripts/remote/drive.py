@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-"""Mount only the known Better Watch HDD. Never inspect or modify partition tables."""
+"""Mount or wake only the known Better Watch HDD. Never modify disk contents."""
+import fcntl
 import os
 from pathlib import Path
 import subprocess
@@ -10,11 +11,19 @@ PART = DRIVE + '-part2'
 TARGET = '/Volumes/Ultra Touch'
 
 def run(*args):
-    return subprocess.run(args, check=True, text=True, capture_output=True).stdout
+    return subprocess.run(args, check=True, text=True, capture_output=True, timeout=45).stdout
 
 def main():
+    if sys.argv[1:] == ['wake']:
+        if not Path(DRIVE).exists():
+            raise ValueError('Expected Ultra Touch drive is not connected')
+        with open('/run/better-watch-drive.lock', 'w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            # Read only: bypass the page cache so Connect physically wakes the HDD.
+            run('/usr/bin/dd', 'if=' + DRIVE, 'of=/dev/null', 'bs=4096', 'count=1', 'iflag=direct', 'status=none')
+        return
     if sys.argv[1:] != ['mount']:
-        raise ValueError('Only the mount operation is supported')
+        raise ValueError('Only the mount and wake operations are supported')
     if run('/usr/bin/blkid', '-s', 'UUID', '-o', 'value', PART).strip() != '3027-844B':
         raise ValueError('Expected Ultra Touch volume is not connected')
     existing = subprocess.run(['/usr/bin/findmnt', '-rn', '-M', TARGET, '-o', 'SOURCE'], capture_output=True, text=True)
@@ -32,7 +41,7 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (ValueError, OSError, subprocess.CalledProcessError) as error:
+    except (ValueError, OSError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         if isinstance(error, subprocess.CalledProcessError):
             print(error.stderr, file=sys.stderr)

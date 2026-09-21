@@ -41,8 +41,7 @@ enum Remote {
         try await run([script.path, "--check"], executable: "/bin/bash")
     }
     static func stop() async throws {
-        try await run(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=10", "-o", "ServerAliveCountMax=2", "asahi-codex", "systemctl --user stop better-watch.service && ! systemctl --user is-active --quiet better-watch.service"])
-        // Leave no background forwarder after ending the session.
+        // Disconnect only this Mac. The shared server also serves iPad and Android.
         try? await run(["-S", NSHomeDirectory() + "/.ssh/better-watch-tunnel", "-O", "exit", "asahi-codex"])
     }
 }

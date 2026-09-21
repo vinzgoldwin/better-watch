@@ -1,0 +1,11 @@
+{
+  "name": "Better Watch",
+  "short_name": "Better Watch",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1b1b1d",
+  "theme_color": "#1b1b1d",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

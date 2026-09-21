@@ -17,8 +17,8 @@ struct RootView: View {
                 switch store.phase {
                 case .running: library
                 case .starting: sessionState("Connecting to your library", detail: "Waking the drive and loading films…", busy: true)
-                case .stopping: sessionState("Stopping the library", detail: "Ending playback and background work…", busy: true)
-                case .stopped: sessionState("Library stopped", detail: "Your drive can rest between sessions.", busy: false)
+                case .stopping: sessionState("Disconnecting", detail: "Ending playback on this Mac…", busy: true)
+                case .stopped: sessionState("Disconnected", detail: "Connect to browse your shared library.", busy: false)
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(nsColor: .windowBackgroundColor))
         }
@@ -28,27 +28,31 @@ struct RootView: View {
         if let playback = store.playback { FilmPlayer(playback:playback,close:store.closePlayback).id(playback.id) }
         }
         .tint(accent)
-        .toolbar(store.playback == nil ? .visible : .hidden, for: .windowToolbar)
+        // AppKit handles toolbar visibility, including top-edge reveal in fullscreen.
+        .toolbar(.automatic, for: .windowToolbar)
+        .toolbarBackground(store.playback == nil ? .automatic : .hidden, for: .windowToolbar)
         .toolbar {
-            if #available(macOS 26.0, *) {
-                connectionStatus.sharedBackgroundVisibility(.hidden)
-                if store.phase == .running && store.playback == nil { ToolbarSpacer(.fixed, placement: .automatic) }
-            } else {
-                connectionStatus
+            if store.playback == nil {
+                if #available(macOS 26.0, *) {
+                    connectionStatus.sharedBackgroundVisibility(.hidden)
+                    if store.phase == .running { ToolbarSpacer(.fixed, placement: .automatic) }
+                } else {
+                    connectionStatus
+                }
             }
             if store.phase == .running && store.playback == nil {
                 ToolbarItem(placement: .automatic) {
-                    Button("Stop Library", systemImage: "stop.circle") { store.confirmStop = true }
+                    Button("Disconnect", systemImage: "network") { store.confirmStop = true }
                         .labelStyle(.titleAndIcon)
-                        .help("Stop the server and let the HDD idle")
+                        .help("Disconnect this Mac from the library")
                 }
             }
         }
         .sheet(item: $store.selected, onDismiss: { NotificationCenter.default.post(name: .init("BetterWatchRestoreFocus"), object: store.lastSelectedID) }) { movie in QuickLook(movie: movie).environmentObject(store) }
-        .alert("Stop library?", isPresented: $store.confirmStop) {
+        .alert("Disconnect this Mac?", isPresented: $store.confirmStop) {
             Button("Keep Watching", role: .cancel) {}
-            Button("Stop Library", role: .destructive) { Task { _ = await store.stop() } }
-        } message: { Text("This ends previews and full-film playback. The HDD will return to its automatic idle state after activity stops.") }
+            Button("Disconnect") { Task { _ = await store.stop() } }
+        } message: { Text("This ends playback on this Mac. Your iPad and Android stay connected.") }
         .alert("Better Watch", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
         .alert("Clean sidecars?", isPresented: $store.confirmCleanup) {
             Button("Cancel", role: .cancel) {}
@@ -66,7 +70,7 @@ struct RootView: View {
         ToolbarItem(placement: .automatic) {
             HStack(spacing: 14) {
                 if store.scanning { Label("Scanning", systemImage: "arrow.triangle.2.circlepath") }
-                Text(store.phase == .running ? "Connected" : store.phase == .stopped ? "Stopped" : store.phase == .stopping ? "Stopping…" : "Connecting…")
+                Text(store.phase == .running ? "Connected" : store.phase == .stopped ? "Disconnected" : store.phase == .stopping ? "Disconnecting…" : "Connecting…")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -170,7 +174,7 @@ struct RootView: View {
         VStack(spacing: 18) {
             Image(systemName: busy ? "externaldrive.badge.wifi" : "externaldrive").font(.system(size: 42)).foregroundStyle(.secondary)
             Text(title).font(.title2.bold()); Text(detail).foregroundStyle(.secondary)
-            if busy { ProgressView().controlSize(.small) } else { Button("Start Library") { store.start() }.buttonStyle(.borderedProminent).controlSize(.large) }
+            if busy { ProgressView().controlSize(.small) } else { Button("Connect to Library") { store.start() }.buttonStyle(.borderedProminent).controlSize(.large) }
         }.padding(32)
     }
 }

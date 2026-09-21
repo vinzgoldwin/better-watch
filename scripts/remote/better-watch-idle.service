@@ -1,0 +1,10 @@
+[Unit]
+Description=Better Watch HDD idle standby
+
+[Service]
+ExecStart=/usr/local/sbin/better-watch-idle
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

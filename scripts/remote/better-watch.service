@@ -1,5 +1,7 @@
 [Unit]
 Description=Better Watch library
+Requires=better-watch.socket
+After=better-watch.socket
 StartLimitIntervalSec=60
 StartLimitBurst=2
 
@@ -9,6 +11,7 @@ WorkingDirectory=/home/kevin/Projects/better-watch
 Environment=HOST=127.0.0.1
 Environment=PORT=3300
 Environment=REMOTE_PLAYBACK=1
+Environment=DRIVE_ACTIVITY_PATH=/run/user/1000/better-watch-drive.activity
 Environment="LIBRARY_ROOT=/Volumes/Ultra Touch"
 Environment=PATH=/home/kevin/.local/share/better-watch-media/bin:/usr/bin:/bin
 ExecStartPre=/usr/bin/sudo -n /usr/local/sbin/better-watch-drive mount

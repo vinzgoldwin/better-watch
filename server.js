@@ -5,6 +5,10 @@ import { lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat, unli
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
+import { homedir } from 'node:os';
+import { DrivePower } from './src/lib/drive-power.js';
+import { SharedProfile } from './src/lib/shared-profile.js';
+import { BrowserPlayback, vodPlaylist } from './src/lib/browser-playback.js';
 import { enrichMoviesWithArtists } from './src/lib/artists.js';
 import { embeddedDescription } from './src/lib/descriptions.js';
 import { readReleaseDate } from './src/lib/release-date.js';
@@ -31,6 +35,9 @@ const THUMB_DIR = join(CACHE_DIR, 'thumbs');
 const PREVIEW_DIR = join(CACHE_DIR, 'previews');
 const INDEX_PATH = join(CACHE_DIR, 'index.json');
 const playbackSubtitles = new PlaybackSubtitles(LIBRARY_ROOT);
+const browserPlayback = new BrowserPlayback(LIBRARY_ROOT, playbackSubtitles);
+const profile = new SharedProfile(join(process.env.STATE_DIR || join(homedir(), '.local/share/better-watch'), 'profile.json'));
+profile.setMaxListeners(50);
 const PUBLIC_DIR = join(__dirname, 'public');
 const PREVIEW_DURATION_SECONDS = 6;
 
@@ -48,6 +55,7 @@ const IGNORED_DIRS = new Set([
 ]);
 
 let deletingMovie = false;
+const drivePower = new DrivePower({ scanning: () => library.scanning || deletingMovie });
 
 let library = {
   root: LIBRARY_ROOT,
@@ -95,7 +103,7 @@ function readJsonBody(request) {
     let body = '';
     request.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 10_000) {
+      if (body.length > 2 * 1024 * 1024) {
         request.destroy();
         rejectPromise(new Error('Request body too large'));
       }
@@ -745,14 +753,84 @@ async function serveStatic(request, response) {
     '.html': 'text/html; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
+    '.webmanifest': 'application/manifest+json',
     '.svg': 'image/svg+xml'
   };
-  response.writeHead(200, { 'content-type': types[extname(filePath)] || 'application/octet-stream' });
+  response.writeHead(200, { 'content-type': types[extname(filePath)] || 'application/octet-stream', 'cache-control': 'no-cache' });
   createReadStream(filePath).pipe(response);
 }
 
 async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
+
+  if (url.pathname === '/api/library' || /^\/api\/(playback|subtitles|preview|rescan|delete)(?:\/|$)/.test(url.pathname)) {
+    await drivePower.hold(response);
+  }
+
+  if (url.pathname === '/api/profile/events' && request.method === 'GET') {
+    response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' });
+    const send = value => {
+      if (response.writableLength > 2 * 1024 * 1024) response.destroy();
+      else if (!response.destroyed) response.write(`data: ${JSON.stringify(value)}\n\n`);
+    };
+    send({ type: 'snapshot', ...profile.state });
+    profile.on('change', send);
+    // Keep the private proxy connection alive without reading the movie drive.
+    const heartbeat = setInterval(() => { if (!response.write(': keepalive\n\n')) response.destroy(); }, 30_000);
+    response.once('close', () => { clearInterval(heartbeat); profile.off('change', send); });
+    return;
+  }
+  if (url.pathname === '/api/profile' && request.method === 'GET') {
+    sendJson(response, 200, profile.state); return;
+  }
+  if (url.pathname === '/api/profile/import' && request.method === 'POST') {
+    try {
+      const { data, overwrite = false } = await readJsonBody(request);
+      sendJson(response, 200, await profile.import(data, overwrite === true));
+    } catch (error) { sendJson(response, 400, { error: error.message }); }
+    return;
+  }
+  const profileItem = /^\/api\/profile\/(marks|positions|artistMarks)\/([^/]+)$/.exec(url.pathname);
+  if (profileItem && request.method === 'POST') {
+    try {
+      const id = decodeURIComponent(profileItem[2]);
+      const previous = profile.state.positions[id]?.seconds;
+      await profile.change(profileItem[1], id, await readJsonBody(request));
+      // Advancing playback protects even a fully buffered movie. Repeated paused
+      // positions (including older Mac clients) must not keep the motor running.
+      if (profileItem[1] === 'positions' && profile.state.positions[id]?.seconds !== previous) await drivePower.touch();
+      sendJson(response, 200, { ok: true });
+    } catch (error) { sendJson(response, 400, { error: error.message }); }
+    return;
+  }
+
+  const playbackRoute = /^\/api\/playback\/([^/]+)(?:\/(index\.m3u8|\d+\.ts|subtitles\/[^/]+\.vtt))?$/.exec(url.pathname);
+  if (playbackRoute && ['GET', 'HEAD'].includes(request.method)) {
+    const movie = library.movies.find(item => item.id === decodeURIComponent(playbackRoute[1]));
+    if (!movie) { sendJson(response, 404, { error: 'Movie not found' }); return; }
+    const controller = new AbortController();
+    response.once('close', () => controller.abort());
+    try {
+      const asset = playbackRoute[2], audio = url.searchParams.get('audio');
+      if (!asset) { sendJson(response, 200, await browserPlayback.descriptor(movie, audio)); return; }
+      let data, contentType;
+      if (asset === 'index.m3u8') {
+        const info = await browserPlayback.inspect(movie), track = browserPlayback.audio(info, audio);
+        data = Buffer.from(vodPlaylist(info.duration, index => `${index}.ts${track === null ? '' : `?audio=${track}`}`));
+        contentType = 'application/vnd.apple.mpegurl';
+      } else if (asset.startsWith('subtitles/')) {
+        data = await browserPlayback.subtitle(movie, asset.slice(10, -4), controller.signal);
+        contentType = 'text/vtt; charset=utf-8';
+      } else {
+        data = await browserPlayback.segment(movie, Number(asset.slice(0, -3)), audio, controller.signal);
+        contentType = 'video/mp2t';
+      }
+      if (response.destroyed) return;
+      response.writeHead(200, { 'content-type': contentType, 'content-length': data.length, 'cache-control': 'private, no-store' });
+      response.end(request.method === 'HEAD' ? undefined : data);
+    } catch (error) { if (!response.destroyed) sendJson(response, 400, { error: error.message }); }
+    return;
+  }
 
   if (url.pathname.startsWith('/api/subtitles/') && ['GET', 'HEAD'].includes(request.method)) {
     try {
@@ -778,7 +856,7 @@ async function handleApi(request, response) {
       const path = await realpath(movie.path);
       const root = await realpath(LIBRARY_ROOT);
       if (!path.startsWith(root + '/')) throw new Error('Video is outside the library');
-      await streamFile(request, response, path);
+      await streamFile(request, response, path, { contentType: ['.mp4', '.m4v', '.mov'].includes(extname(path).toLowerCase()) ? 'video/mp4' : 'application/octet-stream' });
     } catch (error) {
       if (!response.headersSent) sendJson(response, 404, { error: error.message });
       else response.destroy(error);
@@ -792,6 +870,7 @@ async function handleApi(request, response) {
   }
 
   if (url.pathname === '/api/library' && request.method === 'GET') {
+    await drivePower.connect();
     sendJson(response, 200, library);
     return;
   }
@@ -935,6 +1014,8 @@ async function handleApi(request, response) {
 }
 
 // Require the library to be present; never create a substitute mount directory.
+await drivePower.start();
+await profile.load();
 await stat(LIBRARY_ROOT);
 await mkdir(CACHE_DIR, { recursive: true });
 await loadCachedIndex();
@@ -946,15 +1027,19 @@ if (!library.generatedAt) {
 }
 
 const server = http.createServer((request, response) => {
-  if (request.url?.startsWith('/api/')) {
-    handleApi(request, response);
-    return;
-  }
-
-  serveStatic(request, response);
+  const pending = request.url?.startsWith('/api/') ? handleApi(request, response) : serveStatic(request, response);
+  pending.catch(error => {
+    if (response.destroyed) return;
+    if (response.headersSent) response.destroy(error);
+    else sendJson(response, 500, { error: 'The library could not complete this request.' });
+  });
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Ultra Touch Gallery: http://localhost:${PORT}`);
+const listening = () => {
+  console.log(`Better Watch: http://${HOST}:${server.address().port}`);
   console.log(`Library root: ${LIBRARY_ROOT}`);
-});
+};
+// systemd owns the listener so mobile access can start the library independently
+// of the Mac launcher, including after an older Mac build stops the service.
+if (process.env.LISTEN_PID === String(process.pid) && Number(process.env.LISTEN_FDS) === 1) server.listen({ fd: 3 }, listening);
+else server.listen(PORT, HOST, listening);

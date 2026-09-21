@@ -7,9 +7,6 @@ import AppKit
     func applicationShouldTerminate(_ sender:NSApplication) -> NSApplication.TerminateReply {
         guard !finishing, let store, store.phase != .stopped else { return .terminateNow }
 
-        let alert = NSAlert();alert.messageText="Stop library and quit?";alert.informativeText="This ends playback and lets the HDD return to idle."
-        alert.addButton(withTitle:"Stop and Quit");alert.addButton(withTitle:"Cancel")
-        guard alert.runModal() == .alertFirstButtonReturn else { return .terminateCancel }
         Task { let stopped = await store.stop(); finishing = stopped; sender.reply(toApplicationShouldTerminate:stopped) }
         return .terminateLater
     }
@@ -28,8 +25,8 @@ import AppKit
                 CommandGroup(replacing:.newItem) {}
                 CommandGroup(after:.textEditing) { Button("Search Films") { NotificationCenter.default.post(name:.init("BetterWatchSearch"),object:nil) }.keyboardShortcut("f") }
                 CommandMenu("Library") {
-                    Button("Start Library") { store.start() }.disabled(store.phase != .stopped)
-                    Button("Stop Library…") { store.confirmStop = true }.disabled(store.phase != .running)
+                    Button("Connect to Library") { store.start() }.disabled(store.phase != .stopped)
+                    Button("Disconnect…") { store.confirmStop = true }.disabled(store.phase != .running)
                     Divider()
                     Button("Rescan Current Folder") { store.rescan() }.disabled(store.phase != .running || store.scanning)
                     Button("Import Movie Lists…") { store.importMarks() }
@@ -48,6 +45,13 @@ struct WindowCloseGuard: NSViewRepresentable {
     final class Coordinator: NSObject, NSWindowDelegate {
         weak var original: NSWindowDelegate?
         func windowShouldClose(_ sender: NSWindow) -> Bool { NSApp.terminate(nil); return false }
+        func window(_ window: NSWindow, willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions) -> NSApplication.PresentationOptions {
+            var options = original?.window?(window, willUseFullScreenPresentationOptions: proposedOptions) ?? proposedOptions
+            // Let AppKit reveal the title bar and toolbar together on top-edge hover.
+            options.remove(.hideMenuBar)
+            options.formUnion([.fullScreen, .autoHideMenuBar, .autoHideToolbar])
+            return options
+        }
         override func responds(to selector: Selector!) -> Bool { super.responds(to: selector) || (original?.responds(to: selector) ?? false) }
         override func forwardingTarget(for selector: Selector!) -> Any? { original }
     }

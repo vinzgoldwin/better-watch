@@ -1,0 +1,9 @@
+[Unit]
+Description=Better Watch on-demand library listener
+
+[Socket]
+ListenStream=127.0.0.1:3300
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target

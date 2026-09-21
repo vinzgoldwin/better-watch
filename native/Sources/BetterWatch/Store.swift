@@ -28,12 +28,15 @@ import UniformTypeIdentifiers
     private var filterTask: Task<Void, Never>?
     private var scanTask: Task<Void, Never>?
     private var requestTask: Task<Void, Never>?
+    private var playbackTask: Task<Void, Never>?
     private var generation = 0
     private var stopWhenStarted = false
     private let marksURL: URL
     init() {
         marksURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Better Watch/marks.json")
         if let data = try? Data(contentsOf: marksURL), let stored = try? JSONDecoder().decode([String: Mark].self, from: data) { marks = stored }
+        SharedLibrary.shared.onMarks = { [weak self] values in self?.marks = values; self?.persistMarks(); self?.updateResults() }
+        SharedLibrary.shared.onError = { [weak self] message in self?.notice = message }
     }
     var heading: String { !query.artist.isEmpty ? query.artist : !query.folder.isEmpty ? query.folder : query.list.rawValue }
     var scope: String { query.subfolder.isEmpty ? query.folder : query.subfolder }
@@ -47,13 +50,15 @@ import UniformTypeIdentifiers
         requestTask = Task {
             do {
                 try await Remote.start()
+                try await SharedLibrary.shared.connect(localMarks: marks)
                 if !stopWhenStarted { try await refresh() }
-                if stopWhenStarted { try await Remote.stop(); movies = []; filtered = []; phase = .stopped }
+                if stopWhenStarted { SharedLibrary.shared.disconnect(); try await Remote.stop(); movies = []; filtered = []; phase = .stopped }
                 else { phase = .running }
             } catch {
                 let failure = error.localizedDescription
+                SharedLibrary.shared.disconnect()
                 do { try await Remote.stop(); phase = .stopped; self.error = failure }
-                catch { phase = .running; self.error = failure + "\nCould not confirm shutdown. Use Stop Library to retry." }
+                catch { phase = .running; self.error = failure + "\nCould not disconnect. Try reconnecting." }
             }
         }
     }
@@ -70,11 +75,13 @@ import UniformTypeIdentifiers
         guard phase == .running || phase == .stopped else { return false }
         closePlayback(); phase = .stopping; selected = nil; scanTask?.cancel(); filterTask?.cancel(); requestTask?.cancel()
         do {
+            await SharedLibrary.shared.flush()
+            SharedLibrary.shared.disconnect()
             try await Remote.stop()
             await Covers.shared.clear()
             movies = []; filtered = []; folders = []; directories = []; artists = []; categoryOptions = []
             scanning = false; phase = .stopped; return true
-        } catch { phase = .running; self.error = "Could not stop the library: \(error.localizedDescription)"; return false }
+        } catch { phase = .running; self.error = "Could not disconnect: \(error.localizedDescription)"; return false }
     }
     func refresh() async throws {
         let data = try await API.data("/api/library?artists=1")
@@ -115,6 +122,8 @@ import UniformTypeIdentifiers
     func toggle(_ movie: Movie, _ field: WritableKeyPath<Mark, Bool>) {
         var mark = marks[movie.id] ?? Mark(); mark[keyPath: field].toggle(); marks[movie.id] = mark
         persistMarks(); updateResults()
+        let key = field == \Mark.favorite ? "favorite" : field == \Mark.watchLater ? "watchLater" : "watched"
+        SharedLibrary.shared.setMark(movie.id, field: key, value: mark[keyPath: field])
     }
     private func persistMarks() {
         do {
@@ -130,7 +139,7 @@ import UniformTypeIdentifiers
                 do {
                     let data = try Data(contentsOf: url)
                     let imported = try JSONDecoder().decode([String: Mark].self, from: data)
-                    self?.marks.merge(imported) { _, new in new }; self?.persistMarks(); self?.updateResults()
+                    try await SharedLibrary.shared.importMarks(imported)
                 } catch { self?.error = "Choose a Better Watch movie-lists JSON export." }
             }
         }
@@ -138,9 +147,16 @@ import UniformTypeIdentifiers
     func play(_ movie: Movie) {
         guard phase == .running else { return }
         closePlayback(); selected = nil; lastSelectedID = movie.id
-        playback = Playback(movie: movie)
+        playbackTask = Task {
+            do {
+                try await SharedLibrary.shared.refresh()
+                try Task.checkCancellation()
+                playback = Playback(movie: movie, sharedPosition: SharedLibrary.shared.positions[movie.id])
+            } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+        }
     }
     func closePlayback() {
+        playbackTask?.cancel(); playbackTask = nil
         playback?.close(); playback = nil
         NotificationCenter.default.post(name:.init("BetterWatchRestoreFocus"),object:lastSelectedID)
     }

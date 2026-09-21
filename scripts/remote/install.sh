@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo 'Run this installer with sudo.' >&2; exit 1; }
+[[ -x /usr/sbin/hdparm ]] || { echo "Install hdparm first: sudo dnf install hdparm" >&2; exit 1; }
 ROOT=/home/kevin/Projects/better-watch
 [[ -f "$ROOT/scripts/remote/drive.py" ]] || exit 1
 /usr/bin/install -o root -g root -m 0755 "$ROOT/scripts/remote/drive.py" /usr/local/sbin/better-watch-drive
@@ -31,10 +32,17 @@ PY
 /usr/bin/systemctl try-reload-or-restart smartd.service
 TASK_RULE=$(mktemp)
 trap 'rm -f "$TASK_RULE"' EXIT
-printf '%s\n' 'kevin ALL=(root) NOPASSWD: /usr/local/sbin/better-watch-drive mount' > "$TASK_RULE"
+printf '%s\n' 'kevin ALL=(root) NOPASSWD: /usr/local/sbin/better-watch-drive mount, /usr/local/sbin/better-watch-drive wake' > "$TASK_RULE"
 /usr/bin/visudo -cf "$TASK_RULE"
 /usr/bin/install -o root -g root -m 0440 "$TASK_RULE" /etc/sudoers.d/better-watch-mount
 /usr/local/sbin/better-watch-drive mount
+/usr/bin/install -D -o kevin -g kevin -m 0644 "$ROOT/scripts/remote/better-watch.service" /home/kevin/.config/systemd/user/better-watch.service
+/usr/bin/install -D -o kevin -g kevin -m 0644 "$ROOT/scripts/remote/better-watch.socket" /home/kevin/.config/systemd/user/better-watch.socket
 /usr/bin/runuser -u kevin -- env XDG_RUNTIME_DIR=/run/user/1000 /usr/bin/systemctl --user daemon-reload
-/usr/bin/runuser -u kevin -- env XDG_RUNTIME_DIR=/run/user/1000 /usr/bin/systemctl --user start better-watch.service
-printf '%s\n' 'Better Watch installed. The service starts on demand from the Mac launcher.'
+/usr/bin/runuser -u kevin -- env XDG_RUNTIME_DIR=/run/user/1000 /usr/bin/systemctl --user enable --now better-watch.socket
+
+/usr/bin/install -o root -g root -m 0755 "$ROOT/scripts/remote/idle.py" /usr/local/sbin/better-watch-idle
+/usr/bin/install -o root -g root -m 0644 "$ROOT/scripts/remote/better-watch-idle.service" /etc/systemd/system/better-watch-idle.service
+/usr/bin/systemctl daemon-reload
+/usr/bin/systemctl enable --now better-watch-idle.service
+printf '%s\n' 'Better Watch installed. Restart the user service when playback is idle to activate drive wake protection.'

@@ -16,15 +16,6 @@ struct PlaybackTrack: Identifiable {
     }
 }
 
-struct ResumePosition: Codable {
-    let seconds: Double
-    let duration: Double
-    static func validStart(_ position: ResumePosition?) -> Double {
-        guard let p = position, p.seconds.isFinite, p.duration.isFinite, p.seconds >= 5, p.seconds < p.duration - 10 else { return 0 }
-        return p.seconds
-    }
-}
-
 @MainActor final class Playback: ObservableObject, Identifiable {
     let id = UUID()
     let movie: Movie
@@ -49,11 +40,11 @@ struct ResumePosition: Codable {
     private var diagnosticFile: FileHandle?
     private var viewingActivity: NSObjectProtocol?
 
-    init(movie: Movie) {
+    init(movie: Movie, sharedPosition: ResumePosition? = nil) {
         self.movie = movie
         positionsURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Better Watch/resume.json")
         positions = (try? JSONDecoder().decode([String: ResumePosition].self, from: Data(contentsOf: positionsURL))) ?? [:]
-        start = ResumePosition.validStart(positions[movie.id])
+        start = ResumePosition.validStart(sharedPosition)
         volume = UserDefaults.standard.object(forKey: "playbackVolume") as? Double ?? 70
         if let path = ProcessInfo.processInfo.environment["BW_PLAYBACK_DIAGNOSTICS"] {
             if !FileManager.default.fileExists(atPath:path) { FileManager.default.createFile(atPath:path, contents:nil) }
@@ -119,8 +110,9 @@ struct ResumePosition: Codable {
     }
     func retrySubtitles() { subtitleNotice = nil; subtitleTask?.cancel(); loadSubtitles() }
     private func save() {
-        guard loaded, duration > 0 else { return }
-        positions[movie.id] = ResumePosition(seconds: ended ? 0 : position, duration:duration)
+        guard loaded, duration.isFinite, position.isFinite, duration > 0 else { return }
+        positions[movie.id] = ResumePosition(seconds: ended ? 0 : min(duration, max(0, position)), duration:duration)
+        SharedLibrary.shared.savePosition(movie.id, position: positions[movie.id]!)
         do {
             try FileManager.default.createDirectory(at:positionsURL.deletingLastPathComponent(),withIntermediateDirectories:true)
             try JSONEncoder().encode(positions).write(to:positionsURL,options:.atomic)
@@ -166,10 +158,12 @@ struct FilmPlayer: View {
     @State private var cursorHidden = false
     @State private var seeking = false
     @State private var seekPosition = 0.0
+    @State private var isFullscreen = false
     var body: some View {
         ZStack {
             Color.black
-            MPVSurface(playback:playback)
+            // Extend only the picture; playback controls stay clear of the window controls.
+            MPVSurface(playback:playback).ignoresSafeArea()
             Color.clear.contentShape(Rectangle()).onTapGesture(count:2) { fullscreen() }.onTapGesture { playback.togglePause(); reveal() }
             if !playback.loaded || playback.buffering {
                 Text(playback.loaded ? "Buffering…" : "Opening film…").padding(12).background(.black.opacity(0.8))
@@ -216,15 +210,28 @@ struct FilmPlayer: View {
                         }
                     }.padding(24).padding(.top,28).background(LinearGradient(colors:[.clear,.black.opacity(0.9)],startPoint:.top,endPoint:.bottom))
                 }
+                .frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.top)
+                // The hidden fullscreen title bar must not push the top controls down.
+                // In a normal window, keep them below the native window buttons.
+                .ignoresSafeArea(.container,edges:isFullscreen ? .top : [])
             }
         }
         .foregroundStyle(.white).background(.black)
         .onContinuousHover { phase in if case .active = phase { reveal() } }
-        .onAppear { installKeys(); reveal() }
+        .onAppear {
+            isFullscreen = (playback.surface?.window ?? NSApp.keyWindow)?.styleMask.contains(.fullScreen) == true
+            installKeys(); reveal()
+        }
         .onDisappear { hideTask?.cancel(); if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }; showCursor(); playback.close() }
         .onChange(of:showDescription) { _,_ in reveal() }
         .onChange(of:showTracks) { _,_ in reveal() }
         .onReceive(NotificationCenter.default.publisher(for:NSApplication.didResignActiveNotification)) { _ in showCursor() }
+        .onReceive(NotificationCenter.default.publisher(for:NSWindow.didEnterFullScreenNotification)) { notification in
+            if notification.object as? NSWindow === playback.surface?.window { isFullscreen = true }
+        }
+        .onReceive(NotificationCenter.default.publisher(for:NSWindow.didExitFullScreenNotification)) { notification in
+            if notification.object as? NSWindow === playback.surface?.window { isFullscreen = false }
+        }
     }
     private var trackPicker: some View {
         ScrollView {
@@ -259,7 +266,7 @@ struct FilmPlayer: View {
     private func fullscreen() { playback.surface?.window?.toggleFullScreen(nil) }
     private func exit() {
         showCursor()
-        if let window=playback.surface?.window,window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil) }
+        // Returning to the library preserves the user's window/fullscreen choice.
         close()
     }
     private func installKeys() {

@@ -86,3 +86,12 @@ func momentSeconds(_ duration: Double?, _ index: Int) -> Int {
     Int(min(max(0, (duration ?? 0) - 6), max(0, (duration ?? 0) * [0.12, 0.5, 0.78][max(0, min(2,index))])))
 }
 func timestamp(_ seconds: Int) -> String { String(format: "%d:%02d", seconds / 60, seconds % 60) }
+
+struct ResumePosition: Codable {
+    let seconds: Double
+    let duration: Double
+    static func validStart(_ position: ResumePosition?) -> Double {
+        guard let p = position, p.seconds.isFinite, p.duration.isFinite, p.seconds >= 5, p.seconds < p.duration - 10 else { return 0 }
+        return p.seconds
+    }
+}

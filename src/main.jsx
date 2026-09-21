@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MovieBrowser } from './components/movie-browser.jsx';
+import { FilmPlayer } from './components/film-player.jsx';
+import { useSharedProfile } from './lib/profile-client.js';
 import { relativeMovieFolder } from './lib/gallery.js';
 import { createRoot } from 'react-dom/client';
 import {
+  Circle,
+  Folder,
+  Menu,
+  X,
   CheckCircle,
   Clock,
   Grid2X2,
@@ -27,22 +33,12 @@ import { FolderPicker } from './components/folder-picker.jsx';
 import { CategoryPicker } from './components/category-picker.jsx';
 import { buildCategoryOptions, matchesCategories } from './lib/categories.js';
 
-const MARKS_KEY = 'ultra-touch-gallery:movie-marks';
-const ARTIST_MARKS_KEY = 'ultra-touch-gallery:artist-marks';
 const SIDECAR_CLEANUP_CONFIRMATION = 'remove-appledouble-sidecars';
 const MARK_TYPES = [
   { key: 'favorite', label: 'Favorite', Icon: Heart },
   { key: 'watchLater', label: 'Watch Later', Icon: Clock },
   { key: 'watched', label: 'Watched', Icon: CheckCircle }
 ];
-
-function readStoredObject(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key) || '{}');
-  } catch {
-    return {};
-  }
-}
 
 function SelectField({ label, value, options, onChange, className }) {
   return (
@@ -79,25 +75,29 @@ function App() {
   const [artistSearch, setArtistSearch] = useState('');
   const [artistSort, setArtistSort] = useState('name');
   const [artistList, setArtistList] = useState('all');
-  const [movieMarks, setMovieMarks] = useState(() => readStoredObject(MARKS_KEY));
-  const [artistMarks, setArtistMarks] = useState(() => readStoredObject(ARTIST_MARKS_KEY));
+  const profile = useSharedProfile();
+  const movieMarks = profile.marks, artistMarks = profile.artistMarks;
+  const [playing, setPlaying] = useState(null);
+  const drawerRef = useRef(null);
+  const [libraryError, setLibraryError] = useState('');
   const [cleanupStatus, setCleanupStatus] = useState('');
   const [scanError, setScanError] = useState('');
   const scanFolder = activeSubfolder !== 'All Subfolders' ? activeSubfolder : activeFolder !== 'All Films' ? activeFolder : '';
   const [cleanupBusy, setCleanupBusy] = useState(false);
   const [deletingMovieId, setDeletingMovieId] = useState(null);
-  const [openingMovieId, setOpeningMovieId] = useState(null);
+
 
   const movies = useMemo(() => enrichMoviesWithArtists(library.movies), [library.movies]);
 
   const refreshLibrary = useCallback(async () => {
     const response = await fetch('/api/library');
+    if (!response.ok) throw new Error('Could not load your library. Check Tailscale and reconnect.');
     const nextLibrary = await response.json();
-    setLibrary(nextLibrary);
+    setLibrary(nextLibrary); setLibraryError('');
   }, []);
 
   useEffect(() => {
-    refreshLibrary();
+    refreshLibrary().catch(error => setLibraryError(error.message));
   }, [refreshLibrary]);
 
   useEffect(() => {
@@ -128,12 +128,11 @@ function App() {
   }, [library.scanning]);
 
   useEffect(() => {
-    localStorage.setItem(MARKS_KEY, JSON.stringify(movieMarks));
-  }, [movieMarks]);
-
-  useEffect(() => {
-    localStorage.setItem(ARTIST_MARKS_KEY, JSON.stringify(artistMarks));
-  }, [artistMarks]);
+    const wide = window.matchMedia('(min-width: 960px)');
+    const close = () => { if (wide.matches) drawerRef.current?.close(); };
+    wide.addEventListener('change', close);
+    return () => wide.removeEventListener('change', close);
+  }, []);
 
   const collectionCounts = useMemo(() => {
     const counts = new Map();
@@ -170,21 +169,6 @@ function App() {
     }
     return counts;
   }, [movieMarks, movies]);
-
-  const markOptions = useMemo(() => {
-    const labels = {
-      all: 'All Lists',
-      favorite: 'Favorites',
-      watchLater: 'Watch Later',
-      watched: 'Watched',
-      notWatched: 'Not Watched'
-    };
-
-    return ['all', 'favorite', 'watchLater', 'watched', 'notWatched'].map((value) => ({
-      value,
-      label: `${labels[value]} (${markCounts[value]})`
-    }));
-  }, [markCounts]);
 
   const categoryScopeMovies = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -267,6 +251,8 @@ function App() {
   }, [artistMarks, artistSearch, artistSort, artistList, artistSummaries]);
 
   function chooseFolder(folder) {
+    drawerRef.current?.close();
+    setActiveView('movies');
     setSelectedCategories([]);
     setActiveFolder(folder);
     setActiveSubfolder('All Subfolders');
@@ -274,23 +260,15 @@ function App() {
   }
 
   function toggleMovieMark(movieId, markKey) {
-    setMovieMarks((currentMarks) => {
-      const next = { ...currentMarks };
-      const marks = { ...(next[movieId] || {}) };
-      marks[markKey] = !marks[markKey];
-      if (Object.values(marks).some(Boolean)) next[movieId] = marks;
-      else delete next[movieId];
-      return next;
-    });
+    profile.change('marks', movieId, { [markKey]: !movieMarks[movieId]?.[markKey] }).catch(() => {});
   }
 
   function toggleArtistFavorite(name) {
-    setArtistMarks((currentMarks) => {
-      const next = { ...currentMarks };
-      next[name] = !next[name];
-      if (!next[name]) delete next[name];
-      return next;
-    });
+    profile.change('artistMarks', name, !artistMarks[name]).catch(() => {});
+  }
+
+  function chooseList(value) {
+    chooseFolder('All Films'); setActiveMarkFilter(value); setSearch('');
   }
 
   async function deleteMovie(movie) {
@@ -305,11 +283,6 @@ function App() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not delete the video.');
       setLibrary((current) => ({ ...current, movies: current.movies.filter((item) => item.id !== movie.id) }));
-      setMovieMarks((current) => {
-        const next = { ...current };
-        delete next[movie.id];
-        return next;
-      });
       if (result.warning) window.alert(result.warning);
     } catch (error) {
       window.alert(error.message);
@@ -318,26 +291,7 @@ function App() {
     }
   }
 
-  async function openMovie(movie) {
-    setOpeningMovieId(movie.id);
-    try {
-      const response = await fetch('/api/open', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: movie.id })
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not open video');
-      if (result.stream) {
-        const url = new URL(result.stream, window.location.origin);
-        window.location.href = `iina://weblink?url=${encodeURIComponent(url.href)}`;
-      }
-    } catch (error) {
-      window.alert(error.message);
-    } finally {
-      setOpeningMovieId(null);
-    }
-  }
+  function openMovie(movie) { setPlaying(movie); }
 
   async function rescanLibrary() {
     setScanError('');
@@ -380,24 +334,20 @@ function App() {
     }
   }
 
-  return (
-    <>
-      <div className="shell">
-        <aside className="sidebar">
-          <div>
-          </div>
-
-          <nav className="view-switcher" aria-label="Views">
-            <button className={`view-button${activeView === 'movies' ? ' active' : ''}`} type="button" onClick={() => setActiveView('movies')}>
-              <Grid2X2 aria-hidden="true" />
-              Movies
-            </button>
-            <button className={`view-button${activeView === 'artists' ? ' active' : ''}`} type="button" onClick={() => setActiveView('artists')}>
-              <User aria-hidden="true" />
-              Artists
-            </button>
-          </nav>
-
+  const lists = [
+    ['all', 'All Films', Grid2X2], ['favorite', 'Favorites', Heart],
+    ['watchLater', 'Watch Later', Clock], ['notWatched', 'Unwatched', Circle], ['watched', 'Watched', CheckCircle]
+  ];
+  const heading = activeView === 'artists' ? 'Artists' : activeArtist !== 'All Artists' ? activeArtist : activeFolder !== 'All Films' ? activeFolder : lists.find(([key]) => key === activeMarkFilter)[1];
+  const navigation = <>
+    <div className="sidebar-brand">Better Watch</div>
+    <nav className="view-switcher" aria-label="Library">
+      {lists.map(([value, label, Icon]) => <button key={value} type="button" className={`view-button${activeView === 'movies' && activeFolder === 'All Films' && activeMarkFilter === value ? ' active' : ''}`} onClick={() => chooseList(value)}><Icon aria-hidden="true" />{label}<small>{markCounts[value]}</small></button>)}
+      <button type="button" className={`view-button${activeView === 'artists' ? ' active' : ''}`} onClick={() => { setActiveView('artists'); drawerRef.current?.close(); }}><User aria-hidden="true" />Artists</button>
+    </nav>
+    <nav className="folder-navigation" aria-label="Folders"><h2>Folders</h2>
+      {collectionCounts.filter(([folder]) => folder !== 'All Films').map(([folder, count]) => <button type="button" key={folder} className={`view-button${activeView === 'movies' && activeFolder === folder ? ' active' : ''}`} onClick={() => chooseFolder(folder)}><Folder aria-hidden="true" /><span>{folder}</span><small>{count}</small></button>)}
+    </nav>
           <details className="sidebar-footer"><summary>Library tools</summary>
             <button className="rescan" type="button" title={scanFolder ? `Rescan ${scanFolder} and its subfolders` : 'Rescan the entire library'} disabled={library.scanning} onClick={rescanLibrary}>
               <RefreshCw aria-hidden="true" />
@@ -418,23 +368,30 @@ function App() {
             }}>Export Movie Lists</button>
             <p className="cleanup-status" aria-live="polite">{cleanupStatus}</p>
           </details>
-        </aside>
 
+  </>;
+
+  return (
+    <>
+      <div className="shell" inert={playing ? true : undefined} aria-hidden={playing ? true : undefined}>
+        <aside className="sidebar">{navigation}</aside>
+        <dialog ref={drawerRef} className="navigation-drawer" aria-label="Library navigation" onClick={event => { if (event.target === event.currentTarget) drawerRef.current.close(); }}>
+          <button className="drawer-close" type="button" aria-label="Close navigation" onClick={() => drawerRef.current.close()}><X /></button>
+          {navigation}
+        </dialog>
         <main className="content">
+          <div className="library-heading"><button className="navigation-toggle" type="button" aria-label="Open library navigation" onClick={() => drawerRef.current.showModal()}><Menu /></button><h1>{heading}</h1><span>{activeView === 'movies' ? filteredMovies.length.toLocaleString() + ' films' : filteredArtists.length.toLocaleString() + ' artists'}</span></div>
+          {(libraryError || profile.error) && <p className="connection-error" role="alert">{libraryError || profile.error}{libraryError && <button type="button" onClick={() => refreshLibrary().catch(error => setLibraryError(error.message))}>Reconnect</button>}</p>}
           {activeView === 'movies' ? (
             <>
               <header className="toolbar movie-toolbar">
-                <div className="collection-location">
-                  <SelectField label="Collection" className="collection-select" value={activeFolder} onChange={chooseFolder}
-                    options={collectionCounts.map(([value]) => ({ value, label: value }))} />
-                  <span className="path-divider" aria-hidden="true">/</span>
+                {activeFolder !== 'All Films' && <div className="collection-location">
                   <FolderPicker value={activeSubfolder} onChange={(value) => {
                     setActiveSubfolder(value);
                     setActiveArtist('All Artists');
                     setSelectedCategories([]);
                   }} options={subfolderOptions} />
-                  <span className="result-count">{filteredMovies.length.toLocaleString()} films</span>
-                </div>
+                </div>}
                 <div className="controls">
                   <label className="search">
                     <span>Search</span>
@@ -457,7 +414,7 @@ function App() {
                   />
 
                   <CategoryPicker value={selectedCategories} onChange={setSelectedCategories} options={categoryOptions} />
-                  <SelectField label="List" className="list-filter" value={activeMarkFilter} onChange={setActiveMarkFilter} options={markOptions} />
+
                 </div>
               </header>
 
@@ -466,7 +423,7 @@ function App() {
                 key={JSON.stringify([activeFolder, activeSubfolder, activeArtist, activeMarkFilter, sortValue, search, selectedCategories.map((item) => item.value)])}
                 movies={filteredMovies} collection={activeFolder} subfolder={activeSubfolder}
                 movieMarks={movieMarks} onToggleMark={toggleMovieMark} onOpen={openMovie} onDelete={deleteMovie}
-                openingId={openingMovieId} deletingId={deletingMovieId} scanning={library.scanning} />
+                openingId={null} deletingId={deletingMovieId} scanning={library.scanning} />
             </>
           ) : (
             <section className="artist-view">
@@ -520,7 +477,7 @@ function App() {
           )}
         </main>
       </div>
-
+      {playing && <FilmPlayer key={playing.id} movie={playing} onClose={() => { setPlaying(null); requestAnimationFrame(() => document.querySelector(`[data-movie-id="${CSS.escape(playing.id)}"]`)?.focus({ preventScroll: true })); }} />}
     </>
   );
 }

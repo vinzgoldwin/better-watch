@@ -31,7 +31,7 @@ export function MovieBrowser({ movies, collection, subfolder, movieMarks, onTogg
   return <>
     <section className="movie-grid" aria-label="Movies">
       {visible.map((movie) => <button key={movie.id}
-          type="button" className="movie-tile" aria-expanded={selectedId === movie.id}
+          type="button" data-movie-id={movie.id} className="movie-tile" aria-expanded={selectedId === movie.id}
           aria-controls={selectedId === movie.id ? 'movie-preview' : undefined} onClick={() => setSelectedId(movie.id)}>
           <span className="movie-cover">
             {movie.thumbnail ? <img loading="lazy" decoding="async" src={`${movie.thumbnail}?quality=cover&width=480`} srcSet={`${movie.thumbnail}?quality=cover&width=480 480w, ${movie.thumbnail}?quality=cover&width=960 960w`} sizes="(max-width: 650px) calc((100vw - 42px) / 2), (max-width: 1050px) calc((100vw - 92px) / 3), (min-width: 1800px) 422px, calc((100vw - 110px) / 4)" alt="" /> : <span className="cover-missing">No preview</span>}
@@ -46,7 +46,7 @@ export function MovieBrowser({ movies, collection, subfolder, movieMarks, onTogg
     </section>
     {selectedIndex >= 0 && <MoviePreview key={selectedId} movie={visible[selectedIndex]} marks={movieMarks[selectedId] || {}}
           folder={relativeMovieFolder(visible[selectedIndex].folder, collection, subfolder)}
-          onClose={close} onOpen={() => onOpen(visible[selectedIndex])} onDelete={() => onDelete(visible[selectedIndex])}
+          onClose={close} onOpen={() => { const movie = visible[selectedIndex]; close(); onOpen(movie); }} onDelete={() => onDelete(visible[selectedIndex])}
           onToggleMark={(key) => onToggleMark(selectedId, key)} opening={openingId === selectedId}
           deleting={deletingId === selectedId} deleteDisabled={scanning || deletingId !== null}
           />}
@@ -163,7 +163,7 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
         {movie.categories?.length > 0 && <ul className="preview-categories" aria-label="Categories">{movie.categories.map((category) => <li key={category}>{category}</li>)}</ul>}
       </div>
       <div className="preview-actions">
-        <button className="play-movie" type="button" onClick={onOpen} disabled={opening}><Play aria-hidden="true" />{opening ? 'Opening...' : 'Play in IINA'}</button>
+        <button className="play-movie" type="button" onClick={onOpen} disabled={opening}><Play aria-hidden="true" />{opening ? 'Opening...' : 'Play'}</button>
       </div>
       <div className="preview-marks" aria-label="Movie lists">{marks.map(({ key, label, Icon }) => <button key={key} type="button" aria-label={label} title={label} aria-pressed={Boolean(movieMarks[key])} onClick={() => onToggleMark(key)}><Icon aria-hidden="true" /><span>{label}</span></button>)}</div>
       {movie.description?.trim() && <details className="preview-description" open><summary>Description</summary><p>{movie.description}</p></details>}
