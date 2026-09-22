@@ -1,0 +1,13 @@
+{
+  "duration_seconds": 43.0,
+  "channels": 2,
+  "sample_rate": 48000,
+  "sample_peak_dbfs": -2.7377704588228324,
+  "clipped_samples": 0,
+  "rms_dbfs": {
+    "first_quarter_second": -43.72129228159483,
+    "middle_15_to_25s": -20.26753688538108,
+    "last_quarter_second": -86.12577858937374
+  },
+  "listening_performed": false
+}

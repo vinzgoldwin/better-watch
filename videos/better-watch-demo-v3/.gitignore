@@ -1,0 +1,12 @@
+node_modules/
+.hyperframes/
+.hyperframes-local/
+__pycache__/
+*.log
+!project/qa/audio-final.log
+!contact-sheet.png
+!project/preview/contact-sheet.png
+!project/assets/folded-play-ribbon.png
+project/qa/rendered-frames/
+project/qa/rendered-audit-*.png
+project/renders/

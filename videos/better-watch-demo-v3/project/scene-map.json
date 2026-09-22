@@ -1,0 +1,62 @@
+[
+  {
+    "id": "opening",
+    "start": 0,
+    "end": 4,
+    "label": "Better Watch and a synthetic movie library"
+  },
+  {
+    "id": "server",
+    "start": 4,
+    "end": 10,
+    "label": "A repurposed movie server and external HDD"
+  },
+  {
+    "id": "android",
+    "start": 10,
+    "end": 12.6,
+    "label": "Android phone native library illustration"
+  },
+  {
+    "id": "ipad",
+    "start": 12.6,
+    "end": 15.2,
+    "label": "iPad native library illustration"
+  },
+  {
+    "id": "mac",
+    "start": 15.2,
+    "end": 17.8,
+    "label": "Mac native library illustration"
+  },
+  {
+    "id": "tv",
+    "start": 17.8,
+    "end": 20.4,
+    "label": "Google TV / Android TV native library illustration"
+  },
+  {
+    "id": "family",
+    "start": 20.4,
+    "end": 24,
+    "label": "Tailscale connects the home server and four native clients"
+  },
+  {
+    "id": "local",
+    "start": 24,
+    "end": 30,
+    "label": "A direct local movie connection stays inside the home network"
+  },
+  {
+    "id": "remote",
+    "start": 30,
+    "end": 37,
+    "label": "A home server streams over the internet to a remote iPad"
+  },
+  {
+    "id": "closing",
+    "start": 37,
+    "end": 43,
+    "label": "Better Watch closing ribbon"
+  }
+]

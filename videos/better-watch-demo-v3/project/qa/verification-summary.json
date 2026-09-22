@@ -1,0 +1,24 @@
+{
+  "video": {
+    "codec_name": "h264",
+    "pix_fmt": "yuv420p",
+    "width": 1920,
+    "height": 1080,
+    "r_frame_rate": "30/1",
+    "nb_read_frames": "1290"
+  },
+  "audio": {
+    "duration_seconds": 43.0,
+    "channels": 2,
+    "sample_rate": 48000,
+    "sample_peak_dbfs": -2.7377704588228324,
+    "clipped_samples": 0,
+    "rms_dbfs": {
+      "first_quarter_second": -43.72129228159483,
+      "middle_15_to_25s": -20.26753688538108,
+      "last_quarter_second": -86.12577858937374
+    },
+    "listening_performed": false
+  },
+  "inspected_frame_count": 44
+}

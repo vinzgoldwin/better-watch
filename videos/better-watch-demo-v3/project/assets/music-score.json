@@ -1,0 +1,416 @@
+{
+  "title": "Home Library",
+  "duration": 43,
+  "bpm": 100,
+  "key": "D major",
+  "source": "scripts/compose-music.py",
+  "sample_rate": 48000,
+  "peak_dbfs": -2.733542797590882,
+  "events": [
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 0.16
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 0.178
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 0.196
+    },
+    {
+      "instrument": "keys",
+      "midi": 73,
+      "at": 0.214
+    },
+    {
+      "instrument": "keys",
+      "midi": 61,
+      "at": 4.96
+    },
+    {
+      "instrument": "keys",
+      "midi": 64,
+      "at": 4.978
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 4.996
+    },
+    {
+      "instrument": "keys",
+      "midi": 71,
+      "at": 5.014
+    },
+    {
+      "instrument": "keys",
+      "midi": 76,
+      "at": 4.88
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 5.78
+    },
+    {
+      "instrument": "keys",
+      "midi": 83,
+      "at": 6.38
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 7.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 83,
+      "at": 8.03
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 8.78
+    },
+    {
+      "instrument": "keys",
+      "midi": 59,
+      "at": 9.76
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 9.778
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 9.796
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 9.814
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 9.68
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 10.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 11.33
+    },
+    {
+      "instrument": "keys",
+      "midi": 86,
+      "at": 12.08
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 12.98
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 13.73
+    },
+    {
+      "instrument": "keys",
+      "midi": 59,
+      "at": 14.56
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 14.578
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 14.596
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 14.614
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 14.48
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 15.38
+    },
+    {
+      "instrument": "keys",
+      "midi": 86,
+      "at": 16.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 17.33
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 18.08
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 18.68
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 19.36
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 19.378
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 19.396
+    },
+    {
+      "instrument": "keys",
+      "midi": 73,
+      "at": 19.414
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 19.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 19.73
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 20.18
+    },
+    {
+      "instrument": "keys",
+      "midi": 88,
+      "at": 20.93
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 21.68
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 22.58
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 23.33
+    },
+    {
+      "instrument": "keys",
+      "midi": 61,
+      "at": 24.16
+    },
+    {
+      "instrument": "keys",
+      "midi": 64,
+      "at": 24.178
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 24.196
+    },
+    {
+      "instrument": "keys",
+      "midi": 71,
+      "at": 24.214
+    },
+    {
+      "instrument": "keys",
+      "midi": 76,
+      "at": 24.08
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 24.98
+    },
+    {
+      "instrument": "keys",
+      "midi": 83,
+      "at": 25.58
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 26.48
+    },
+    {
+      "instrument": "keys",
+      "midi": 83,
+      "at": 27.23
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 27.98
+    },
+    {
+      "instrument": "keys",
+      "midi": 59,
+      "at": 28.96
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 28.978
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 28.996
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 29.014
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 28.88
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 29.48
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 30.53
+    },
+    {
+      "instrument": "keys",
+      "midi": 86,
+      "at": 31.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 32.18
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 32.93
+    },
+    {
+      "instrument": "keys",
+      "midi": 59,
+      "at": 33.76
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 33.778
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 33.796
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 33.814
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 33.68
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 34.58
+    },
+    {
+      "instrument": "keys",
+      "midi": 86,
+      "at": 35.48
+    },
+    {
+      "instrument": "keys",
+      "midi": 85,
+      "at": 36.53
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 37.28
+    },
+    {
+      "instrument": "keys",
+      "midi": 78,
+      "at": 37.88
+    },
+    {
+      "instrument": "keys",
+      "midi": 62,
+      "at": 37.85
+    },
+    {
+      "instrument": "keys",
+      "midi": 66,
+      "at": 37.895
+    },
+    {
+      "instrument": "keys",
+      "midi": 69,
+      "at": 37.94
+    },
+    {
+      "instrument": "keys",
+      "midi": 73,
+      "at": 37.985
+    },
+    {
+      "instrument": "keys",
+      "midi": 76,
+      "at": 38.03
+    },
+    {
+      "instrument": "keys",
+      "midi": 81,
+      "at": 38.075
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "ok": true,
+  "strict": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 5,
+    "findings": [
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 10.375,
+        "selector": "#server-heading > text:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 116,
+          "top": 150,
+          "right": 1363.06,
+          "bottom": 242,
+          "width": 1247.06,
+          "height": 92
+        },
+        "containerSelector": "#android-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(1)",
+        "text": "Old computer. New purpose.",
+        "fixHint": "Give each block its own zone, or mark intentional layering with data-layout-allow-overlap.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 116,
+          "y": 150,
+          "width": 1247.06,
+          "height": 92
+        },
+        "firstSeen": 10.375,
+        "lastSeen": 10.375,
+        "occurrences": 1,
+        "heldMs": 0
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 12.875,
+        "selector": "#android-heading > text:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 116,
+          "top": 294,
+          "right": 841.25,
+          "bottom": 396,
+          "width": 725.25,
+          "height": 102
+        },
+        "containerSelector": "#ipad-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(3)",
+        "text": "Android phone",
+        "fixHint": "Give each block its own zone, or mark intentional layering with data-layout-allow-overlap.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 116,
+          "y": 294,
+          "width": 725.25,
+          "height": 102
+        },
+        "firstSeen": 12.875,
+        "lastSeen": 12.875,
+        "occurrences": 1,
+        "heldMs": 0
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 12.875,
+        "selector": "#android-heading > text:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 116,
+          "top": 294,
+          "right": 841.25,
+          "bottom": 396,
+          "width": 725.25,
+          "height": 102
+        },
+        "containerSelector": "#ipad-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(4)",
+        "text": "Android phone",
+        "fixHint": "Give each block its own zone, or mark intentional layering with data-layout-allow-overlap.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 116,
+          "y": 294,
+          "width": 725.25,
+          "height": 102
+        },
+        "firstSeen": 12.875,
+        "lastSeen": 12.875,
+        "occurrences": 1,
+        "heldMs": 0
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 12.875,
+        "selector": "#android-heading > text:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 116,
+          "top": 294,
+          "right": 841.25,
+          "bottom": 396,
+          "width": 725.25,
+          "height": 102
+        },
+        "containerSelector": "#ipad-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(5)",
+        "text": "Android phone",
+        "fixHint": "Give each block its own zone, or mark intentional layering with data-layout-allow-overlap.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 116,
+          "y": 294,
+          "width": 725.25,
+          "height": 102
+        },
+        "firstSeen": 12.875,
+        "lastSeen": 12.875,
+        "occurrences": 1,
+        "heldMs": 0
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 12.875,
+        "selector": "#android-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(17)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 1360.3,
+          "top": 809.13,
+          "right": 1453.05,
+          "bottom": 823.39,
+          "width": 92.75,
+          "height": 14.26
+        },
+        "containerSelector": "#ipad-screen > g:nth-of-type(1) > g:nth-of-type(1) > text:nth-of-type(20)",
+        "text": "2025 · Cinema",
+        "fixHint": "Give each block its own zone, or mark intentional layering with data-layout-allow-overlap.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1360.3,
+          "y": 809.13,
+          "width": 92.75,
+          "height": 14.26
+        },
+        "firstSeen": 12.875,
+        "lastSeen": 12.875,
+        "occurrences": 1,
+        "heldMs": 0
+      }
+    ],
+    "duration": 43,
+    "samples": [
+      2.389,
+      7.167,
+      11.944,
+      16.722,
+      21.5,
+      26.278,
+      31.056,
+      35.833,
+      40.611
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 5,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      2.389,
+      11.944,
+      21.5,
+      31.056,
+      40.611
+    ],
+    "checked": 85,
+    "passed": 85
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  },
+  "_meta": {
+    "version": "0.8.60",
+    "latestVersion": "0.8.60",
+    "updateAvailable": false
+  }
+}

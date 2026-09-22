@@ -1,0 +1,6549 @@
+{
+  "composition": "/home/kevin/Projects/better-watch/outputs/hyperframes-demo/project",
+  "duration": 43,
+  "totalTweens": 77,
+  "mappedTweens": 77,
+  "skippedMicroTweens": 0,
+  "tweens": [
+    {
+      "index": 1,
+      "selector": "#opening-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "rotation",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 0.2,
+      "end": 1.25,
+      "duration": 1.05,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 0.375,
+          "x": 123,
+          "y": 267,
+          "w": 331,
+          "h": 331,
+          "opacity": 0.4991,
+          "visible": true
+        },
+        {
+          "t": 0.725,
+          "x": 117,
+          "y": 261,
+          "w": 344,
+          "h": 344,
+          "opacity": 0.9247,
+          "visible": true
+        },
+        {
+          "t": 1.075,
+          "x": 116,
+          "y": 260,
+          "w": 346,
+          "h": 346,
+          "opacity": 0.9991,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#opening-ribbon animates scale+rotation+transformOrigin+opacity over 1.05s (power3.out). moves 7px up and 7px left. opacity 0.5→1.0. scales. width 331→346px. height 331→346px. ends at (116, 260) 346×346px."
+    },
+    {
+      "index": 2,
+      "selector": "#opening-title",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 0.45,
+      "end": 1.25,
+      "duration": 0.8,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 0.583,
+          "x": 81,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 0.3768,
+          "visible": true
+        },
+        {
+          "t": 0.85,
+          "x": 108,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 0.8587,
+          "visible": true
+        },
+        {
+          "t": 1.117,
+          "x": 116,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 0.9934,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#opening-title animates x+opacity over 0.80s (power2.out). moves 35px right. opacity 0.4→1.0. ends at (116, 835) 833×136px."
+    },
+    {
+      "index": 3,
+      "selector": "#opening-mac",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 0.72,
+      "end": 1.87,
+      "duration": 1.15,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 0.912,
+          "x": 656,
+          "y": 138,
+          "w": 1188,
+          "h": 667,
+          "opacity": 0.6586,
+          "visible": true
+        },
+        {
+          "t": 1.295,
+          "x": 636,
+          "y": 138,
+          "w": 1188,
+          "h": 667,
+          "opacity": 0.9706,
+          "visible": true
+        },
+        {
+          "t": 1.678,
+          "x": 634,
+          "y": 138,
+          "w": 1188,
+          "h": 667,
+          "opacity": 0.9994,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#opening-mac animates x+opacity over 1.15s (expo.out). moves 22px left. opacity 0.7→1.0. ends at (634, 138) 1188×667px."
+    },
+    {
+      "index": 4,
+      "selector": "#opening-mac",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "start": 2.1,
+      "end": 3.7,
+      "duration": 1.6,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 2.367,
+          "x": 633,
+          "y": 137,
+          "w": 1190,
+          "h": 668,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 2.9,
+          "x": 628,
+          "y": 134,
+          "w": 1201,
+          "h": 674,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 3.433,
+          "x": 622,
+          "y": 131,
+          "w": 1212,
+          "h": 681,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#opening-mac animates scale+transformOrigin over 1.60s (sine.inOut). moves 6px up and 11px left. scales. width 1190→1212px. height 668→681px. ends at (622, 131) 1212×681px."
+    },
+    {
+      "index": 5,
+      "selector": "#scene-opening",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 4,
+      "end": 4.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 4.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9642,
+          "visible": true
+        },
+        {
+          "t": 4.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5238,
+          "visible": true
+        },
+        {
+          "t": 4.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.107,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-opening animates opacity over 0.55s (sine.inOut). opacity 1.0→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 6,
+      "selector": "#scene-server",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 4,
+      "end": 4.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 4.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0358,
+          "visible": true
+        },
+        {
+          "t": 4.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4762,
+          "visible": true
+        },
+        {
+          "t": 4.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.893,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-server animates opacity over 0.55s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 7,
+      "selector": "#computer",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 4.28,
+      "end": 5.22,
+      "duration": 0.94,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 4.437,
+          "x": 441,
+          "y": 459,
+          "w": 457,
+          "h": 235,
+          "opacity": 0.2534,
+          "visible": true
+        },
+        {
+          "t": 4.75,
+          "x": 433,
+          "y": 456,
+          "w": 472,
+          "h": 242,
+          "opacity": 0.6871,
+          "visible": true
+        },
+        {
+          "t": 5.063,
+          "x": 429,
+          "y": 453,
+          "w": 481,
+          "h": 247,
+          "opacity": 0.9517,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#computer animates scale+transformOrigin+opacity over 0.94s (sine.out). moves 6px up and 12px left. opacity 0.3→1.0. scales. width 457→481px. height 235→247px. ends at (429, 453) 481×247px."
+    },
+    {
+      "index": 8,
+      "selector": "#server-heading",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 4.6,
+      "end": 5.26,
+      "duration": 0.66,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 4.71,
+          "x": 116,
+          "y": 171,
+          "w": 1247,
+          "h": 93,
+          "opacity": 0.4817,
+          "visible": true
+        },
+        {
+          "t": 4.93,
+          "x": 116,
+          "y": 152,
+          "w": 1247,
+          "h": 93,
+          "opacity": 0.9115,
+          "visible": true
+        },
+        {
+          "t": 5.15,
+          "x": 116,
+          "y": 148,
+          "w": 1247,
+          "h": 93,
+          "opacity": 0.9986,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#server-heading animates y+opacity over 0.66s (power3.out). moves 23px up. opacity 0.5→1.0. ends at (116, 148) 1247×93px."
+    },
+    {
+      "index": 9,
+      "selector": "#server-copy",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 4.82,
+      "end": 5.54,
+      "duration": 0.72,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 4.94,
+          "x": 83,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 0.4018,
+          "visible": true
+        },
+        {
+          "t": 5.18,
+          "x": 108,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 0.8606,
+          "visible": true
+        },
+        {
+          "t": 5.42,
+          "x": 116,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 0.9926,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#server-copy animates x+opacity over 0.72s (power2.out). moves 33px right. opacity 0.4→1.0. ends at (116, 291) 784×53px."
+    },
+    {
+      "index": 10,
+      "selector": "#drive-cable",
+      "targets": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 5.55,
+      "end": 6.25,
+      "duration": 0.7,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 5.667,
+          "x": 906,
+          "y": 600,
+          "w": 75,
+          "h": 156,
+          "opacity": 0.4213,
+          "visible": true
+        },
+        {
+          "t": 5.9,
+          "x": 906,
+          "y": 600,
+          "w": 156,
+          "h": 156,
+          "opacity": 0.875,
+          "visible": true
+        },
+        {
+          "t": 6.133,
+          "x": 906,
+          "y": 600,
+          "w": 176,
+          "h": 156,
+          "opacity": 0.9902,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#drive-cable animates scaleX+transformOrigin+opacity over 0.70s (power2.out). opacity 0.4→1.0. scales. width 75→176px. ends at (906, 600) 176×156px."
+    },
+    {
+      "index": 11,
+      "selector": "#hard-drive",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 5.8,
+      "end": 6.55,
+      "duration": 0.75,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 5.925,
+          "x": 1110,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 0.5996,
+          "visible": true
+        },
+        {
+          "t": 6.175,
+          "x": 1086,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 0.974,
+          "visible": true
+        },
+        {
+          "t": 6.425,
+          "x": 1084,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 0.9992,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#hard-drive animates x+opacity over 0.75s (expo.out). moves 26px left. opacity 0.6→1.0. ends at (1084, 643) 170×298px."
+    },
+    {
+      "index": 12,
+      "selector": "#server-label",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 6.05,
+      "end": 6.85,
+      "duration": 0.8,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 6.183,
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 0.2271,
+          "visible": true
+        },
+        {
+          "t": 6.45,
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 0.6836,
+          "visible": true
+        },
+        {
+          "t": 6.717,
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 0.9569,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#server-label animates opacity over 0.80s (sine.out). opacity 0.2→1.0. ends at (537, 748) 263×46px."
+    },
+    {
+      "index": 13,
+      "selector": "#drive-label",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 6.2,
+      "end": 6.84,
+      "duration": 0.64,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 6.307,
+          "x": 1044,
+          "y": 991,
+          "w": 244,
+          "h": 40,
+          "opacity": 0.4932,
+          "visible": true
+        },
+        {
+          "t": 6.52,
+          "x": 1044,
+          "y": 973,
+          "w": 244,
+          "h": 40,
+          "opacity": 0.9203,
+          "visible": true
+        },
+        {
+          "t": 6.733,
+          "x": 1044,
+          "y": 969,
+          "w": 244,
+          "h": 40,
+          "opacity": 0.9977,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#drive-label animates y+opacity over 0.64s (power3.out). moves 22px up. opacity 0.5→1.0. ends at (1044, 969) 244×40px."
+    },
+    {
+      "index": 14,
+      "selector": "#day-night",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 6.65,
+      "end": 7.35,
+      "duration": 0.7,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 6.767,
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 0.2588,
+          "visible": true
+        },
+        {
+          "t": 7,
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 0.7071,
+          "visible": true
+        },
+        {
+          "t": 7.233,
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 0.9439,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#day-night animates opacity over 0.70s (sine.out). opacity 0.3→0.9. ends at (96, 844) 262×112px."
+    },
+    {
+      "index": 15,
+      "selector": "#day-night-progress",
+      "targets": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 7.8,
+      "end": 9.35,
+      "duration": 1.55,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 8.058,
+          "x": 222,
+          "y": 897,
+          "w": 21,
+          "h": 6,
+          "opacity": 0.387,
+          "visible": true
+        },
+        {
+          "t": 8.575,
+          "x": 222,
+          "y": 897,
+          "w": 47,
+          "h": 6,
+          "opacity": 0.8709,
+          "visible": true
+        },
+        {
+          "t": 9.092,
+          "x": 222,
+          "y": 897,
+          "w": 54,
+          "h": 6,
+          "opacity": 0.9939,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#day-night-progress animates scaleX+transformOrigin+opacity over 1.55s (power2.out). opacity 0.4→1.0. scales. width 21→54px. ends at (222, 897) 54×6px."
+    },
+    {
+      "index": 16,
+      "selector": "#scene-server",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 10,
+      "end": 10.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 10.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9642,
+          "visible": true
+        },
+        {
+          "t": 10.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5238,
+          "visible": true
+        },
+        {
+          "t": 10.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.107,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-server animates opacity over 0.55s (sine.inOut). opacity 1.0→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 17,
+      "selector": "#scene-android",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 10,
+      "end": 10.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 10.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0358,
+          "visible": true
+        },
+        {
+          "t": 10.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4762,
+          "visible": true
+        },
+        {
+          "t": 10.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.893,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-android animates opacity over 0.55s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 18,
+      "selector": "#android-screen",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 10.2,
+      "end": 10.8,
+      "duration": 0.6,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 10.3,
+          "x": 1164,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 0.6817,
+          "visible": true
+        },
+        {
+          "t": 10.5,
+          "x": 1146,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 0.9766,
+          "visible": true
+        },
+        {
+          "t": 10.7,
+          "x": 1144,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 0.9995,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#android-screen animates x+opacity over 0.60s (expo.out). moves 20px left. opacity 0.7→1.0. ends at (1144, 148) 412×784px."
+    },
+    {
+      "index": 19,
+      "selector": "#android-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 10.3,
+      "end": 10.84,
+      "duration": 0.54,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 10.39,
+          "x": 138,
+          "y": 498,
+          "w": 196,
+          "h": 196,
+          "opacity": 0.1927,
+          "visible": true
+        },
+        {
+          "t": 10.57,
+          "x": 134,
+          "y": 494,
+          "w": 204,
+          "h": 204,
+          "opacity": 0.7002,
+          "visible": true
+        },
+        {
+          "t": 10.75,
+          "x": 132,
+          "y": 492,
+          "w": 207,
+          "h": 207,
+          "opacity": 0.9522,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#android-ribbon animates scale+transformOrigin+opacity over 0.54s (sine.out). moves 6px up and 6px left. opacity 0.2→1.0. scales. width 196→207px. height 196→207px. ends at (132, 492) 207×207px."
+    },
+    {
+      "index": 20,
+      "selector": "#android-heading",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 10.6,
+      "end": 11.04,
+      "duration": 0.44,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 10.673,
+          "x": 82,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 0.3892,
+          "visible": true
+        },
+        {
+          "t": 10.82,
+          "x": 107,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 0.8377,
+          "visible": true
+        },
+        {
+          "t": 10.967,
+          "x": 116,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 0.9954,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#android-heading animates x+opacity over 0.44s (power2.out). moves 34px right. opacity 0.4→1.0. ends at (116, 294) 725×102px."
+    },
+    {
+      "index": 21,
+      "selector": "#scene-android",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 12.6,
+      "end": 13.02,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 12.67,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9391,
+          "visible": true
+        },
+        {
+          "t": 12.81,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5374,
+          "visible": true
+        },
+        {
+          "t": 12.95,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.1014,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-android animates opacity over 0.42s (sine.inOut). opacity 0.9→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 22,
+      "selector": "#scene-ipad",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 12.6,
+      "end": 13.02,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 12.67,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0609,
+          "visible": true
+        },
+        {
+          "t": 12.81,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4626,
+          "visible": true
+        },
+        {
+          "t": 12.95,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.8986,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-ipad animates opacity over 0.42s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 23,
+      "selector": "#content-ipad",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "start": 12.6,
+      "end": 13.2,
+      "duration": 0.6,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 12.7,
+          "x": 18,
+          "y": 8,
+          "w": 1892,
+          "h": 1064,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 12.9,
+          "x": 4,
+          "y": 2,
+          "w": 1914,
+          "h": 1077,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 13.1,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#content-ipad animates scale+transformOrigin over 0.60s (power2.out). moves 8px up and 18px left. scales. width 1892→1920px. height 1064→1080px. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 24,
+      "selector": "#ipad-screen",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 12.8,
+      "end": 13.4,
+      "duration": 0.6,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 12.9,
+          "x": 732,
+          "y": 149,
+          "w": 1005,
+          "h": 767,
+          "opacity": 0.6817,
+          "visible": true
+        },
+        {
+          "t": 13.1,
+          "x": 712,
+          "y": 148,
+          "w": 1008,
+          "h": 769,
+          "opacity": 0.9766,
+          "visible": true
+        },
+        {
+          "t": 13.3,
+          "x": 710,
+          "y": 148,
+          "w": 1008,
+          "h": 769,
+          "opacity": 0.9995,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#ipad-screen animates x+opacity over 0.60s (expo.out). moves 22px left. opacity 0.7→1.0. ends at (710, 148) 1008×769px. Overlaps another animated element."
+    },
+    {
+      "index": 25,
+      "selector": "#ipad-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 12.9,
+      "end": 13.44,
+      "duration": 0.54,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 12.99,
+          "x": 140,
+          "y": 498,
+          "w": 196,
+          "h": 196,
+          "opacity": 0.1927,
+          "visible": true
+        },
+        {
+          "t": 13.17,
+          "x": 134,
+          "y": 494,
+          "w": 204,
+          "h": 204,
+          "opacity": 0.7002,
+          "visible": true
+        },
+        {
+          "t": 13.35,
+          "x": 132,
+          "y": 492,
+          "w": 207,
+          "h": 207,
+          "opacity": 0.9522,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#ipad-ribbon animates scale+transformOrigin+opacity over 0.54s (sine.out). moves 6px up and 8px left. opacity 0.2→1.0. scales. width 196→207px. height 196→207px. ends at (132, 492) 207×207px."
+    },
+    {
+      "index": 26,
+      "selector": "#ipad-heading",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 13.05,
+      "end": 13.49,
+      "duration": 0.44,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 13.123,
+          "x": 77,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 0.3036,
+          "visible": true
+        },
+        {
+          "t": 13.27,
+          "x": 109,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 0.8692,
+          "visible": true
+        },
+        {
+          "t": 13.417,
+          "x": 116,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 0.9914,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#ipad-heading animates x+opacity over 0.44s (power2.out). moves 39px right. opacity 0.3→1.0. ends at (116, 294) 215×102px."
+    },
+    {
+      "index": 27,
+      "selector": "#scene-ipad",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 15.2,
+      "end": 15.62,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 15.27,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9391,
+          "visible": true
+        },
+        {
+          "t": 15.41,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5374,
+          "visible": true
+        },
+        {
+          "t": 15.55,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.1014,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-ipad animates opacity over 0.42s (sine.inOut). opacity 0.9→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 28,
+      "selector": "#scene-mac",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 15.2,
+      "end": 15.62,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 15.27,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0609,
+          "visible": true
+        },
+        {
+          "t": 15.41,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4626,
+          "visible": true
+        },
+        {
+          "t": 15.55,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.8986,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-mac animates opacity over 0.42s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 29,
+      "selector": "#content-mac",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "start": 15.2,
+      "end": 15.8,
+      "duration": 0.6,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 15.3,
+          "x": 18,
+          "y": 8,
+          "w": 1892,
+          "h": 1064,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 15.5,
+          "x": 4,
+          "y": 2,
+          "w": 1914,
+          "h": 1077,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 15.7,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#content-mac animates scale+transformOrigin over 0.60s (power2.out). moves 8px up and 18px left. scales. width 1892→1920px. height 1064→1080px. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 30,
+      "selector": "#mac-screen",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 15.4,
+      "end": 16,
+      "duration": 0.6,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 15.5,
+          "x": 484,
+          "y": 213,
+          "w": 1353,
+          "h": 760,
+          "opacity": 0.6817,
+          "visible": true
+        },
+        {
+          "t": 15.7,
+          "x": 463,
+          "y": 212,
+          "w": 1357,
+          "h": 762,
+          "opacity": 0.9766,
+          "visible": true
+        },
+        {
+          "t": 15.9,
+          "x": 461,
+          "y": 212,
+          "w": 1357,
+          "h": 762,
+          "opacity": 0.9995,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#mac-screen animates x+opacity over 0.60s (expo.out). moves 23px left. opacity 0.7→1.0. ends at (461, 212) 1357×762px. Overlaps another animated element."
+    },
+    {
+      "index": 31,
+      "selector": "#mac-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 15.52,
+      "end": 16.07,
+      "duration": 0.55,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 15.612,
+          "x": 129,
+          "y": 380,
+          "w": 142,
+          "h": 142,
+          "opacity": 0.2265,
+          "visible": true
+        },
+        {
+          "t": 15.795,
+          "x": 126,
+          "y": 378,
+          "w": 146,
+          "h": 146,
+          "opacity": 0.6476,
+          "visible": true
+        },
+        {
+          "t": 15.978,
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 0.9568,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#mac-ribbon animates scale+transformOrigin+opacity over 0.55s (sine.out). moves 4px up and 5px left. opacity 0.2→1.0. scales. width 142→150px. height 142→150px. ends at (124, 376) 150×150px."
+    },
+    {
+      "index": 32,
+      "selector": "#mac-heading",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 15.65,
+      "end": 16.09,
+      "duration": 0.44,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 15.723,
+          "x": 77,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 0.3036,
+          "visible": true
+        },
+        {
+          "t": 15.87,
+          "x": 109,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 0.8692,
+          "visible": true
+        },
+        {
+          "t": 16.017,
+          "x": 116,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 0.9914,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#mac-heading animates x+opacity over 0.44s (power2.out). moves 39px right. opacity 0.3→1.0. ends at (116, 90) 198×102px."
+    },
+    {
+      "index": 33,
+      "selector": "#scene-mac",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 17.8,
+      "end": 18.22,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 17.87,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9391,
+          "visible": true
+        },
+        {
+          "t": 18.01,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5374,
+          "visible": true
+        },
+        {
+          "t": 18.15,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.1014,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-mac animates opacity over 0.42s (sine.inOut). opacity 0.9→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 34,
+      "selector": "#scene-tv",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 17.8,
+      "end": 18.22,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 17.87,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0609,
+          "visible": true
+        },
+        {
+          "t": 18.01,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4626,
+          "visible": true
+        },
+        {
+          "t": 18.15,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.8986,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-tv animates opacity over 0.42s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 35,
+      "selector": "#content-tv",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "start": 17.8,
+      "end": 18.4,
+      "duration": 0.6,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 17.9,
+          "x": 18,
+          "y": 8,
+          "w": 1892,
+          "h": 1064,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 18.1,
+          "x": 4,
+          "y": 2,
+          "w": 1914,
+          "h": 1077,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 18.3,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#content-tv animates scale+transformOrigin over 0.60s (power2.out). moves 8px up and 18px left. scales. width 1892→1920px. height 1064→1080px. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 36,
+      "selector": "#tv-screen",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 18,
+      "end": 18.6,
+      "duration": 0.6,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 18.1,
+          "x": 527,
+          "y": 203,
+          "w": 1280,
+          "h": 775,
+          "opacity": 0.6817,
+          "visible": true
+        },
+        {
+          "t": 18.3,
+          "x": 506,
+          "y": 202,
+          "w": 1284,
+          "h": 777,
+          "opacity": 0.9766,
+          "visible": true
+        },
+        {
+          "t": 18.5,
+          "x": 504,
+          "y": 202,
+          "w": 1284,
+          "h": 777,
+          "opacity": 0.9995,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#tv-screen animates x+opacity over 0.60s (expo.out). moves 23px left. opacity 0.7→1.0. ends at (504, 202) 1284×777px. Overlaps another animated element."
+    },
+    {
+      "index": 37,
+      "selector": "#tv-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 18.12,
+      "end": 18.67,
+      "duration": 0.55,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 18.212,
+          "x": 129,
+          "y": 380,
+          "w": 142,
+          "h": 142,
+          "opacity": 0.2265,
+          "visible": true
+        },
+        {
+          "t": 18.395,
+          "x": 126,
+          "y": 378,
+          "w": 146,
+          "h": 146,
+          "opacity": 0.6476,
+          "visible": true
+        },
+        {
+          "t": 18.578,
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 0.9568,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#tv-ribbon animates scale+transformOrigin+opacity over 0.55s (sine.out). moves 4px up and 5px left. opacity 0.2→1.0. scales. width 142→150px. height 142→150px. ends at (124, 376) 150×150px."
+    },
+    {
+      "index": 38,
+      "selector": "#tv-heading",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 18.25,
+      "end": 18.69,
+      "duration": 0.44,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 18.323,
+          "x": 77,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 0.3036,
+          "visible": true
+        },
+        {
+          "t": 18.47,
+          "x": 109,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 0.8692,
+          "visible": true
+        },
+        {
+          "t": 18.617,
+          "x": 116,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 0.9914,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#tv-heading animates x+opacity over 0.44s (power2.out). moves 39px right. opacity 0.3→1.0. ends at (116, 101) 945×85px."
+    },
+    {
+      "index": 39,
+      "selector": "#scene-tv",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 20.4,
+      "end": 20.82,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 20.47,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9391,
+          "visible": true
+        },
+        {
+          "t": 20.61,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5374,
+          "visible": true
+        },
+        {
+          "t": 20.75,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.1014,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-tv animates opacity over 0.42s (sine.inOut). opacity 0.9→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 40,
+      "selector": "#scene-family",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 20.4,
+      "end": 20.82,
+      "duration": 0.42,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 20.47,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0609,
+          "visible": true
+        },
+        {
+          "t": 20.61,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4626,
+          "visible": true
+        },
+        {
+          "t": 20.75,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.8986,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-family animates opacity over 0.42s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 41,
+      "selector": "#family-server",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 20.6,
+      "end": 21.15,
+      "duration": 0.55,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 20.692,
+          "x": 291,
+          "y": 365,
+          "w": 218,
+          "h": 152,
+          "opacity": 0.1893,
+          "visible": true
+        },
+        {
+          "t": 20.875,
+          "x": 287,
+          "y": 362,
+          "w": 227,
+          "h": 159,
+          "opacity": 0.6901,
+          "visible": true
+        },
+        {
+          "t": 21.058,
+          "x": 284,
+          "y": 360,
+          "w": 231,
+          "h": 161,
+          "opacity": 0.945,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-server animates scale+transformOrigin+opacity over 0.55s (sine.out). moves 5px up and 7px left. opacity 0.2→0.9. scales. width 218→231px. height 152→161px. ends at (284, 360) 231×161px."
+    },
+    {
+      "index": 42,
+      "selector": "#family-tailscale",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 20.7,
+      "end": 21.25,
+      "duration": 0.55,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 20.792,
+          "x": 664,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 0.3213,
+          "visible": true
+        },
+        {
+          "t": 20.975,
+          "x": 694,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 0.8633,
+          "visible": true
+        },
+        {
+          "t": 21.158,
+          "x": 701,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 0.9905,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-tailscale animates x+opacity over 0.55s (power2.out). moves 37px right. opacity 0.3→1.0. ends at (701, 382) 595×55px."
+    },
+    {
+      "index": 43,
+      "selector": "#family-heading",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 20.85,
+      "end": 21.35,
+      "duration": 0.5,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 20.933,
+          "x": 116,
+          "y": 136,
+          "w": 1393,
+          "h": 89,
+          "opacity": 0.3439,
+          "visible": true
+        },
+        {
+          "t": 21.1,
+          "x": 116,
+          "y": 110,
+          "w": 1393,
+          "h": 89,
+          "opacity": 0.9375,
+          "visible": true
+        },
+        {
+          "t": 21.267,
+          "x": 116,
+          "y": 107,
+          "w": 1393,
+          "h": 89,
+          "opacity": 0.9992,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-heading animates y+opacity over 0.50s (power3.out). moves 29px up. opacity 0.3→1.0. ends at (116, 107) 1393×89px."
+    },
+    {
+      "index": 44,
+      "selector": "#family-paths",
+      "targets": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 20.85,
+      "end": 21.57,
+      "duration": 0.72,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 20.97,
+          "x": 372,
+          "y": 412,
+          "w": 516,
+          "h": 220,
+          "opacity": 0.4116,
+          "visible": true
+        },
+        {
+          "t": 21.21,
+          "x": 372,
+          "y": 412,
+          "w": 1084,
+          "h": 220,
+          "opacity": 0.8643,
+          "visible": true
+        },
+        {
+          "t": 21.45,
+          "x": 372,
+          "y": 412,
+          "w": 1245,
+          "h": 220,
+          "opacity": 0.9932,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-paths animates scaleX+transformOrigin+opacity over 0.72s (power2.out). opacity 0.4→1.0. scales. width 516→1245px. ends at (372, 412) 1245×220px."
+    },
+    {
+      "index": 45,
+      "selector": "#family-mac",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 20.97,
+      "end": 21.59,
+      "duration": 0.62,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 21.073,
+          "x": 96,
+          "y": 640,
+          "w": 551,
+          "h": 380,
+          "opacity": 0.4924,
+          "visible": true
+        },
+        {
+          "t": 21.28,
+          "x": 96,
+          "y": 621,
+          "w": 551,
+          "h": 380,
+          "opacity": 0.926,
+          "visible": true
+        },
+        {
+          "t": 21.487,
+          "x": 96,
+          "y": 618,
+          "w": 551,
+          "h": 380,
+          "opacity": 0.9984,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-mac animates y+opacity over 0.62s (power3.out). moves 22px up. opacity 0.5→1.0. ends at (96, 618) 551×380px."
+    },
+    {
+      "index": 46,
+      "selector": "#family-ipad",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 21.07,
+      "end": 21.69,
+      "duration": 0.62,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 21.173,
+          "x": 708,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 0.6572,
+          "visible": true
+        },
+        {
+          "t": 21.38,
+          "x": 688,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 0.9715,
+          "visible": true
+        },
+        {
+          "t": 21.587,
+          "x": 686,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 0.9992,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-ipad animates x+opacity over 0.62s (expo.out). moves 22px left. opacity 0.7→1.0. ends at (686, 588) 408×410px."
+    },
+    {
+      "index": 47,
+      "selector": "#family-phone",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 21.17,
+      "end": 21.79,
+      "duration": 0.62,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 21.273,
+          "x": 1147,
+          "y": 576,
+          "w": 221,
+          "h": 411,
+          "opacity": 0.2425,
+          "visible": true
+        },
+        {
+          "t": 21.48,
+          "x": 1144,
+          "y": 569,
+          "w": 229,
+          "h": 425,
+          "opacity": 0.6828,
+          "visible": true
+        },
+        {
+          "t": 21.687,
+          "x": 1141,
+          "y": 565,
+          "w": 233,
+          "h": 433,
+          "opacity": 0.9516,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-phone animates scale+transformOrigin+opacity over 0.62s (sine.out). moves 11px up and 6px left. opacity 0.2→1.0. scales. width 221→233px. height 411→433px. ends at (1141, 565) 233×433px."
+    },
+    {
+      "index": 48,
+      "selector": "#family-tv",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 21.27,
+      "end": 21.89,
+      "duration": 0.62,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 21.373,
+          "x": 1402,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 0.3986,
+          "visible": true
+        },
+        {
+          "t": 21.58,
+          "x": 1428,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 0.8582,
+          "visible": true
+        },
+        {
+          "t": 21.787,
+          "x": 1436,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 0.9921,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#family-tv animates x+opacity over 0.62s (power2.out). moves 34px right. opacity 0.4→1.0. ends at (1436, 632) 380×337px."
+    },
+    {
+      "index": 49,
+      "selector": "#scene-family",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 24,
+      "end": 24.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 24.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9642,
+          "visible": true
+        },
+        {
+          "t": 24.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5238,
+          "visible": true
+        },
+        {
+          "t": 24.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.107,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-family animates opacity over 0.55s (sine.inOut). opacity 1.0→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 50,
+      "selector": "#scene-local",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 24,
+      "end": 24.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 24.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0358,
+          "visible": true
+        },
+        {
+          "t": 24.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4762,
+          "visible": true
+        },
+        {
+          "t": 24.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.893,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-local animates opacity over 0.55s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 51,
+      "selector": "#local-house",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 24.3,
+      "end": 25.1,
+      "duration": 0.8,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 24.433,
+          "x": 222,
+          "y": 348,
+          "w": 1472,
+          "h": 542,
+          "opacity": 0.1951,
+          "visible": true
+        },
+        {
+          "t": 24.7,
+          "x": 194,
+          "y": 338,
+          "w": 1528,
+          "h": 562,
+          "opacity": 0.7071,
+          "visible": true
+        },
+        {
+          "t": 24.967,
+          "x": 180,
+          "y": 333,
+          "w": 1556,
+          "h": 573,
+          "opacity": 0.9659,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#local-house animates scale+transformOrigin+opacity over 0.80s (sine.out). moves 15px up and 42px left. opacity 0.2→1.0. scales. width 1472→1556px. height 542→573px. ends at (180, 333) 1556×573px. Overlaps another animated element."
+    },
+    {
+      "index": 52,
+      "selector": "#local-server",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 24.58,
+      "end": 25.33,
+      "duration": 0.75,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 24.705,
+          "x": 267,
+          "y": 553,
+          "w": 508,
+          "h": 300,
+          "opacity": 0.4073,
+          "visible": true
+        },
+        {
+          "t": 24.955,
+          "x": 292,
+          "y": 553,
+          "w": 508,
+          "h": 300,
+          "opacity": 0.8521,
+          "visible": true
+        },
+        {
+          "t": 25.205,
+          "x": 300,
+          "y": 553,
+          "w": 508,
+          "h": 300,
+          "opacity": 0.9948,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-server animates x+opacity over 0.75s (power2.out). moves 33px right. opacity 0.4→1.0. ends at (300, 553) 508×300px."
+    },
+    {
+      "index": 53,
+      "selector": "#local-heading",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 24.6,
+      "end": 25.35,
+      "duration": 0.75,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 24.725,
+          "x": 116,
+          "y": 128,
+          "w": 844,
+          "h": 100,
+          "opacity": 0.4358,
+          "visible": true
+        },
+        {
+          "t": 24.975,
+          "x": 116,
+          "y": 106,
+          "w": 844,
+          "h": 100,
+          "opacity": 0.9318,
+          "visible": true
+        },
+        {
+          "t": 25.225,
+          "x": 116,
+          "y": 103,
+          "w": 844,
+          "h": 100,
+          "opacity": 0.9984,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-heading animates y+opacity over 0.75s (power3.out). moves 25px up. opacity 0.4→1.0. ends at (116, 103) 844×100px."
+    },
+    {
+      "index": 54,
+      "selector": "#local-tablet",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 24.8,
+      "end": 25.68,
+      "duration": 0.88,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 24.947,
+          "x": 1185,
+          "y": 556,
+          "w": 400,
+          "h": 305,
+          "opacity": 0.6466,
+          "visible": true
+        },
+        {
+          "t": 25.24,
+          "x": 1164,
+          "y": 556,
+          "w": 400,
+          "h": 305,
+          "opacity": 0.9749,
+          "visible": true
+        },
+        {
+          "t": 25.533,
+          "x": 1162,
+          "y": 556,
+          "w": 400,
+          "h": 305,
+          "opacity": 0.9991,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-tablet animates x+opacity over 0.88s (expo.out). moves 23px left. opacity 0.6→1.0. ends at (1162, 556) 400×305px."
+    },
+    {
+      "index": 55,
+      "selector": "#local-qualifier",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 25.1,
+      "end": 25.78,
+      "duration": 0.68,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 25.213,
+          "x": 608,
+          "y": 479,
+          "w": 703,
+          "h": 48,
+          "opacity": 0.229,
+          "visible": true
+        },
+        {
+          "t": 25.44,
+          "x": 608,
+          "y": 479,
+          "w": 703,
+          "h": 48,
+          "opacity": 0.6961,
+          "visible": true
+        },
+        {
+          "t": 25.667,
+          "x": 608,
+          "y": 479,
+          "w": 703,
+          "h": 48,
+          "opacity": 0.9659,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-qualifier animates opacity over 0.68s (sine.out). opacity 0.2→1.0. ends at (608, 479) 703×48px."
+    },
+    {
+      "index": 56,
+      "selector": "#local-path",
+      "targets": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 25.4,
+      "end": 26.05,
+      "duration": 0.65,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 25.508,
+          "x": 808,
+          "y": 705,
+          "w": 139,
+          "h": 8,
+          "opacity": 0.3942,
+          "visible": true
+        },
+        {
+          "t": 25.725,
+          "x": 808,
+          "y": 705,
+          "w": 299,
+          "h": 8,
+          "opacity": 0.8439,
+          "visible": true
+        },
+        {
+          "t": 25.942,
+          "x": 808,
+          "y": 705,
+          "w": 352,
+          "h": 8,
+          "opacity": 0.9942,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-path animates scaleX+transformOrigin+opacity over 0.65s (power2.out). opacity 0.4→1.0. scales. width 139→352px. ends at (808, 705) 352×8px."
+    },
+    {
+      "index": 57,
+      "selector": "#local-benefit",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 25.6,
+      "end": 26.35,
+      "duration": 0.75,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 25.725,
+          "x": 480,
+          "y": 978,
+          "w": 960,
+          "h": 59,
+          "opacity": 0.4358,
+          "visible": true
+        },
+        {
+          "t": 25.975,
+          "x": 480,
+          "y": 956,
+          "w": 960,
+          "h": 59,
+          "opacity": 0.9318,
+          "visible": true
+        },
+        {
+          "t": 26.225,
+          "x": 480,
+          "y": 953,
+          "w": 960,
+          "h": 59,
+          "opacity": 0.9984,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-benefit animates y+opacity over 0.75s (power3.out). moves 25px up. opacity 0.4→1.0. ends at (480, 953) 960×59px."
+    },
+    {
+      "index": 58,
+      "selector": "#local-packet",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 26.2,
+      "end": 26.55,
+      "duration": 0.35,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 26.258,
+          "x": 808,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.149,
+          "visible": true
+        },
+        {
+          "t": 26.375,
+          "x": 808,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.6802,
+          "visible": true
+        },
+        {
+          "t": 26.492,
+          "x": 808,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.9309,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#local-packet animates opacity over 0.35s (sine.out). opacity 0.1→0.9. ends at (808, 700) 18×18px."
+    },
+    {
+      "index": 59,
+      "selector": "#local-packet",
+      "targets": 1,
+      "props": [
+        "x"
+      ],
+      "start": 26.55,
+      "end": 29.75,
+      "duration": 3.2,
+      "ease": "none",
+      "bboxes": [
+        {
+          "t": 27.083,
+          "x": 917,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 28.15,
+          "x": 1141,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 29.217,
+          "x": 1029,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "paced-slow"
+      ],
+      "summary": "#local-packet animates x over 3.20s (none). moves 112px right. ends at (1029, 700) 18×18px. FLAGS: paced-slow."
+    },
+    {
+      "index": 60,
+      "selector": "#scene-local",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 30,
+      "end": 30.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 30.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9642,
+          "visible": true
+        },
+        {
+          "t": 30.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5238,
+          "visible": true
+        },
+        {
+          "t": 30.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.107,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-local animates opacity over 0.55s (sine.inOut). opacity 1.0→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 61,
+      "selector": "#scene-remote",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 30,
+      "end": 30.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 30.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0358,
+          "visible": true
+        },
+        {
+          "t": 30.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4762,
+          "visible": true
+        },
+        {
+          "t": 30.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.893,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-remote animates opacity over 0.55s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 62,
+      "selector": "#remote-house",
+      "targets": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 30.3,
+      "end": 31.18,
+      "duration": 0.88,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 30.447,
+          "x": 141,
+          "y": 368,
+          "w": 611,
+          "h": 479,
+          "opacity": 0.2358,
+          "visible": true
+        },
+        {
+          "t": 30.74,
+          "x": 131,
+          "y": 359,
+          "w": 632,
+          "h": 495,
+          "opacity": 0.6986,
+          "visible": true
+        },
+        {
+          "t": 31.033,
+          "x": 125,
+          "y": 355,
+          "w": 644,
+          "h": 504,
+          "opacity": 0.9488,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-house animates scale+transformOrigin+opacity over 0.88s (sine.out). moves 13px up and 16px left. opacity 0.2→0.9. scales. width 611→644px. height 479→504px. ends at (125, 355) 644×504px."
+    },
+    {
+      "index": 63,
+      "selector": "#remote-server",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 30.53,
+      "end": 31.28,
+      "duration": 0.75,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 30.655,
+          "x": 184,
+          "y": 559,
+          "w": 429,
+          "h": 254,
+          "opacity": 0.359,
+          "visible": true
+        },
+        {
+          "t": 30.905,
+          "x": 213,
+          "y": 559,
+          "w": 429,
+          "h": 254,
+          "opacity": 0.8699,
+          "visible": true
+        },
+        {
+          "t": 31.155,
+          "x": 220,
+          "y": 559,
+          "w": 429,
+          "h": 254,
+          "opacity": 0.9925,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-server animates x+opacity over 0.75s (power2.out). moves 36px right. opacity 0.4→1.0. ends at (220, 559) 429×254px."
+    },
+    {
+      "index": 64,
+      "selector": "#remote-heading",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 30.6,
+      "end": 31.35,
+      "duration": 0.75,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 30.725,
+          "x": 116,
+          "y": 143,
+          "w": 1410,
+          "h": 87,
+          "opacity": 0.4358,
+          "visible": true
+        },
+        {
+          "t": 30.975,
+          "x": 116,
+          "y": 121,
+          "w": 1410,
+          "h": 87,
+          "opacity": 0.9318,
+          "visible": true
+        },
+        {
+          "t": 31.225,
+          "x": 116,
+          "y": 118,
+          "w": 1410,
+          "h": 87,
+          "opacity": 0.9984,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-heading animates y+opacity over 0.75s (power3.out). moves 25px up. opacity 0.4→1.0. ends at (116, 118) 1410×87px."
+    },
+    {
+      "index": 65,
+      "selector": "#remote-tablet",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 30.7,
+      "end": 31.5,
+      "duration": 0.8,
+      "ease": "expo.out",
+      "bboxes": [
+        {
+          "t": 30.833,
+          "x": 1205,
+          "y": 438,
+          "w": 580,
+          "h": 443,
+          "opacity": 0.576,
+          "visible": true
+        },
+        {
+          "t": 31.1,
+          "x": 1180,
+          "y": 438,
+          "w": 580,
+          "h": 443,
+          "opacity": 0.9766,
+          "visible": true
+        },
+        {
+          "t": 31.367,
+          "x": 1178,
+          "y": 438,
+          "w": 580,
+          "h": 443,
+          "opacity": 0.9995,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-tablet animates x+opacity over 0.80s (expo.out). moves 27px left. opacity 0.6→1.0. ends at (1178, 438) 580×443px."
+    },
+    {
+      "index": 66,
+      "selector": "#remote-path",
+      "targets": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 31,
+      "end": 31.78,
+      "duration": 0.78,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 31.13,
+          "x": 770,
+          "y": 655,
+          "w": 138,
+          "h": 8,
+          "opacity": 0.3374,
+          "visible": true
+        },
+        {
+          "t": 31.39,
+          "x": 770,
+          "y": 655,
+          "w": 347,
+          "h": 8,
+          "opacity": 0.8512,
+          "visible": true
+        },
+        {
+          "t": 31.65,
+          "x": 770,
+          "y": 655,
+          "w": 405,
+          "h": 8,
+          "opacity": 0.9934,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-path animates scaleX+transformOrigin+opacity over 0.78s (power2.out). opacity 0.3→1.0. scales. width 138→405px. ends at (770, 655) 405×8px."
+    },
+    {
+      "index": 67,
+      "selector": "#internet-label",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 31.25,
+      "end": 32,
+      "duration": 0.75,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 31.375,
+          "x": 893,
+          "y": 554,
+          "w": 162,
+          "h": 48,
+          "opacity": 0.2419,
+          "visible": true
+        },
+        {
+          "t": 31.625,
+          "x": 893,
+          "y": 554,
+          "w": 162,
+          "h": 48,
+          "opacity": 0.6691,
+          "visible": true
+        },
+        {
+          "t": 31.875,
+          "x": 893,
+          "y": 554,
+          "w": 162,
+          "h": 48,
+          "opacity": 0.9613,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#internet-label animates opacity over 0.75s (sine.out). opacity 0.2→1.0. ends at (893, 554) 162×48px."
+    },
+    {
+      "index": 68,
+      "selector": "#upload-label",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 31.52,
+      "end": 32.12,
+      "duration": 0.6,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 31.62,
+          "x": 317,
+          "y": 949,
+          "w": 262,
+          "h": 44,
+          "opacity": 0.4358,
+          "visible": true
+        },
+        {
+          "t": 31.82,
+          "x": 317,
+          "y": 928,
+          "w": 262,
+          "h": 44,
+          "opacity": 0.9191,
+          "visible": true
+        },
+        {
+          "t": 32.02,
+          "x": 317,
+          "y": 924,
+          "w": 262,
+          "h": 44,
+          "opacity": 0.9984,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#upload-label animates y+opacity over 0.60s (power3.out). moves 25px up. opacity 0.4→1.0. ends at (317, 924) 262×44px."
+    },
+    {
+      "index": 69,
+      "selector": "#download-label",
+      "targets": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "start": 31.68,
+      "end": 32.33,
+      "duration": 0.65,
+      "ease": "power2.out",
+      "bboxes": [
+        {
+          "t": 31.788,
+          "x": 1257,
+          "y": 924,
+          "w": 353,
+          "h": 44,
+          "opacity": 0.349,
+          "visible": true
+        },
+        {
+          "t": 32.005,
+          "x": 1286,
+          "y": 924,
+          "w": 353,
+          "h": 44,
+          "opacity": 0.8691,
+          "visible": true
+        },
+        {
+          "t": 32.222,
+          "x": 1293,
+          "y": 924,
+          "w": 353,
+          "h": 44,
+          "opacity": 0.992,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#download-label animates x+opacity over 0.65s (power2.out). moves 36px right. opacity 0.3→1.0. ends at (1293, 924) 353×44px."
+    },
+    {
+      "index": 70,
+      "selector": "#remote-packet",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 32.2,
+      "end": 32.55,
+      "duration": 0.35,
+      "ease": "sine.out",
+      "bboxes": [
+        {
+          "t": 32.258,
+          "x": 770,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.149,
+          "visible": true
+        },
+        {
+          "t": 32.375,
+          "x": 770,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.6802,
+          "visible": true
+        },
+        {
+          "t": 32.492,
+          "x": 770,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.9309,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#remote-packet animates opacity over 0.35s (sine.out). opacity 0.1→0.9. ends at (770, 650) 18×18px."
+    },
+    {
+      "index": 71,
+      "selector": "#remote-packet",
+      "targets": 1,
+      "props": [
+        "x"
+      ],
+      "start": 32.55,
+      "end": 36.15,
+      "duration": 3.6,
+      "ease": "none",
+      "bboxes": [
+        {
+          "t": 33.15,
+          "x": 896,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 34.35,
+          "x": 1156,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        },
+        {
+          "t": 35.55,
+          "x": 1026,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 1,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "paced-slow"
+      ],
+      "summary": "#remote-packet animates x over 3.60s (none). moves 130px right. ends at (1026, 650) 18×18px. FLAGS: paced-slow."
+    },
+    {
+      "index": 72,
+      "selector": "#scene-remote",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 37,
+      "end": 37.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 37.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.9642,
+          "visible": true
+        },
+        {
+          "t": 37.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.5238,
+          "visible": true
+        },
+        {
+          "t": 37.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.107,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-remote animates opacity over 0.55s (sine.inOut). opacity 1.0→0.1. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 73,
+      "selector": "#scene-closing",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 37,
+      "end": 37.55,
+      "duration": 0.55,
+      "ease": "sine.inOut",
+      "bboxes": [
+        {
+          "t": 37.092,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.0358,
+          "visible": true
+        },
+        {
+          "t": 37.275,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.4762,
+          "visible": true
+        },
+        {
+          "t": 37.458,
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 0.893,
+          "visible": true
+        }
+      ],
+      "flags": [
+        "collision"
+      ],
+      "summary": "#scene-closing animates opacity over 0.55s (sine.inOut). fades in. ends at (0, 0) 1920×1080px. Overlaps another animated element."
+    },
+    {
+      "index": 74,
+      "selector": "#closing-ribbon",
+      "targets": 1,
+      "props": [
+        "scale",
+        "rotation",
+        "transformOrigin",
+        "opacity"
+      ],
+      "start": 37.2,
+      "end": 38.25,
+      "duration": 1.05,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 37.375,
+          "x": 736,
+          "y": 184,
+          "w": 448,
+          "h": 448,
+          "opacity": 0.4991,
+          "visible": true
+        },
+        {
+          "t": 37.725,
+          "x": 727,
+          "y": 175,
+          "w": 465,
+          "h": 465,
+          "opacity": 0.9247,
+          "visible": true
+        },
+        {
+          "t": 38.075,
+          "x": 726,
+          "y": 174,
+          "w": 468,
+          "h": 468,
+          "opacity": 0.9991,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#closing-ribbon animates scale+rotation+transformOrigin+opacity over 1.05s (power3.out). moves 10px up and 10px left. opacity 0.5→1.0. scales. width 448→468px. height 448→468px. ends at (726, 174) 468×468px."
+    },
+    {
+      "index": 75,
+      "selector": "#closing-title",
+      "targets": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "start": 37.62,
+      "end": 38.48,
+      "duration": 0.86,
+      "ease": "power3.out",
+      "bboxes": [
+        {
+          "t": 37.763,
+          "x": 513,
+          "y": 747,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.4318,
+          "visible": true
+        },
+        {
+          "t": 38.05,
+          "x": 513,
+          "y": 725,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.9272,
+          "visible": true
+        },
+        {
+          "t": 38.337,
+          "x": 513,
+          "y": 722,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.9992,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#closing-title animates y+opacity over 0.86s (power3.out). moves 25px up. opacity 0.4→1.0. ends at (513, 722) 895×146px."
+    },
+    {
+      "index": 76,
+      "selector": "#closing-ribbon",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 41.55,
+      "end": 42.7,
+      "duration": 1.15,
+      "ease": "sine.in",
+      "bboxes": [
+        {
+          "t": 41.742,
+          "x": 726,
+          "y": 174,
+          "w": 468,
+          "h": 468,
+          "opacity": 0.9688,
+          "visible": true
+        },
+        {
+          "t": 42.125,
+          "x": 726,
+          "y": 174,
+          "w": 468,
+          "h": 468,
+          "opacity": 0.7308,
+          "visible": true
+        },
+        {
+          "t": 42.508,
+          "x": 726,
+          "y": 174,
+          "w": 468,
+          "h": 468,
+          "opacity": 0.2698,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#closing-ribbon animates opacity over 1.15s (sine.in). opacity 1.0→0.3. ends at (726, 174) 468×468px."
+    },
+    {
+      "index": 77,
+      "selector": "#closing-title",
+      "targets": 1,
+      "props": [
+        "opacity"
+      ],
+      "start": 41.7,
+      "end": 42.8,
+      "duration": 1.1,
+      "ease": "power2.in",
+      "bboxes": [
+        {
+          "t": 41.883,
+          "x": 513,
+          "y": 722,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.9965,
+          "visible": true
+        },
+        {
+          "t": 42.25,
+          "x": 513,
+          "y": 722,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.886,
+          "visible": true
+        },
+        {
+          "t": 42.617,
+          "x": 513,
+          "y": 722,
+          "w": 895,
+          "h": 146,
+          "opacity": 0.4523,
+          "visible": true
+        }
+      ],
+      "flags": [],
+      "summary": "#closing-title animates opacity over 1.10s (power2.in). opacity 1.0→0.5. ends at (513, 722) 895×146px."
+    }
+  ],
+  "choreography": "Timeline (43.0s, each char ≈ 0.72s):\n  0s                                                    43s\n  ┼───────────────────────────────────────────────────────────┤\n  ██                                                            #opening-ribbon scale+rotation+transformOrigin+opacity\n  ██                                                            #opening-title x+opacity\n   ██                                                           #opening-mac x+opacity\n    ████                                                        #opening-mac scale+transformOrigin\n       ██                                                       #scene-opening opacity\n       ██                                                       #scene-server opacity\n       ███                                                      #computer scale+transformOrigin+opacity\n        ██                                                      #server-heading y+opacity\n        ██                                                      #server-copy x+opacity\n         ██                                                     #drive-cable scaleX+transformOrigin+opacity\n          ██                                                    #hard-drive x+opacity\n          ██                                                    #server-label opacity\n          ██                                                    #drive-label y+opacity\n           ██                                                   #day-night opacity\n            ████                                                #day-night-progress scaleX+transformOrigin+opacity\n               ██                                               #scene-server opacity\n               ██                                               #scene-android opacity\n                ██                                              #android-screen x+opacity\n                ██                                              #android-ribbon scale+transformOrigin+opacity\n                ██                                              #android-heading x+opacity\n                   ██                                           #scene-android opacity\n                   ██                                           #scene-ipad opacity\n                   ██                                           #content-ipad scale+transformOrigin\n                   ██                                           #ipad-screen x+opacity\n                    █                                           #ipad-ribbon scale+transformOrigin+opacity\n                    █                                           #ipad-heading x+opacity\n                       █                                        #scene-ipad opacity\n                       █                                        #scene-mac opacity\n                       ██                                       #content-mac scale+transformOrigin\n                       ██                                       #mac-screen x+opacity\n                       ██                                       #mac-ribbon scale+transformOrigin+opacity\n                       ██                                       #mac-heading x+opacity\n                          ██                                    #scene-mac opacity\n                          ██                                    #scene-tv opacity\n                          ██                                    #content-tv scale+transformOrigin\n                           █                                    #tv-screen x+opacity\n                           ██                                   #tv-ribbon scale+transformOrigin+opacity\n                           ██                                   #tv-heading x+opacity\n                              ██                                #scene-tv opacity\n                              ██                                #scene-family opacity\n                              ██                                #family-server scale+transformOrigin+opacity\n                              ██                                #family-tailscale x+opacity\n                               █                                #family-heading y+opacity\n                               ██                               #family-paths scaleX+transformOrigin+opacity\n                               ██                               #family-mac y+opacity\n                               ██                               #family-ipad x+opacity\n                               ██                               #family-phone scale+transformOrigin+opacity\n                               ██                               #family-tv x+opacity\n                                   ██                           #scene-family opacity\n                                   ██                           #scene-local opacity\n                                   ███                          #local-house scale+transformOrigin+opacity\n                                    ██                          #local-server x+opacity\n                                    ██                          #local-heading y+opacity\n                                    ██                          #local-tablet x+opacity\n                                     █                          #local-qualifier opacity\n                                     ██                         #local-path scaleX+transformOrigin+opacity\n                                     ██                         #local-benefit y+opacity\n                                      ██                        #local-packet opacity\n                                       █████                    #local-packet x\n                                           ██                   #scene-local opacity\n                                           ██                   #scene-remote opacity\n                                            ██                  #remote-house scale+transformOrigin+opacity\n                                            ██                  #remote-server x+opacity\n                                            ██                  #remote-heading y+opacity\n                                            ██                  #remote-tablet x+opacity\n                                             ██                 #remote-path scaleX+transformOrigin+opacity\n                                             ██                 #internet-label opacity\n                                             ██                 #upload-label y+opacity\n                                              ██                #download-label x+opacity\n                                              ██                #remote-packet opacity\n                                               ██████           #remote-packet x\n                                                     ██         #scene-remote opacity\n                                                     ██         #scene-closing opacity\n                                                     ███        #closing-ribbon scale+rotation+transformOrigin+opacity\n                                                      ██        #closing-title y+opacity\n                                                           ███  #closing-ribbon opacity\n                                                            ██  #closing-title opacity",
+  "density": [
+    {
+      "t": 0,
+      "activeTweens": 2
+    },
+    {
+      "t": 0.5,
+      "activeTweens": 3
+    },
+    {
+      "t": 1,
+      "activeTweens": 3
+    },
+    {
+      "t": 1.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 2,
+      "activeTweens": 1
+    },
+    {
+      "t": 2.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 3,
+      "activeTweens": 1
+    },
+    {
+      "t": 3.5,
+      "activeTweens": 3
+    },
+    {
+      "t": 4,
+      "activeTweens": 3
+    },
+    {
+      "t": 4.5,
+      "activeTweens": 5
+    },
+    {
+      "t": 5,
+      "activeTweens": 3
+    },
+    {
+      "t": 5.5,
+      "activeTweens": 3
+    },
+    {
+      "t": 6,
+      "activeTweens": 4
+    },
+    {
+      "t": 6.5,
+      "activeTweens": 4
+    },
+    {
+      "t": 7,
+      "activeTweens": 1
+    },
+    {
+      "t": 7.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 8,
+      "activeTweens": 1
+    },
+    {
+      "t": 8.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 9,
+      "activeTweens": 1
+    },
+    {
+      "t": 9.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 10,
+      "activeTweens": 4
+    },
+    {
+      "t": 10.5,
+      "activeTweens": 5
+    },
+    {
+      "t": 11,
+      "activeTweens": 1
+    },
+    {
+      "t": 11.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 12,
+      "activeTweens": 0
+    },
+    {
+      "t": 12.5,
+      "activeTweens": 5
+    },
+    {
+      "t": 13,
+      "activeTweens": 6
+    },
+    {
+      "t": 13.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 14,
+      "activeTweens": 0
+    },
+    {
+      "t": 14.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 15,
+      "activeTweens": 4
+    },
+    {
+      "t": 15.5,
+      "activeTweens": 6
+    },
+    {
+      "t": 16,
+      "activeTweens": 3
+    },
+    {
+      "t": 16.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 17,
+      "activeTweens": 0
+    },
+    {
+      "t": 17.5,
+      "activeTweens": 4
+    },
+    {
+      "t": 18,
+      "activeTweens": 6
+    },
+    {
+      "t": 18.5,
+      "activeTweens": 3
+    },
+    {
+      "t": 19,
+      "activeTweens": 0
+    },
+    {
+      "t": 19.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 20,
+      "activeTweens": 2
+    },
+    {
+      "t": 20.5,
+      "activeTweens": 7
+    },
+    {
+      "t": 21,
+      "activeTweens": 8
+    },
+    {
+      "t": 21.5,
+      "activeTweens": 5
+    },
+    {
+      "t": 22,
+      "activeTweens": 0
+    },
+    {
+      "t": 22.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 23,
+      "activeTweens": 0
+    },
+    {
+      "t": 23.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 24,
+      "activeTweens": 3
+    },
+    {
+      "t": 24.5,
+      "activeTweens": 6
+    },
+    {
+      "t": 25,
+      "activeTweens": 6
+    },
+    {
+      "t": 25.5,
+      "activeTweens": 4
+    },
+    {
+      "t": 26,
+      "activeTweens": 3
+    },
+    {
+      "t": 26.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 27,
+      "activeTweens": 1
+    },
+    {
+      "t": 27.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 28,
+      "activeTweens": 1
+    },
+    {
+      "t": 28.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 29,
+      "activeTweens": 1
+    },
+    {
+      "t": 29.5,
+      "activeTweens": 3
+    },
+    {
+      "t": 30,
+      "activeTweens": 3
+    },
+    {
+      "t": 30.5,
+      "activeTweens": 7
+    },
+    {
+      "t": 31,
+      "activeTweens": 6
+    },
+    {
+      "t": 31.5,
+      "activeTweens": 5
+    },
+    {
+      "t": 32,
+      "activeTweens": 4
+    },
+    {
+      "t": 32.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 33,
+      "activeTweens": 1
+    },
+    {
+      "t": 33.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 34,
+      "activeTweens": 1
+    },
+    {
+      "t": 34.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 35,
+      "activeTweens": 1
+    },
+    {
+      "t": 35.5,
+      "activeTweens": 1
+    },
+    {
+      "t": 36,
+      "activeTweens": 1
+    },
+    {
+      "t": 36.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 37,
+      "activeTweens": 3
+    },
+    {
+      "t": 37.5,
+      "activeTweens": 4
+    },
+    {
+      "t": 38,
+      "activeTweens": 2
+    },
+    {
+      "t": 38.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 39,
+      "activeTweens": 0
+    },
+    {
+      "t": 39.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 40,
+      "activeTweens": 0
+    },
+    {
+      "t": 40.5,
+      "activeTweens": 0
+    },
+    {
+      "t": 41,
+      "activeTweens": 0
+    },
+    {
+      "t": 41.5,
+      "activeTweens": 2
+    },
+    {
+      "t": 42,
+      "activeTweens": 2
+    },
+    {
+      "t": 42.5,
+      "activeTweens": 2
+    }
+  ],
+  "staggers": [],
+  "elements": {
+    "#opening-ribbon": {
+      "firstAppears": 0.2,
+      "lastAnimates": 1.25,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "rotation",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 260,
+        "w": 346,
+        "h": 346
+      }
+    },
+    "#opening-title": {
+      "firstAppears": 0.45,
+      "lastAnimates": 1.25,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 835,
+        "w": 833,
+        "h": 136
+      }
+    },
+    "#opening-mac": {
+      "firstAppears": 0.72,
+      "lastAnimates": 3.7,
+      "tweenCount": 2,
+      "props": [
+        "x",
+        "opacity",
+        "scale",
+        "transformOrigin"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 622,
+        "y": 131,
+        "w": 1212,
+        "h": 681
+      }
+    },
+    "#scene-opening": {
+      "firstAppears": 4,
+      "lastAnimates": 4.55,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#scene-server": {
+      "firstAppears": 4,
+      "lastAnimates": 10.55,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#computer": {
+      "firstAppears": 4.28,
+      "lastAnimates": 5.22,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 429,
+        "y": 453,
+        "w": 481,
+        "h": 247
+      }
+    },
+    "#server-heading": {
+      "firstAppears": 4.6,
+      "lastAnimates": 5.26,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 148,
+        "w": 1247,
+        "h": 93
+      }
+    },
+    "#server-copy": {
+      "firstAppears": 4.82,
+      "lastAnimates": 5.54,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 291,
+        "w": 784,
+        "h": 53
+      }
+    },
+    "#drive-cable": {
+      "firstAppears": 5.55,
+      "lastAnimates": 6.25,
+      "tweenCount": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 906,
+        "y": 600,
+        "w": 176,
+        "h": 156
+      }
+    },
+    "#hard-drive": {
+      "firstAppears": 5.8,
+      "lastAnimates": 6.55,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1084,
+        "y": 643,
+        "w": 170,
+        "h": 298
+      }
+    },
+    "#server-label": {
+      "firstAppears": 6.05,
+      "lastAnimates": 6.85,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 537,
+        "y": 748,
+        "w": 263,
+        "h": 46
+      }
+    },
+    "#drive-label": {
+      "firstAppears": 6.2,
+      "lastAnimates": 6.84,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1044,
+        "y": 969,
+        "w": 244,
+        "h": 40
+      }
+    },
+    "#day-night": {
+      "firstAppears": 6.65,
+      "lastAnimates": 7.35,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 96,
+        "y": 844,
+        "w": 262,
+        "h": 112
+      }
+    },
+    "#day-night-progress": {
+      "firstAppears": 7.8,
+      "lastAnimates": 9.35,
+      "tweenCount": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 222,
+        "y": 897,
+        "w": 54,
+        "h": 6
+      }
+    },
+    "#scene-android": {
+      "firstAppears": 10,
+      "lastAnimates": 13.02,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#android-screen": {
+      "firstAppears": 10.2,
+      "lastAnimates": 10.8,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1144,
+        "y": 148,
+        "w": 412,
+        "h": 784
+      }
+    },
+    "#android-ribbon": {
+      "firstAppears": 10.3,
+      "lastAnimates": 10.84,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 132,
+        "y": 492,
+        "w": 207,
+        "h": 207
+      }
+    },
+    "#android-heading": {
+      "firstAppears": 10.6,
+      "lastAnimates": 11.04,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 294,
+        "w": 725,
+        "h": 102
+      }
+    },
+    "#scene-ipad": {
+      "firstAppears": 12.6,
+      "lastAnimates": 15.62,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#content-ipad": {
+      "firstAppears": 12.6,
+      "lastAnimates": 13.2,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#ipad-screen": {
+      "firstAppears": 12.8,
+      "lastAnimates": 13.4,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 710,
+        "y": 148,
+        "w": 1008,
+        "h": 769
+      }
+    },
+    "#ipad-ribbon": {
+      "firstAppears": 12.9,
+      "lastAnimates": 13.44,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 132,
+        "y": 492,
+        "w": 207,
+        "h": 207
+      }
+    },
+    "#ipad-heading": {
+      "firstAppears": 13.05,
+      "lastAnimates": 13.49,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 294,
+        "w": 215,
+        "h": 102
+      }
+    },
+    "#scene-mac": {
+      "firstAppears": 15.2,
+      "lastAnimates": 18.22,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#content-mac": {
+      "firstAppears": 15.2,
+      "lastAnimates": 15.8,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#mac-screen": {
+      "firstAppears": 15.4,
+      "lastAnimates": 16,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 461,
+        "y": 212,
+        "w": 1357,
+        "h": 762
+      }
+    },
+    "#mac-ribbon": {
+      "firstAppears": 15.52,
+      "lastAnimates": 16.07,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 124,
+        "y": 376,
+        "w": 150,
+        "h": 150
+      }
+    },
+    "#mac-heading": {
+      "firstAppears": 15.65,
+      "lastAnimates": 16.09,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 90,
+        "w": 198,
+        "h": 102
+      }
+    },
+    "#scene-tv": {
+      "firstAppears": 17.8,
+      "lastAnimates": 20.82,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#content-tv": {
+      "firstAppears": 17.8,
+      "lastAnimates": 18.4,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#tv-screen": {
+      "firstAppears": 18,
+      "lastAnimates": 18.6,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 504,
+        "y": 202,
+        "w": 1284,
+        "h": 777
+      }
+    },
+    "#tv-ribbon": {
+      "firstAppears": 18.12,
+      "lastAnimates": 18.67,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 124,
+        "y": 376,
+        "w": 150,
+        "h": 150
+      }
+    },
+    "#tv-heading": {
+      "firstAppears": 18.25,
+      "lastAnimates": 18.69,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 101,
+        "w": 945,
+        "h": 85
+      }
+    },
+    "#scene-family": {
+      "firstAppears": 20.4,
+      "lastAnimates": 24.55,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#family-server": {
+      "firstAppears": 20.6,
+      "lastAnimates": 21.15,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 284,
+        "y": 360,
+        "w": 231,
+        "h": 161
+      }
+    },
+    "#family-tailscale": {
+      "firstAppears": 20.7,
+      "lastAnimates": 21.25,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 701,
+        "y": 382,
+        "w": 595,
+        "h": 55
+      }
+    },
+    "#family-heading": {
+      "firstAppears": 20.85,
+      "lastAnimates": 21.35,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 107,
+        "w": 1393,
+        "h": 89
+      }
+    },
+    "#family-paths": {
+      "firstAppears": 20.85,
+      "lastAnimates": 21.57,
+      "tweenCount": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 372,
+        "y": 412,
+        "w": 1245,
+        "h": 220
+      }
+    },
+    "#family-mac": {
+      "firstAppears": 20.97,
+      "lastAnimates": 21.59,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 96,
+        "y": 618,
+        "w": 551,
+        "h": 380
+      }
+    },
+    "#family-ipad": {
+      "firstAppears": 21.07,
+      "lastAnimates": 21.69,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 686,
+        "y": 588,
+        "w": 408,
+        "h": 410
+      }
+    },
+    "#family-phone": {
+      "firstAppears": 21.17,
+      "lastAnimates": 21.79,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1141,
+        "y": 565,
+        "w": 233,
+        "h": 433
+      }
+    },
+    "#family-tv": {
+      "firstAppears": 21.27,
+      "lastAnimates": 21.89,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1436,
+        "y": 632,
+        "w": 380,
+        "h": 337
+      }
+    },
+    "#scene-local": {
+      "firstAppears": 24,
+      "lastAnimates": 30.55,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#local-house": {
+      "firstAppears": 24.3,
+      "lastAnimates": 25.1,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 180,
+        "y": 333,
+        "w": 1556,
+        "h": 573
+      }
+    },
+    "#local-server": {
+      "firstAppears": 24.58,
+      "lastAnimates": 25.33,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 300,
+        "y": 553,
+        "w": 508,
+        "h": 300
+      }
+    },
+    "#local-heading": {
+      "firstAppears": 24.6,
+      "lastAnimates": 25.35,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 103,
+        "w": 844,
+        "h": 100
+      }
+    },
+    "#local-tablet": {
+      "firstAppears": 24.8,
+      "lastAnimates": 25.68,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1162,
+        "y": 556,
+        "w": 400,
+        "h": 305
+      }
+    },
+    "#local-qualifier": {
+      "firstAppears": 25.1,
+      "lastAnimates": 25.78,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 608,
+        "y": 479,
+        "w": 703,
+        "h": 48
+      }
+    },
+    "#local-path": {
+      "firstAppears": 25.4,
+      "lastAnimates": 26.05,
+      "tweenCount": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 808,
+        "y": 705,
+        "w": 352,
+        "h": 8
+      }
+    },
+    "#local-benefit": {
+      "firstAppears": 25.6,
+      "lastAnimates": 26.35,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 480,
+        "y": 953,
+        "w": 960,
+        "h": 59
+      }
+    },
+    "#local-packet": {
+      "firstAppears": 26.2,
+      "lastAnimates": 29.75,
+      "tweenCount": 2,
+      "props": [
+        "opacity",
+        "x"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1029,
+        "y": 700,
+        "w": 18,
+        "h": 18
+      }
+    },
+    "#scene-remote": {
+      "firstAppears": 30,
+      "lastAnimates": 37.55,
+      "tweenCount": 2,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#remote-house": {
+      "firstAppears": 30.3,
+      "lastAnimates": 31.18,
+      "tweenCount": 1,
+      "props": [
+        "scale",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 125,
+        "y": 355,
+        "w": 644,
+        "h": 504
+      }
+    },
+    "#remote-server": {
+      "firstAppears": 30.53,
+      "lastAnimates": 31.28,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 220,
+        "y": 559,
+        "w": 429,
+        "h": 254
+      }
+    },
+    "#remote-heading": {
+      "firstAppears": 30.6,
+      "lastAnimates": 31.35,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 116,
+        "y": 118,
+        "w": 1410,
+        "h": 87
+      }
+    },
+    "#remote-tablet": {
+      "firstAppears": 30.7,
+      "lastAnimates": 31.5,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1178,
+        "y": 438,
+        "w": 580,
+        "h": 443
+      }
+    },
+    "#remote-path": {
+      "firstAppears": 31,
+      "lastAnimates": 31.78,
+      "tweenCount": 1,
+      "props": [
+        "scaleX",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 770,
+        "y": 655,
+        "w": 405,
+        "h": 8
+      }
+    },
+    "#internet-label": {
+      "firstAppears": 31.25,
+      "lastAnimates": 32,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 893,
+        "y": 554,
+        "w": 162,
+        "h": 48
+      }
+    },
+    "#upload-label": {
+      "firstAppears": 31.52,
+      "lastAnimates": 32.12,
+      "tweenCount": 1,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 317,
+        "y": 924,
+        "w": 262,
+        "h": 44
+      }
+    },
+    "#download-label": {
+      "firstAppears": 31.68,
+      "lastAnimates": 32.33,
+      "tweenCount": 1,
+      "props": [
+        "x",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1293,
+        "y": 924,
+        "w": 353,
+        "h": 44
+      }
+    },
+    "#remote-packet": {
+      "firstAppears": 32.2,
+      "lastAnimates": 36.15,
+      "tweenCount": 2,
+      "props": [
+        "opacity",
+        "x"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 1026,
+        "y": 650,
+        "w": 18,
+        "h": 18
+      }
+    },
+    "#scene-closing": {
+      "firstAppears": 37,
+      "lastAnimates": 37.55,
+      "tweenCount": 1,
+      "props": [
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    "#closing-ribbon": {
+      "firstAppears": 37.2,
+      "lastAnimates": 42.7,
+      "tweenCount": 2,
+      "props": [
+        "scale",
+        "rotation",
+        "transformOrigin",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 726,
+        "y": 174,
+        "w": 468,
+        "h": 468
+      }
+    },
+    "#closing-title": {
+      "firstAppears": 37.62,
+      "lastAnimates": 42.8,
+      "tweenCount": 2,
+      "props": [
+        "y",
+        "opacity"
+      ],
+      "endsVisible": true,
+      "finalPosition": {
+        "x": 513,
+        "y": 722,
+        "w": 895,
+        "h": 146
+      }
+    }
+  },
+  "deadZones": [
+    {
+      "start": 11.5,
+      "end": 12.5,
+      "duration": 1,
+      "note": "No animation for 1.0s. Intentional hold or missing entrance?"
+    },
+    {
+      "start": 13.5,
+      "end": 15,
+      "duration": 1.5,
+      "note": "No animation for 1.5s. Intentional hold or missing entrance?"
+    },
+    {
+      "start": 16.5,
+      "end": 17.5,
+      "duration": 1,
+      "note": "No animation for 1.0s. Intentional hold or missing entrance?"
+    },
+    {
+      "start": 19,
+      "end": 20,
+      "duration": 1,
+      "note": "No animation for 1.0s. Intentional hold or missing entrance?"
+    },
+    {
+      "start": 22,
+      "end": 23.5,
+      "duration": 1.5,
+      "note": "No animation for 1.5s. Intentional hold or missing entrance?"
+    },
+    {
+      "start": 38.5,
+      "end": 41.5,
+      "duration": 3,
+      "note": "No animation for 3.0s. Intentional hold or missing entrance?"
+    }
+  ],
+  "snapshots": [
+    {
+      "t": 0,
+      "visibleElements": 12,
+      "animatingNow": [],
+      "elements": [
+        {
+          "id": "root",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "scene-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-server",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-ipad",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-mac",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-tv",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-local",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "t": 10.75,
+      "visibleElements": 27,
+      "animatingNow": [
+        "#android-screen",
+        "#android-ribbon",
+        "#android-heading"
+      ],
+      "elements": [
+        {
+          "id": "root",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "opening-ribbon",
+          "x": 116,
+          "y": 260,
+          "w": 346,
+          "h": 346,
+          "opacity": 1
+        },
+        {
+          "id": "opening-title",
+          "x": 116,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 1
+        },
+        {
+          "id": "opening-mac",
+          "x": 621,
+          "y": 131,
+          "w": 1214,
+          "h": 682,
+          "opacity": 1
+        },
+        {
+          "id": "content-server",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "server-heading",
+          "x": 116,
+          "y": 148,
+          "w": 1247,
+          "h": 93,
+          "opacity": 1
+        },
+        {
+          "id": "server-copy",
+          "x": 116,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 1
+        },
+        {
+          "id": "computer",
+          "x": 428,
+          "y": 453,
+          "w": 483,
+          "h": 248,
+          "opacity": 1
+        },
+        {
+          "id": "drive-cable",
+          "x": 906,
+          "y": 600,
+          "w": 178,
+          "h": 156,
+          "opacity": 1
+        },
+        {
+          "id": "hard-drive",
+          "x": 1084,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 1
+        },
+        {
+          "id": "server-label",
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 1
+        },
+        {
+          "id": "drive-label",
+          "x": 1044,
+          "y": 969,
+          "w": 244,
+          "h": 40,
+          "opacity": 1
+        },
+        {
+          "id": "day-night",
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 1
+        },
+        {
+          "id": "day-night-progress",
+          "x": 222,
+          "y": 897,
+          "w": 54,
+          "h": 6,
+          "opacity": 1
+        },
+        {
+          "id": "scene-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "android-heading",
+          "x": 97,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 0.66
+        },
+        {
+          "id": "android-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 207,
+          "h": 207,
+          "opacity": 0.95
+        },
+        {
+          "id": "android-screen",
+          "x": 1144,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 1
+        },
+        {
+          "id": "content-ipad",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-mac",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-tv",
+          "x": 32,
+          "y": 14,
+          "w": 1872,
+          "h": 1053,
+          "opacity": 1
+        },
+        {
+          "id": "content-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-local",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "t": 21.5,
+      "visibleElements": 44,
+      "animatingNow": [
+        "#family-paths",
+        "#family-mac",
+        "#family-ipad",
+        "#family-phone",
+        "#family-tv"
+      ],
+      "elements": [
+        {
+          "id": "root",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "opening-ribbon",
+          "x": 116,
+          "y": 260,
+          "w": 346,
+          "h": 346,
+          "opacity": 1
+        },
+        {
+          "id": "opening-title",
+          "x": 116,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 1
+        },
+        {
+          "id": "opening-mac",
+          "x": 621,
+          "y": 131,
+          "w": 1214,
+          "h": 682,
+          "opacity": 1
+        },
+        {
+          "id": "content-server",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "server-heading",
+          "x": 116,
+          "y": 148,
+          "w": 1247,
+          "h": 93,
+          "opacity": 1
+        },
+        {
+          "id": "server-copy",
+          "x": 116,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 1
+        },
+        {
+          "id": "computer",
+          "x": 428,
+          "y": 453,
+          "w": 483,
+          "h": 248,
+          "opacity": 1
+        },
+        {
+          "id": "drive-cable",
+          "x": 906,
+          "y": 600,
+          "w": 178,
+          "h": 156,
+          "opacity": 1
+        },
+        {
+          "id": "hard-drive",
+          "x": 1084,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 1
+        },
+        {
+          "id": "server-label",
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 1
+        },
+        {
+          "id": "drive-label",
+          "x": 1044,
+          "y": 969,
+          "w": 244,
+          "h": 40,
+          "opacity": 1
+        },
+        {
+          "id": "day-night",
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 1
+        },
+        {
+          "id": "day-night-progress",
+          "x": 222,
+          "y": 897,
+          "w": 54,
+          "h": 6,
+          "opacity": 1
+        },
+        {
+          "id": "content-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "android-heading",
+          "x": 116,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "android-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "android-screen",
+          "x": 1144,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 1
+        },
+        {
+          "id": "content-ipad",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-heading",
+          "x": 116,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-screen",
+          "x": 710,
+          "y": 148,
+          "w": 1008,
+          "h": 769,
+          "opacity": 1
+        },
+        {
+          "id": "content-mac",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "mac-heading",
+          "x": 116,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "mac-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "mac-screen",
+          "x": 461,
+          "y": 212,
+          "w": 1357,
+          "h": 762,
+          "opacity": 1
+        },
+        {
+          "id": "content-tv",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "tv-heading",
+          "x": 116,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 1
+        },
+        {
+          "id": "tv-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "tv-screen",
+          "x": 504,
+          "y": 202,
+          "w": 1284,
+          "h": 777,
+          "opacity": 1
+        },
+        {
+          "id": "scene-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "family-heading",
+          "x": 116,
+          "y": 107,
+          "w": 1393,
+          "h": 89,
+          "opacity": 1
+        },
+        {
+          "id": "family-server",
+          "x": 284,
+          "y": 360,
+          "w": 232,
+          "h": 162,
+          "opacity": 1
+        },
+        {
+          "id": "family-tailscale",
+          "x": 702,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 1
+        },
+        {
+          "id": "family-paths",
+          "x": 372,
+          "y": 412,
+          "w": 1253,
+          "h": 220,
+          "opacity": 1
+        },
+        {
+          "id": "family-mac",
+          "x": 96,
+          "y": 618,
+          "w": 551,
+          "h": 380,
+          "opacity": 1
+        },
+        {
+          "id": "family-ipad",
+          "x": 686,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 1
+        },
+        {
+          "id": "family-phone",
+          "x": 1143,
+          "y": 568,
+          "w": 230,
+          "h": 426,
+          "opacity": 0.74
+        },
+        {
+          "id": "family-tv",
+          "x": 1422,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 0.75
+        },
+        {
+          "id": "content-local",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "t": 32.25,
+      "visibleElements": 61,
+      "animatingNow": [
+        "#download-label",
+        "#remote-packet"
+      ],
+      "elements": [
+        {
+          "id": "root",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "opening-ribbon",
+          "x": 116,
+          "y": 260,
+          "w": 346,
+          "h": 346,
+          "opacity": 1
+        },
+        {
+          "id": "opening-title",
+          "x": 116,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 1
+        },
+        {
+          "id": "opening-mac",
+          "x": 621,
+          "y": 131,
+          "w": 1214,
+          "h": 682,
+          "opacity": 1
+        },
+        {
+          "id": "content-server",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "server-heading",
+          "x": 116,
+          "y": 148,
+          "w": 1247,
+          "h": 93,
+          "opacity": 1
+        },
+        {
+          "id": "server-copy",
+          "x": 116,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 1
+        },
+        {
+          "id": "computer",
+          "x": 428,
+          "y": 453,
+          "w": 483,
+          "h": 248,
+          "opacity": 1
+        },
+        {
+          "id": "drive-cable",
+          "x": 906,
+          "y": 600,
+          "w": 178,
+          "h": 156,
+          "opacity": 1
+        },
+        {
+          "id": "hard-drive",
+          "x": 1084,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 1
+        },
+        {
+          "id": "server-label",
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 1
+        },
+        {
+          "id": "drive-label",
+          "x": 1044,
+          "y": 969,
+          "w": 244,
+          "h": 40,
+          "opacity": 1
+        },
+        {
+          "id": "day-night",
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 1
+        },
+        {
+          "id": "day-night-progress",
+          "x": 222,
+          "y": 897,
+          "w": 54,
+          "h": 6,
+          "opacity": 1
+        },
+        {
+          "id": "content-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "android-heading",
+          "x": 116,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "android-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "android-screen",
+          "x": 1144,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 1
+        },
+        {
+          "id": "content-ipad",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-heading",
+          "x": 116,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-screen",
+          "x": 710,
+          "y": 148,
+          "w": 1008,
+          "h": 769,
+          "opacity": 1
+        },
+        {
+          "id": "content-mac",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "mac-heading",
+          "x": 116,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "mac-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "mac-screen",
+          "x": 461,
+          "y": 212,
+          "w": 1357,
+          "h": 762,
+          "opacity": 1
+        },
+        {
+          "id": "content-tv",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "tv-heading",
+          "x": 116,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 1
+        },
+        {
+          "id": "tv-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "tv-screen",
+          "x": 504,
+          "y": 202,
+          "w": 1284,
+          "h": 777,
+          "opacity": 1
+        },
+        {
+          "id": "content-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "family-heading",
+          "x": 116,
+          "y": 107,
+          "w": 1393,
+          "h": 89,
+          "opacity": 1
+        },
+        {
+          "id": "family-server",
+          "x": 284,
+          "y": 360,
+          "w": 232,
+          "h": 162,
+          "opacity": 1
+        },
+        {
+          "id": "family-tailscale",
+          "x": 702,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 1
+        },
+        {
+          "id": "family-paths",
+          "x": 372,
+          "y": 412,
+          "w": 1254,
+          "h": 220,
+          "opacity": 1
+        },
+        {
+          "id": "family-mac",
+          "x": 96,
+          "y": 618,
+          "w": 551,
+          "h": 380,
+          "opacity": 1
+        },
+        {
+          "id": "family-ipad",
+          "x": 686,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 1
+        },
+        {
+          "id": "family-phone",
+          "x": 1141,
+          "y": 564,
+          "w": 234,
+          "h": 434,
+          "opacity": 1
+        },
+        {
+          "id": "family-tv",
+          "x": 1436,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 1
+        },
+        {
+          "id": "content-local",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "local-heading",
+          "x": 116,
+          "y": 103,
+          "w": 844,
+          "h": 100,
+          "opacity": 1
+        },
+        {
+          "id": "local-house",
+          "x": 178,
+          "y": 332,
+          "w": 1560,
+          "h": 574,
+          "opacity": 1
+        },
+        {
+          "id": "local-server",
+          "x": 300,
+          "y": 553,
+          "w": 508,
+          "h": 300,
+          "opacity": 1
+        },
+        {
+          "id": "local-tablet",
+          "x": 1162,
+          "y": 556,
+          "w": 400,
+          "h": 305,
+          "opacity": 1
+        },
+        {
+          "id": "local-qualifier",
+          "x": 608,
+          "y": 479,
+          "w": 703,
+          "h": 48,
+          "opacity": 1
+        },
+        {
+          "id": "local-path",
+          "x": 808,
+          "y": 705,
+          "w": 354,
+          "h": 8,
+          "opacity": 1
+        },
+        {
+          "id": "local-benefit",
+          "x": 480,
+          "y": 953,
+          "w": 960,
+          "h": 59,
+          "opacity": 1
+        },
+        {
+          "id": "local-packet",
+          "x": 1144,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 1
+        },
+        {
+          "id": "scene-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "remote-heading",
+          "x": 116,
+          "y": 118,
+          "w": 1410,
+          "h": 87,
+          "opacity": 1
+        },
+        {
+          "id": "remote-house",
+          "x": 124,
+          "y": 354,
+          "w": 646,
+          "h": 506,
+          "opacity": 1
+        },
+        {
+          "id": "remote-server",
+          "x": 220,
+          "y": 559,
+          "w": 429,
+          "h": 254,
+          "opacity": 1
+        },
+        {
+          "id": "remote-tablet",
+          "x": 1178,
+          "y": 438,
+          "w": 580,
+          "h": 443,
+          "opacity": 1
+        },
+        {
+          "id": "remote-path",
+          "x": 770,
+          "y": 655,
+          "w": 408,
+          "h": 8,
+          "opacity": 1
+        },
+        {
+          "id": "internet-label",
+          "x": 893,
+          "y": 554,
+          "w": 162,
+          "h": 48,
+          "opacity": 1
+        },
+        {
+          "id": "upload-label",
+          "x": 317,
+          "y": 924,
+          "w": 262,
+          "h": 44,
+          "opacity": 1
+        },
+        {
+          "id": "download-label",
+          "x": 1294,
+          "y": 924,
+          "w": 353,
+          "h": 44,
+          "opacity": 1
+        },
+        {
+          "id": "remote-packet",
+          "x": 770,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 0.15
+        },
+        {
+          "id": "content-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "t": 42.9,
+      "visibleElements": 61,
+      "animatingNow": [],
+      "elements": [
+        {
+          "id": "root",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-opening",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "opening-ribbon",
+          "x": 116,
+          "y": 260,
+          "w": 346,
+          "h": 346,
+          "opacity": 1
+        },
+        {
+          "id": "opening-title",
+          "x": 116,
+          "y": 835,
+          "w": 833,
+          "h": 136,
+          "opacity": 1
+        },
+        {
+          "id": "opening-mac",
+          "x": 621,
+          "y": 131,
+          "w": 1214,
+          "h": 682,
+          "opacity": 1
+        },
+        {
+          "id": "content-server",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "server-heading",
+          "x": 116,
+          "y": 148,
+          "w": 1247,
+          "h": 93,
+          "opacity": 1
+        },
+        {
+          "id": "server-copy",
+          "x": 116,
+          "y": 291,
+          "w": 784,
+          "h": 53,
+          "opacity": 1
+        },
+        {
+          "id": "computer",
+          "x": 428,
+          "y": 453,
+          "w": 483,
+          "h": 248,
+          "opacity": 1
+        },
+        {
+          "id": "drive-cable",
+          "x": 906,
+          "y": 600,
+          "w": 178,
+          "h": 156,
+          "opacity": 1
+        },
+        {
+          "id": "hard-drive",
+          "x": 1084,
+          "y": 643,
+          "w": 170,
+          "h": 298,
+          "opacity": 1
+        },
+        {
+          "id": "server-label",
+          "x": 537,
+          "y": 748,
+          "w": 263,
+          "h": 46,
+          "opacity": 1
+        },
+        {
+          "id": "drive-label",
+          "x": 1044,
+          "y": 969,
+          "w": 244,
+          "h": 40,
+          "opacity": 1
+        },
+        {
+          "id": "day-night",
+          "x": 96,
+          "y": 844,
+          "w": 262,
+          "h": 112,
+          "opacity": 1
+        },
+        {
+          "id": "day-night-progress",
+          "x": 222,
+          "y": 897,
+          "w": 54,
+          "h": 6,
+          "opacity": 1
+        },
+        {
+          "id": "content-android",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "android-heading",
+          "x": 116,
+          "y": 294,
+          "w": 725,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "android-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "android-screen",
+          "x": 1144,
+          "y": 148,
+          "w": 412,
+          "h": 784,
+          "opacity": 1
+        },
+        {
+          "id": "content-ipad",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-heading",
+          "x": 116,
+          "y": 294,
+          "w": 215,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-ribbon",
+          "x": 132,
+          "y": 492,
+          "w": 208,
+          "h": 208,
+          "opacity": 1
+        },
+        {
+          "id": "ipad-screen",
+          "x": 710,
+          "y": 148,
+          "w": 1008,
+          "h": 769,
+          "opacity": 1
+        },
+        {
+          "id": "content-mac",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "mac-heading",
+          "x": 116,
+          "y": 90,
+          "w": 198,
+          "h": 102,
+          "opacity": 1
+        },
+        {
+          "id": "mac-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "mac-screen",
+          "x": 461,
+          "y": 212,
+          "w": 1357,
+          "h": 762,
+          "opacity": 1
+        },
+        {
+          "id": "content-tv",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "tv-heading",
+          "x": 116,
+          "y": 101,
+          "w": 945,
+          "h": 85,
+          "opacity": 1
+        },
+        {
+          "id": "tv-ribbon",
+          "x": 124,
+          "y": 376,
+          "w": 150,
+          "h": 150,
+          "opacity": 1
+        },
+        {
+          "id": "tv-screen",
+          "x": 504,
+          "y": 202,
+          "w": 1284,
+          "h": 777,
+          "opacity": 1
+        },
+        {
+          "id": "content-family",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "family-heading",
+          "x": 116,
+          "y": 107,
+          "w": 1393,
+          "h": 89,
+          "opacity": 1
+        },
+        {
+          "id": "family-server",
+          "x": 284,
+          "y": 360,
+          "w": 232,
+          "h": 162,
+          "opacity": 1
+        },
+        {
+          "id": "family-tailscale",
+          "x": 702,
+          "y": 382,
+          "w": 595,
+          "h": 55,
+          "opacity": 1
+        },
+        {
+          "id": "family-paths",
+          "x": 372,
+          "y": 412,
+          "w": 1254,
+          "h": 220,
+          "opacity": 1
+        },
+        {
+          "id": "family-mac",
+          "x": 96,
+          "y": 618,
+          "w": 551,
+          "h": 380,
+          "opacity": 1
+        },
+        {
+          "id": "family-ipad",
+          "x": 686,
+          "y": 588,
+          "w": 408,
+          "h": 410,
+          "opacity": 1
+        },
+        {
+          "id": "family-phone",
+          "x": 1141,
+          "y": 564,
+          "w": 234,
+          "h": 434,
+          "opacity": 1
+        },
+        {
+          "id": "family-tv",
+          "x": 1436,
+          "y": 632,
+          "w": 380,
+          "h": 337,
+          "opacity": 1
+        },
+        {
+          "id": "content-local",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "local-heading",
+          "x": 116,
+          "y": 103,
+          "w": 844,
+          "h": 100,
+          "opacity": 1
+        },
+        {
+          "id": "local-house",
+          "x": 178,
+          "y": 332,
+          "w": 1560,
+          "h": 574,
+          "opacity": 1
+        },
+        {
+          "id": "local-server",
+          "x": 300,
+          "y": 553,
+          "w": 508,
+          "h": 300,
+          "opacity": 1
+        },
+        {
+          "id": "local-tablet",
+          "x": 1162,
+          "y": 556,
+          "w": 400,
+          "h": 305,
+          "opacity": 1
+        },
+        {
+          "id": "local-qualifier",
+          "x": 608,
+          "y": 479,
+          "w": 703,
+          "h": 48,
+          "opacity": 1
+        },
+        {
+          "id": "local-path",
+          "x": 808,
+          "y": 705,
+          "w": 354,
+          "h": 8,
+          "opacity": 1
+        },
+        {
+          "id": "local-benefit",
+          "x": 480,
+          "y": 953,
+          "w": 960,
+          "h": 59,
+          "opacity": 1
+        },
+        {
+          "id": "local-packet",
+          "x": 1144,
+          "y": 700,
+          "w": 18,
+          "h": 18,
+          "opacity": 1
+        },
+        {
+          "id": "content-remote",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "remote-heading",
+          "x": 116,
+          "y": 118,
+          "w": 1410,
+          "h": 87,
+          "opacity": 1
+        },
+        {
+          "id": "remote-house",
+          "x": 124,
+          "y": 354,
+          "w": 646,
+          "h": 506,
+          "opacity": 1
+        },
+        {
+          "id": "remote-server",
+          "x": 220,
+          "y": 559,
+          "w": 429,
+          "h": 254,
+          "opacity": 1
+        },
+        {
+          "id": "remote-tablet",
+          "x": 1178,
+          "y": 438,
+          "w": 580,
+          "h": 443,
+          "opacity": 1
+        },
+        {
+          "id": "remote-path",
+          "x": 770,
+          "y": 655,
+          "w": 408,
+          "h": 8,
+          "opacity": 1
+        },
+        {
+          "id": "internet-label",
+          "x": 893,
+          "y": 554,
+          "w": 162,
+          "h": 48,
+          "opacity": 1
+        },
+        {
+          "id": "upload-label",
+          "x": 317,
+          "y": 924,
+          "w": 262,
+          "h": 44,
+          "opacity": 1
+        },
+        {
+          "id": "download-label",
+          "x": 1294,
+          "y": 924,
+          "w": 353,
+          "h": 44,
+          "opacity": 1
+        },
+        {
+          "id": "remote-packet",
+          "x": 1160,
+          "y": 650,
+          "w": 18,
+          "h": 18,
+          "opacity": 1
+        },
+        {
+          "id": "scene-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        },
+        {
+          "id": "content-closing",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "opacity": 1
+        }
+      ]
+    }
+  ]
+}
