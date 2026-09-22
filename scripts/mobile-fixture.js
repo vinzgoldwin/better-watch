@@ -32,6 +32,6 @@ try {
   console.log(`Isolated native test library: ${directory}`);
   const [code] = await once(server, 'exit'); process.exitCode = code || 0;
 } finally {
-  if (server && server.exitCode === null) { server.kill(); await once(server, 'exit'); }
+  if (server && server.exitCode === null && server.signalCode === null) { server.kill(); await once(server, 'exit'); }
   await rm(directory, { recursive: true, force: true });
 }

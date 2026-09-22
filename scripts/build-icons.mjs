@@ -23,13 +23,13 @@ try {
   });
   const header = Buffer.alloc(8); header.write('icns');
   header.writeUInt32BE(8 + entries.reduce((size, entry) => size + entry.length, 0), 4);
-  writeFileSync(join(root, 'native/Resources/AppIcon.icns'), Buffer.concat([header, ...entries]));
+  writeFileSync(join(root, 'apps/mac/Resources/AppIcon.icns'), Buffer.concat([header, ...entries]));
 
   // The default iPad asset is opaque; the transparent master remains unchanged.
-  png(join(root, 'native/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png'),
+  png(join(root, 'apps/ipad/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png'),
     'scale=1024:1024:flags=lanczos,format=rgba,split[art][base];[base]drawbox=color=0x151515:t=fill:replace=1[bg];[bg][art]overlay=format=auto,format=rgb24');
 
-  const android = join(root, 'mobile/android/app/src/main/res/drawable-nodpi');
+  const android = join(root, 'apps/android/app/src/main/res/drawable-nodpi');
   mkdirSync(android, { recursive: true });
   // Keep the ribbon inside the adaptive icon safe area; the launcher supplies its mask.
   png(join(android, 'ic_launcher.png'),

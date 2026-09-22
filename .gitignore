@@ -3,13 +3,17 @@
 node_modules/
 *.png
 !assets/branding/folded-play-ribbon.png
-!native/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
-!mobile/android/app/src/main/res/drawable-nodpi/ic_launcher.png
-native/ios/.build/
-native/ios/.device-build/
-native/ios/*.xcodeproj/
-native/ios/Info.plist
-mobile/android/.gradle/
-mobile/android/.kotlin/
-mobile/android/**/build/
-mobile/android/local.properties
+!apps/ipad/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+!apps/android/app/src/main/res/drawable-nodpi/ic_launcher.png
+!apps/tv/src/main/res/drawable-xhdpi/tv_banner.png
+apps/ipad/.build/
+apps/ipad/.device-build/
+apps/ipad/*.xcodeproj/
+apps/ipad/Info.plist
+apps/android/.gradle/
+apps/android/.kotlin/
+apps/android/**/build/
+apps/android/local.properties
+
+# Local review artifacts, render caches, and archived iterations.
+/outputs/
