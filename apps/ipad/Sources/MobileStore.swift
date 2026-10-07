@@ -3,11 +3,14 @@ import SwiftUI
 @MainActor final class MobileStore: ObservableObject {
     @Published var movies: [Movie] = []
     @Published var filtered: [Movie] = []
+    @Published private(set) var positions: [String: ResumePosition] = [:]
+    @Published private(set) var filtering = false
+    @Published private(set) var picking = false
     @Published var directories: [String] = []
     @Published var categoryOptions: [(name: String, key: String, count: Int)] = []
     @Published var marks: [String: Mark] = [:]
     @Published var query = FilmQuery() { didSet { filter() } }
-    @Published var selected: Movie?
+    @Published var selected: Movie? { didSet { if selected != nil { positions = SharedLibrary.shared.positions } } }
     @Published var playing: NativePlayback?
     @Published var error: String?
     @Published var loading = false
@@ -19,6 +22,12 @@ import SwiftUI
     var heading: String { artistsVisible ? "Artists" : !query.artist.isEmpty ? query.artist : !query.folder.isEmpty ? query.folder : query.list.rawValue }
     init() {
         SharedLibrary.shared.onMarks = { [weak self] values in self?.marks = values; self?.filter() }
+        // Only the progress view and open details observe playback broadcasts.
+        SharedLibrary.shared.onPositions = { [weak self] values in
+            guard let self, self.playing == nil else { return }
+            if self.query.list == .continuing { self.positions = values; self.filter() }
+            else if self.selected != nil { self.positions = values }
+        }
         SharedLibrary.shared.onError = { [weak self] message in self?.error = message }
     }
     func connect() async {
@@ -33,16 +42,19 @@ import SwiftUI
         loading = false
     }
     func filter() {
+        filtering = true
+        let positions = SharedLibrary.shared.positions
+        if query.list == .continuing { self.positions = positions }
         filterTask?.cancel()
         let query = query, movies = movies, marks = marks
         filterTask = Task {
             do {
                 try await Task.sleep(for: .milliseconds(120))
                 let result = await Task.detached {
-                    let scope = query.apply(movies, marks: marks, includeCategories: false)
+                    let scope = query.apply(movies, marks: marks, positions: positions, includeCategories: false)
                     return (scope.filter(query.matchesCategories), FilmQuery.categoryOptions(in: scope))
                 }.value
-                try Task.checkCancellation(); filtered = result.0; categoryOptions = result.1
+                try Task.checkCancellation(); filtered = result.0; categoryOptions = result.1; filtering = false
             } catch { }
         }
     }
@@ -58,6 +70,12 @@ import SwiftUI
         await connect()
     }
     func choose(folder: String) { artistsVisible = false; query.folder = folder; query.subfolder = ""; query.artist = ""; query.categories = [] }
+    var canPick: Bool { !filtering && filtered.contains { marks[$0.id]?.watched != true } }
+    func open(_ movie: Movie) { picking = false; selected = movie }
+    func pick() {
+        guard !filtering, let movie = pickMovie(filtered, marks: marks, excluding: picking ? selected?.id : nil) else { return }
+        picking = true; selected = movie
+    }
     func toggle(_ movie: Movie, _ field: WritableKeyPath<Mark, Bool>) {
         var mark = marks[movie.id] ?? Mark(); mark[keyPath: field].toggle(); marks[movie.id] = mark; filter()
         let key = field == \Mark.favorite ? "favorite" : field == \Mark.watchLater ? "watchLater" : "watched"
@@ -68,6 +86,6 @@ import SwiftUI
         else { playing = NativePlayback(movie: movie) }
     }
     func previewDismissed() { if let movie = requestedPlayback { requestedPlayback = nil; playing = NativePlayback(movie: movie) } }
-    func closePlayback() { playing?.close(); playing = nil }
+    func closePlayback() { playing?.close(); playing = nil; if query.list == .continuing { filter() } }
     func background() { playing?.pause(); Task { await SharedLibrary.shared.flush() }; SharedLibrary.shared.disconnect() }
 }

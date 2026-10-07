@@ -24,3 +24,8 @@ ffmpeg -hide_banner -loglevel error -f lavfi -i 'testsrc2=size=640x360:rate=24:d
 clang -I "$ROOT/Sources/MPVKit/include" "$ROOT/Integration/engine-check.c" \
   -L "$APP/Contents/Frameworks" -lmpv.2 -Wl,-rpath,"$APP/Contents/Frameworks" -o "$FIXTURE/engine-check"
 "$FIXTURE/engine-check" "$FIXTURE/embedded.mkv"
+clang -fobjc-arc -fblocks -Wno-deprecated-declarations -I "$ROOT/Sources/MPVKit/include" \
+  "$ROOT/Integration/tab-check.m" "$ROOT/Sources/MPVKit/MPVKit.m" \
+  -framework AppKit -framework OpenGL -L "$APP/Contents/Frameworks" -lmpv.2 \
+  -Wl,-rpath,"$APP/Contents/Frameworks" -o "$FIXTURE/tab-check"
+"$FIXTURE/tab-check" "$FIXTURE/embedded.mkv"

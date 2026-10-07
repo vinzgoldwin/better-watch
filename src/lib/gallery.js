@@ -1,5 +1,22 @@
 export const PREVIEW_MOMENTS = [0.12, 0.5, 0.78];
 
+export function resumeStart(position) {
+  return position && Number.isFinite(position.seconds) && Number.isFinite(position.duration) &&
+    position.seconds >= 5 && position.seconds < position.duration - 10 ? position.seconds : 0;
+}
+
+export function canContinue(mark, position) {
+  return !mark?.watched && resumeStart(position) > 0;
+}
+
+// Use the complete filtered view, including tiles not yet rendered by pagination.
+export function pickMovie(movies, marks, excluding = null) {
+  const candidates = movies.filter(movie => !marks[movie.id]?.watched);
+  const alternatives = candidates.filter(movie => movie.id !== excluding);
+  const pool = alternatives.length ? alternatives : candidates;
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
+}
+
 export function relativeMovieFolder(folder, collection, subfolder = 'All Subfolders') {
   const scope = subfolder !== 'All Subfolders' ? subfolder : collection !== 'All Films' ? collection : '';
   if (folder === scope) return '';

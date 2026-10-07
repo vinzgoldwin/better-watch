@@ -13,28 +13,40 @@
     void (^_snapshot)(NSDictionary *);
     BOOL _closed, _loaded;
     NSString *_error;
-    atomic_bool _renderQueued;
+    atomic_bool _active, _renderQueued, _eventsQueued;
 }
 static void *getGL(void *context, const char *name) { return dlsym(RTLD_DEFAULT, name); }
 static void renderUpdate(void *context) {
     MPVVideoView *view = (__bridge MPVVideoView *)context;
+    if (!atomic_load(&view->_active)) return;
     if (atomic_exchange(&view->_renderQueued, true)) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         atomic_store(&view->_renderQueued, false);
-        if (!view->_closed) [view setNeedsDisplay:YES];
+        if (!view->_closed && atomic_load(&view->_active)) [view setNeedsDisplay:YES];
     });
 }
-- (instancetype)initWithURL:(NSString *)url start:(double)start volume:(double)volume snapshot:(void (^)(NSDictionary *))snapshot {
+static void eventWakeup(void *context) {
+    MPVVideoView *view = (__bridge MPVVideoView *)context;
+    if (atomic_exchange(&view->_eventsQueued, true)) return;
+    dispatch_async(view->_engine, ^{
+        atomic_store(&view->_eventsQueued, false);
+        [view processEvents];
+    });
+}
+- (instancetype)initWithURL:(NSString *)url start:(double)start volume:(double)volume paused:(BOOL)paused snapshot:(void (^)(NSDictionary *))snapshot {
     NSOpenGLPixelFormatAttribute attributes[] = {NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core, NSOpenGLPFADoubleBuffer, NSOpenGLPFAAccelerated, NSOpenGLPFAColorSize, 24, 0};
     self = [super initWithFrame:NSZeroRect pixelFormat:[[NSOpenGLPixelFormat alloc] initWithAttributes:attributes]];
     if (!self) return nil;
     self.wantsBestResolutionOpenGLSurface = YES;
+    atomic_init(&_active, false);
+    atomic_init(&_renderQueued, false);
+    atomic_init(&_eventsQueued, false);
     _snapshot = [snapshot copy];
     _engine = dispatch_queue_create("local.better-watch.mpv", DISPATCH_QUEUE_SERIAL);
     dispatch_async(_engine, ^{
         self->_mpv = mpv_create();
         if (!self->_mpv) { [self fail:@"Could not create the playback engine."]; return; }
-        NSDictionary *options = @{@"vo":@"libmpv", @"hwdec":@"auto-safe", @"config":@"no", @"terminal":@"no", @"input-default-bindings":@"no", @"input-vo-keyboard":@"no", @"osc":@"no", @"osd-level":@"0", @"keep-open":@"yes", @"idle":@"yes", @"cache":@"yes", @"cache-on-disk":@"no", @"demuxer-max-bytes":@"128MiB", @"demuxer-max-back-bytes":@"16MiB", @"demuxer-readahead-secs":@"90", @"cache-secs":@"90", @"cache-pause-wait":@"1", @"network-timeout":@"15", @"slang":@"en,eng,english", @"sub-auto":@"no", @"audio-display":@"no", @"volume":[NSString stringWithFormat:@"%f",volume], @"start":[NSString stringWithFormat:@"%f",start]};
+        NSDictionary *options = @{@"vo":@"libmpv", @"hwdec":@"auto-safe", @"config":@"no", @"terminal":@"no", @"input-default-bindings":@"no", @"input-vo-keyboard":@"no", @"osc":@"no", @"osd-level":@"0", @"keep-open":@"yes", @"idle":@"yes", @"cache":@"yes", @"cache-on-disk":@"no", @"demuxer-max-bytes":@"128MiB", @"demuxer-max-back-bytes":@"16MiB", @"demuxer-readahead-secs":@"90", @"cache-secs":@"90", @"cache-pause-wait":@"1", @"network-timeout":@"15", @"slang":@"en,eng,english", @"sub-auto":@"no", @"audio-display":@"no", @"pause":paused ? @"yes" : @"no", @"volume":[NSString stringWithFormat:@"%f",volume], @"start":[NSString stringWithFormat:@"%f",start]};
         for (NSString *key in options) {
             int result = mpv_set_option_string(self->_mpv, key.UTF8String, [options[key] UTF8String]);
             if (result < 0) { [self fail:[NSString stringWithFormat:@"Playback option %@: %s", key, mpv_error_string(result)]]; return; }
@@ -78,22 +90,46 @@ static id nodeValue(mpv_node *node) {
     }
 }
 - (void)startObserving {
+    mpv_set_wakeup_callback(_mpv, eventWakeup, (__bridge void *)self);
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _engine);
-    dispatch_source_set_timer(_timer, DISPATCH_TIME_NOW, 250*NSEC_PER_MSEC, 25*NSEC_PER_MSEC);
+    [self updateSnapshotTimer];
     __weak MPVVideoView *weakSelf = self;
     dispatch_source_set_event_handler(_timer, ^{ [weakSelf publishSnapshot]; });
     dispatch_resume(_timer);
+    [self processEvents];
 }
-- (void)publishSnapshot {
+- (void)updateSnapshotTimer {
+    if (!_timer) return;
+    dispatch_time_t start = atomic_load(&_active) ? DISPATCH_TIME_NOW : DISPATCH_TIME_FOREVER;
+    dispatch_source_set_timer(_timer, start, 250*NSEC_PER_MSEC, 25*NSEC_PER_MSEC);
+}
+- (void)setActive:(BOOL)active {
+    if (_closed || atomic_exchange(&_active, active) == active) return;
+    [self setNeedsDisplay:active];
+    dispatch_async(_engine, ^{ [self updateSnapshotTimer]; });
+}
+- (void)processEvents {
+    if (!_mpv) return;
+    BOOL changed = NO;
     mpv_event *event;
     while ((event = mpv_wait_event(_mpv, 0))->event_id != MPV_EVENT_NONE) {
-        if (event->event_id == MPV_EVENT_FILE_LOADED) _loaded = YES;
+        if (event->event_id == MPV_EVENT_FILE_LOADED) { _loaded = YES; changed = YES; }
         if (event->event_id == MPV_EVENT_END_FILE) {
             mpv_event_end_file *end = event->data;
             if (end->reason == MPV_END_FILE_REASON_ERROR) _error = @(mpv_error_string(end->error));
+            changed = YES;
         }
-        if (event->event_id == MPV_EVENT_COMMAND_REPLY && event->error < 0) _error = @(mpv_error_string(event->error));
+        if (event->event_id == MPV_EVENT_COMMAND_REPLY) {
+            if (event->error < 0) _error = @(mpv_error_string(event->error));
+            changed = YES;
+        }
+        if (event->event_id == MPV_EVENT_PLAYBACK_RESTART) changed = YES;
     }
+    // Only meaningful events publish while hidden; property reads can themselves wake mpv.
+    if (changed) [self publishSnapshot];
+}
+- (void)publishSnapshot {
+    if (!_mpv) return;
     NSMutableDictionary *snapshot = [NSMutableDictionary dictionaryWithObject:@(_loaded) forKey:@"loaded"];
     for (NSString *key in @[@"time-pos",@"duration",@"pause",@"paused-for-cache",@"demuxer-cache-duration",@"demuxer-cache-state",@"eof-reached",@"volume",@"mute",@"track-list",@"hwdec-current",@"video-codec",@"video-params",@"frame-drop-count",@"audio-pts"]) {
         mpv_node node;
@@ -116,7 +152,7 @@ static id nodeValue(mpv_node *node) {
     });
 }
 - (void)drawRect:(NSRect)dirtyRect {
-    if (_closed || !_renderer) return;
+    if (_closed || !atomic_load(&_active) || !_renderer) return;
     [self.openGLContext makeCurrentContext];
     NSRect pixels = [self convertRectToBacking:self.bounds];
     if (pixels.size.width < 1 || pixels.size.height < 1) return;
@@ -128,11 +164,12 @@ static id nodeValue(mpv_node *node) {
     [self.openGLContext flushBuffer];
     mpv_render_context_report_swap(_renderer);
 }
-- (void)reshape { [super reshape]; [self setNeedsDisplay:YES]; }
+- (void)reshape { [super reshape]; if (atomic_load(&_active)) [self setNeedsDisplay:YES]; }
 - (BOOL)isOpaque { return YES; }
 - (void)shutdown {
     if (_closed) return;
     _closed=YES; _snapshot=nil;
+    atomic_store(&_active, false);
     if (_renderer) {
         [self.openGLContext makeCurrentContext];
         mpv_render_context_set_update_callback(_renderer,NULL,NULL);
@@ -141,7 +178,10 @@ static id nodeValue(mpv_node *node) {
     // Never wait for mpv on the main/render thread, including during teardown.
     dispatch_async(_engine, ^{
         if (self->_timer) { dispatch_source_cancel(self->_timer); self->_timer=nil; }
-        if (self->_mpv) { mpv_terminate_destroy(self->_mpv); self->_mpv=NULL; }
+        if (self->_mpv) {
+            mpv_set_wakeup_callback(self->_mpv, NULL, NULL);
+            mpv_terminate_destroy(self->_mpv); self->_mpv=NULL;
+        }
     });
 }
 @end

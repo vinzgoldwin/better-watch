@@ -38,7 +38,7 @@
     },
     {
       "id": "c",
-      "title": "Café 3",
+      "title": "Caf\u00e9 3",
       "folder": "Collection/Sub/Child",
       "topFolder": "Collection",
       "relativePath": "Collection/Sub/Child/film.mp4",
@@ -309,6 +309,142 @@
       "expected": [
         "b"
       ]
+    },
+    {
+      "name": "continue excludes watched, just started, and final ten seconds",
+      "query": {
+        "list": "continuing"
+      },
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "continue keeps category and filename filters",
+      "query": {
+        "list": "continuing",
+        "search": "archive-code",
+        "categories": [
+          "drama"
+        ]
+      },
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "name": "continue empty filtered view",
+      "query": {
+        "list": "continuing",
+        "categories": [
+          "action"
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "completion clears continue even with saved records",
+      "query": {
+        "list": "continuing"
+      },
+      "positions": {
+        "a": {
+          "seconds": 0,
+          "duration": 60
+        },
+        "b": {
+          "seconds": 110,
+          "duration": 120
+        }
+      },
+      "expected": []
+    },
+    {
+      "name": "pick excludes last choice inside category scope",
+      "query": {
+        "categories": [
+          "drama"
+        ]
+      },
+      "expected": [
+        "a",
+        "b"
+      ],
+      "pickExcluding": "a",
+      "expectedPick": [
+        "b"
+      ]
+    },
+    {
+      "name": "pick can repeat the sole unwatched match",
+      "query": {
+        "list": "favorite"
+      },
+      "expected": [
+        "a"
+      ],
+      "pickExcluding": "a",
+      "expectedPick": [
+        "a"
+      ]
+    },
+    {
+      "name": "pick returns none for watched-only results",
+      "query": {
+        "list": "watched"
+      },
+      "expected": [
+        "c"
+      ],
+      "expectedPick": []
+    },
+    {
+      "name": "pick returns none for empty results",
+      "query": {
+        "search": "not a film"
+      },
+      "expected": [],
+      "expectedPick": []
+    },
+    {
+      "name": "pick never selects a watched film",
+      "query": {},
+      "expected": [
+        "c",
+        "d",
+        "a",
+        "b",
+        "e"
+      ],
+      "expectedPick": [
+        "d",
+        "a",
+        "b",
+        "e"
+      ]
     }
-  ]
+  ],
+  "positions": {
+    "a": {
+      "seconds": 5,
+      "duration": 60
+    },
+    "b": {
+      "seconds": 109,
+      "duration": 120
+    },
+    "c": {
+      "seconds": 30,
+      "duration": 90
+    },
+    "d": {
+      "seconds": 4.999,
+      "duration": 60
+    },
+    "e": {
+      "seconds": 50,
+      "duration": 60
+    }
+  }
 }

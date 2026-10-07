@@ -55,3 +55,27 @@ Platform source now lives in `apps/mac/`, `apps/ipad/`, `apps/android/`, and `ap
 - Server: all 34 Node/media tests passed using synthetic fixtures.
 
 Apple validation used a temporary source-only directory because the normal Mac checkout has uncommitted work; it was not overwritten. Android source and tooling stayed on Asahi. No apps were installed or launched on personal devices, and no production server restart or personal-library mutation was performed. These build/local-test results do not replace the pending physical TV verification in [tv/VERIFICATION.md](tv/VERIFICATION.md).
+
+## Continue Watching and Pick for me: 2026-10-07
+
+Approved option A is implemented in Mac, iPad, Android phone, TV, and the web companion. Continue Watching uses existing shared positions and the resume boundaries; the picker uses the complete filtered view and excludes films marked Watched. Progress updates do not refilter ordinary library views.
+
+- Mac: build and signature verification passed; all 11 Swift tests passed, including the expanded 27-case shared contract. Filtering/sorting 10,000 films took 41 ms. Build 6 was installed at `~/Applications/Better Watch.app` while the app was closed.
+- Android/TV: all 14 unit/Compose integration tests passed using the isolated HTTP fixture. Coverage includes incoming progress/completion, filtered picking, disabled empty picking, and D-pad focus after Back. App/test APK builds and lint passed with zero errors and 25 warnings. Build 5 is signed and saved as `/home/kevin/.local/share/better-watch-builds/continue-pick-2026-10-07/Better-Watch-phone-and-TV.apk`.
+- Web: production build and seven focused Node checks passed. The production server on localhost:3300 serves the rebuilt JavaScript, verified by its SHA-256 matching `public/react/app.js`. No browser check was performed.
+- iPad: simulator and unsigned physical-device builds passed. Four focused simulator UI checks passed after reconnection: shared Continue Watching updates, filtered picking and completion across rotation (20.044s); HLS seek/resume across rotation (28.997s); descriptions during playback and rotation (19.573s); and Quick Look, favorites, search and rotation (15.466s). The tests now open the collapsed sidebar and reveal controls after rotation, respecting the existing three-second auto-hide behavior. The separate touch/double-tap suite was not rerun. Device signing was retried and still failed with `errSecInternalComponent` over SSH.
+
+No Android/TV device was connected to ADB; the physical iPad was unavailable. Phone/TV installation and physical playback/D-pad checks remain pending, as do iPad signing, installation, and device checks. The personal library's marks were not used for testing.
+
+The Mac's working checkout has unrelated edits and was preserved. The temporary Apple build, simulator app/test runner, isolated fixture, and SSH forward were removed; the simulator was shut down. Logs and Xcode test results are saved under `/home/kevin/.local/share/better-watch-builds/continue-pick-2026-10-07/verification/`.
+
+An Apple-only source snapshot is ready on the Mac at `~/Library/Application Support/Better Watch/Builds/continue-pick-2026-10-07/`. To finish signing in the Mac's normal Terminal session, where macOS can request keychain access:
+
+```sh
+cd "$HOME/Library/Application Support/Better Watch/Builds/continue-pick-2026-10-07/apps/ipad"
+xcodebuild -project BetterWatchMobile.xcodeproj -scheme BetterWatchMobile \
+  -destination 'generic/platform=iOS' -derivedDataPath .device-build \
+  DEVELOPMENT_TEAM=6QAS5757AU build
+```
+
+After the iPad reconnects, follow the [iPad installation steps](ipad/README.md#build-and-install). The installed Mac app is already updated; Android/TV installation uses the saved APK above.

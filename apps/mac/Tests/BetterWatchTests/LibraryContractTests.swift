@@ -12,7 +12,7 @@ final class LibraryContractTests: XCTestCase {
         let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let movies = try JSONDecoder().decode([Movie].self, from: JSONSerialization.data(withJSONObject: fixture["movies"]!))
         let marks = try JSONDecoder().decode([String: Mark].self, from: JSONSerialization.data(withJSONObject: fixture["marks"]!))
-        let lists: [String: SavedList] = ["favorite": .favorite, "watchLater": .watchLater, "unwatched": .unwatched, "watched": .watched]
+        let lists: [String: SavedList] = ["continuing": .continuing, "favorite": .favorite, "watchLater": .watchLater, "unwatched": .unwatched, "watched": .watched]
         let sorts: [String: Sort] = ["folder": .folder, "duration": .duration, "size": .size, "modified": .modified, "releaseNewest": .releaseNewest, "releaseOldest": .releaseOldest]
         for row in fixture["cases"] as! [[String: Any]] {
             let q = row["query"] as! [String: Any]
@@ -20,7 +20,14 @@ final class LibraryContractTests: XCTestCase {
                 search: q["search"] as? String ?? "", artist: q["artist"] as? String ?? "",
                 categories: Set(q["categories"] as? [String] ?? []), list: lists[q["list"] as? String ?? ""] ?? .all,
                 sort: sorts[q["sort"] as? String ?? ""] ?? .name)
-            XCTAssertEqual(query.apply(movies, marks: marks).map(\.id), row["expected"] as! [String], row["name"] as! String)
+            let positions = try JSONDecoder().decode([String: ResumePosition].self, from: JSONSerialization.data(withJSONObject: row["positions"] ?? fixture["positions"]!))
+            let results = query.apply(movies, marks: marks, positions: positions)
+            XCTAssertEqual(results.map(\.id), row["expected"] as! [String], row["name"] as! String)
+            if let allowed = row["expectedPick"] as? [String] {
+                let picked = pickMovie(results, marks: marks, excluding: row["pickExcluding"] as? String)
+                if allowed.isEmpty { XCTAssertNil(picked) }
+                else { XCTAssertTrue(allowed.contains(try XCTUnwrap(picked).id), row["name"] as! String) }
+            }
         }
     }
 }

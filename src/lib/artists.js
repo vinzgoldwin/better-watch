@@ -86,20 +86,20 @@ const SHORT_NAME_RULES = [
 ];
 
 const FILENAME_ALIAS_RULES = [
-  { artist: 'Aaliyah Yasin', aliases: ['aaliyahyasin'], folders: ['xxxsmall/Hijab/fp'] },
-  { artist: 'Alix Lynx', aliases: ['alixlynx'], folders: ['t7/primal'] },
-  { artist: 'Aria Alexander', aliases: ['ariaalexander'], folders: ['t7/primal'] },
+  { artist: 'Aaliyah Yasin', aliases: ['aaliyahyasin'], folders: ['xxxsmall'] },
+  { artist: 'Alix Lynx', aliases: ['alixlynx'], folders: ['t7'] },
+  { artist: 'Aria Alexander', aliases: ['ariaalexander'], folders: ['t7'] },
   { artist: 'Alexis Zara', aliases: ['alexiszara'], folders: ['megasite'] },
   { artist: 'Anikka Albrite', aliases: ['anikkaalbrite', 'annikaalbrite'], folders: ['megasite'] },
   { artist: 'Anna Chambers', aliases: ['annachambers'], folders: ['megasite'] },
-  { artist: 'Ashley Lane', aliases: ['ashleylane'], folders: ['t7/primal'] },
+  { artist: 'Ashley Lane', aliases: ['ashleylane'], folders: ['t7'] },
   { artist: 'Ashley Pink', aliases: ['ashleypink'], folders: ['megasite'] },
   { artist: 'Aubrey Gold', aliases: ['aubreygold'], folders: ['megasite'] },
   { artist: 'Cecilia Taylor', aliases: ['ceciliataylor'], folders: ['megasite'] },
   { artist: 'Channy Crossfire', aliases: ['channycrossfire'], folders: ['megasite'] },
   { artist: 'Courtney Taylor', aliases: ['courtneytaylor'], folders: ['megasite'] },
   { artist: 'Cristi Ann', aliases: ['cristiann'], folders: ['megasite'] },
-  { artist: 'Demi Hawks', aliases: ['demihawks'], folders: ['xxxsmall/fp'] },
+  { artist: 'Demi Hawks', aliases: ['demihawks'], folders: ['xxxsmall'] },
   { artist: 'Ember Snow', aliases: ['embersnow', 'emberisadomme'], folders: ['megasite'] },
   { artist: 'Emma Hix', aliases: ['emmahix'], folders: ['megasite'] },
   { artist: 'Gabi Paltrova', aliases: ['gabipaltrova'], folders: ['megasite'] },
@@ -118,36 +118,36 @@ const FILENAME_ALIAS_RULES = [
   { artist: 'Kayla Green', aliases: ['kaylagreen'], folders: ['megasite'] },
   { artist: 'Kennedy Kressler', aliases: ['kennedykressler'], folders: ['megasite'] },
   { artist: 'Kenzie Madison', aliases: ['kenziemadison'], folders: ['megasite'] },
-  { artist: 'Kira Perez', aliases: ['kiraperez'], folders: ['xxxsmall/Hijab/fp'] },
+  { artist: 'Kira Perez', aliases: ['kiraperez'], folders: ['xxxsmall'] },
   { artist: 'Kristina Rose', aliases: ['kristinarose'], folders: ['megasite'] },
-  { artist: 'Kylie Jay', aliases: ['kyliejay'], folders: ['t7/primal'] },
+  { artist: 'Kylie Jay', aliases: ['kyliejay'], folders: ['t7'] },
   { artist: 'Kylie Kingston', aliases: ['kyliekingston'], folders: ['megasite'] },
   { artist: 'Lala Ivey', aliases: ['lalaivey'], folders: ['megasite'] },
   { artist: 'Lana Violet', aliases: ['lanaviolet'], folders: ['megasite'] },
   { artist: 'Lauren Phillips', aliases: ['gkmlaurenphilips'], folders: ['megasite'] },
-  { artist: 'Layla Jenner', aliases: ['laylajenner'], folders: ['xxxsmall/fp'] },
+  { artist: 'Layla Jenner', aliases: ['laylajenner'], folders: ['xxxsmall'] },
   { artist: 'Lienne Dagger', aliases: ['liennedagger'], folders: ['megasite'] },
   { artist: 'Lilian Stone', aliases: ['lilianstone'], folders: ['megasite'] },
-  { artist: 'Lily LaBeau', aliases: ['lilylabeau', 'lilylebeau'], folders: ['t7/primal'] },
+  { artist: 'Lily LaBeau', aliases: ['lilylabeau', 'lilylebeau'], folders: ['t7'] },
   { artist: 'Lisa Tiffian', aliases: ['lisatiffian'], folders: ['megasite'] },
   { artist: 'Luna Star', aliases: ['lunastar', 'luna star'], folders: ['megasite'] },
   { artist: 'Madison Wilde', aliases: ['madisonwilde'], folders: ['megasite'] },
   { artist: 'Marsha May', aliases: ['marshamay'], folders: ['megasite'] },
   { artist: 'Mia James', aliases: ['miajames'], folders: ['megasite'] },
-  { artist: 'Naomi Swann', aliases: ['naomiswann'], folders: ['t7/primal'] },
+  { artist: 'Naomi Swann', aliases: ['naomiswann'], folders: ['t7'] },
   { artist: 'Nikki Delano', aliases: ['nikkidelano'], folders: ['megasite'] },
   { artist: 'Nina Elle', aliases: ['ninaelle'], folders: ['megasite'] },
   { artist: 'Noemie Bilas', aliases: ['noemiebilas', 'noemie bilas'], folders: ['megasite'] },
   { artist: 'Osa Lovely', aliases: ['osalovely'], folders: ['megasite'] },
   { artist: 'Raven Bay', aliases: ['ravenbay'], folders: ['megasite'] },
   { artist: 'Richelle Ryan', aliases: ['richellryan'], folders: ['megasite'] },
-  { artist: 'Riley Reid', aliases: ['rileyreid'], folders: ['t7/primal'] },
+  { artist: 'Riley Reid', aliases: ['rileyreid'], folders: ['t7'] },
   { artist: 'Sami Parker', aliases: ['samiparker'], folders: ['megasite'] },
   { artist: 'Sarah Banks', aliases: ['sarahbanks', 'sarah banks'], folders: ['megasite'] },
   { artist: 'Tiffani Time', aliases: ['tiffanitime'], folders: ['megasite'] },
   { artist: 'Vanessa Cage', aliases: ['vanessacage'], folders: ['megasite'] },
   { artist: 'Vanessa Vega', aliases: ['vanessavega'], folders: ['megasite'] },
-  { artist: 'Veruca James', aliases: ['verucajames'], folders: ['t7/primal'] },
+  { artist: 'Veruca James', aliases: ['verucajames'], folders: ['t7'] },
   { artist: 'Vicki Chase', aliases: ['vickichase'], folders: ['megasite'] },
   { artist: 'Victoria June', aliases: ['victoriajune', 'victoria june'], folders: ['megasite'] },
   { artist: 'Zoe Clark', aliases: ['zoeclark'], folders: ['megasite'] }
@@ -248,7 +248,8 @@ function artistsFromFilenameAliasRules(movie) {
 }
 
 function explicitMovieArtists(movie) {
-  const override = ARTIST_OVERRIDES[movie.relativePath];
+  const parts = movie.relativePath.split('/');
+  const override = ARTIST_OVERRIDES[`${parts[0]}/${parts.at(-1)}`];
   if (override) return override;
 
   const fromPath = artistsFromT7Path(movie.relativePath).sort((a, b) => a.localeCompare(b));

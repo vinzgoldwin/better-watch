@@ -24,11 +24,17 @@ class PhoneLibraryTest {
             .putString("server", "http://127.0.0.1:3399").commit()
         ActivityScenario.launch(MainActivity::class.java).use {
             compose.waitUntil(20_000) { compose.onAllNodesWithTag("movie-compatible").fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty() }
-            compose.onNodeWithTag("film-search").performTextInput("Direct")
+            compose.onNodeWithTag("film-search").performTextInput("Direct film")
             compose.waitUntil(5000) { compose.onAllNodesWithTag("movie-compatible").fetchSemanticsNodes().isEmpty() }
             compose.onNodeWithTag("movie-direct").assertIsDisplayed()
+            compose.onNodeWithTag("pick-film").performClick()
+            compose.onNode(hasText("Direct film") and hasAnyAncestor(isDialog())).assertExists()
+            compose.onNodeWithTag("pick-again").performClick()
+            compose.onNode(hasText("Direct film") and hasAnyAncestor(isDialog())).assertExists()
+            compose.onNodeWithContentDescription("Close").performClick()
             compose.onNodeWithTag("film-search").performTextReplacement("No matching film")
             compose.waitUntil(5000) { compose.onAllNodesWithText("No films found").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("pick-film").assertIsNotEnabled()
         }
     }
 

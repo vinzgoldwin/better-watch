@@ -12,8 +12,11 @@ final class LibraryUITests: XCTestCase {
     }
     private func revealControls() {
         let center = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        if !app.buttons["player-toggle"].exists { center.tap() }
-        XCTAssertTrue(app.buttons["player-toggle"].waitForExistence(timeout: 5))
+        let toggle = app.buttons["player-toggle"]
+        // Begin with a fresh visibility interval, rather than racing the auto-hide deadline.
+        if toggle.exists { XCTAssertTrue(toggle.waitForNonExistence(timeout: 5)) }
+        center.tap()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 2))
     }
     func testLibraryPreviewListsAndRotation() {
         let movie = app.buttons["movie-compatible"]
@@ -34,6 +37,46 @@ final class LibraryUITests: XCTestCase {
         XCTAssertTrue(app.buttons["movie-direct"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["movie-compatible"].exists)
     }
+    private func updateFixture(_ path: String, _ body: [String: Any]) {
+        var request = URLRequest(url: URL(string: "http://localhost:3399/api/profile/" + path)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try! JSONSerialization.data(withJSONObject: body)
+        let finished = expectation(description: "Update isolated fixture")
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            XCTAssertNil(error)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            finished.fulfill()
+        }.resume()
+        wait(for: [finished], timeout: 10)
+    }
+    func testContinueSyncAndFilteredPickAcrossRotation() {
+        XCTAssertTrue(app.buttons["movie-direct"].waitForExistence(timeout: 30))
+        updateFixture("marks/direct", ["watched": false])
+        updateFixture("positions/direct", ["seconds": 30, "duration": 90])
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let continuing = app.buttons["nav-Continue Watching"]
+        if !continuing.exists {
+            let sidebar = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'sidebar'")).firstMatch
+            XCTAssertTrue(sidebar.exists); sidebar.tap()
+        }
+        XCTAssertTrue(continuing.waitForExistence(timeout: 10)); continuing.tap()
+        let movie = app.buttons["movie-direct"]
+        XCTAssertTrue(movie.waitForExistence(timeout: 10))
+        let search = app.textFields["film-search"]
+        search.tap(); search.typeText("Direct")
+        app.buttons["pick-film"].tap()
+        XCTAssertTrue(app.buttons["play-film"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.buttons["play-film"].label, "Resume 0:30")
+        app.buttons["pick-again"].tap()
+        XCTAssertEqual(app.buttons["play-film"].label, "Resume 0:30")
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.buttons["play-film"].waitForExistence(timeout: 10))
+        app.buttons["Close"].tap()
+        updateFixture("positions/direct", ["seconds": 0, "duration": 90])
+        XCTAssertTrue(app.staticTexts["No films to continue"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["pick-film"].isEnabled)
+    }
     func testCompatiblePlaybackSeekAndResume() {
         let movie = app.buttons["movie-compatible"]
         XCTAssertTrue(movie.waitForExistence(timeout: 30)); movie.tap()
@@ -51,7 +94,8 @@ final class LibraryUITests: XCTestCase {
         expectation(for: ready, evaluatedWith: app.staticTexts["Preparing playback…"])
         waitForExpectations(timeout: 30)
         XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(slider.waitForExistence(timeout: 10))
+        revealControls()
+        XCTAssertTrue(slider.exists)
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = "iPad native player landscape"; attachment.lifetime = .keepAlways; add(attachment)
         app.buttons["Back to library"].tap()
         XCTAssertTrue(movie.waitForExistence(timeout: 10)); movie.tap(); app.buttons["play-film"].tap()

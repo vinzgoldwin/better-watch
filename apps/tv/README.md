@@ -2,6 +2,8 @@
 
 Native Kotlin/Compose app for TCL TVs running Google TV or Android TV, Android 9 or later. This does not target TCL Roku TVs. It ships in the same APK as the Android phone app, with its own TV launcher, banner, screen layout, and D-pad controls. It shares playback, filters, favorites, Watch Later, watched status, and resume positions with the existing library. See [CROSS_PLATFORM.md](../../CROSS_PLATFORM.md).
 
+Continue Watching is available in the sidebar with remaining time and a progress line. Pick for me uses the current filters, excludes Watched films, and opens details with Play/Resume and Pick again. Finishing a film removes it from Continue Watching through the existing shared profile.
+
 ## Install
 
 TV sources and tests live in this directory. The shared manifest, dependencies, library model, and playback remain in `../android/`. Build the single phone/TV APK from the Android directory below.
@@ -14,7 +16,7 @@ source ./asahi-env.sh
 ./gradlew assembleDebug
 ```
 
-The signed APK is `app/build/outputs/apk/debug/app-debug.apk`. It uses the existing debug signing key, application ID `local.kego.betterwatch`, version 1.1, build 4. Copy it to the TV with a USB drive and open it using a TV file manager; allow that file manager to install apps if prompted. No browser or WebView is used by Better Watch.
+The signed APK is `app/build/outputs/apk/debug/app-debug.apk`. It uses the existing debug signing key, application ID `local.kego.betterwatch`, version 1.1, build 5. Copy it to the TV with a USB drive and open it using a TV file manager; allow that file manager to install apps if prompted. No browser or WebView is used by Better Watch.
 
 For installation through an already authorized ADB connection:
 

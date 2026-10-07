@@ -24,6 +24,17 @@ import AppKit
             .commands {
                 CommandGroup(replacing:.newItem) {}
                 CommandGroup(after:.textEditing) { Button("Search Films") { NotificationCenter.default.post(name:.init("BetterWatchSearch"),object:nil) }.keyboardShortcut("f") }
+                CommandMenu("Playback") {
+                    Button("Library", action: store.showLibrary).keyboardShortcut("0")
+                    ForEach(0..<3) { index in
+                        Button("Video Tab \(index + 1)") { store.selectPlayback(at: index) }
+                            .keyboardShortcut(KeyEquivalent(Character(String(index + 1))))
+                            .disabled(index >= store.playbacks.count)
+                    }
+                    Divider()
+                    Button("Close Video Tab", action: store.closeCurrentPlayback).keyboardShortcut("w")
+                        .disabled(store.playback == nil)
+                }
                 CommandMenu("Library") {
                     Button("Connect to Library") { store.start() }.disabled(store.phase != .stopped)
                     Button("Disconnect…") { store.confirmStop = true }.disabled(store.phase != .running)

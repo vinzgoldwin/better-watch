@@ -39,10 +39,10 @@ struct Mark: Codable {
     }
 }
 enum SavedList: String, CaseIterable, Identifiable {
-    case all = "All Films", favorite = "Favorites", watchLater = "Watch Later", unwatched = "Unwatched", watched = "Watched"
+    case all = "All Films", continuing = "Continue Watching", favorite = "Favorites", watchLater = "Watch Later", unwatched = "Unwatched", watched = "Watched"
     var id: String { rawValue }
-    var symbol: String { switch self { case .all: "square.grid.2x2"; case .favorite: "heart"; case .watchLater: "clock"; case .unwatched: "circle"; case .watched: "checkmark.circle" } }
-    func matches(_ mark: Mark) -> Bool { switch self { case .all: true; case .favorite: mark.favorite; case .watchLater: mark.watchLater; case .unwatched: !mark.watched; case .watched: mark.watched } }
+    var symbol: String { switch self { case .all: "square.grid.2x2"; case .continuing: "play.circle"; case .favorite: "heart"; case .watchLater: "clock"; case .unwatched: "circle"; case .watched: "checkmark.circle" } }
+    func matches(_ mark: Mark, position: ResumePosition? = nil) -> Bool { switch self { case .all: true; case .continuing: !mark.watched && ResumePosition.validStart(position) > 0; case .favorite: mark.favorite; case .watchLater: mark.watchLater; case .unwatched: !mark.watched; case .watched: mark.watched } }
 }
 enum Sort: String, CaseIterable, Identifiable {
     case name = "Name", folder = "Folder", duration = "Duration", size = "Size", modified = "Newest", releaseNewest = "Newest release", releaseOldest = "Oldest release"
@@ -88,14 +88,14 @@ struct FilmQuery {
         }
         return counts.map { ($0.value.0, $0.key, $0.value.1) }.sorted { $0.0.localizedStandardCompare($1.0) == .orderedAscending }
     }
-    func apply(_ movies: [Movie], marks: [String: Mark], includeCategories: Bool = true) -> [Movie] {
+    func apply(_ movies: [Movie], marks: [String: Mark], positions: [String: ResumePosition] = [:], includeCategories: Bool = true) -> [Movie] {
         let text = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return movies.filter { m in
             (folder.isEmpty || m.topFolder == folder) &&
             (subfolder.isEmpty || m.folder == subfolder || m.folder.hasPrefix(subfolder + "/")) &&
             (artist.isEmpty || (m.artists ?? []).contains(artist)) &&
             (text.isEmpty || m.title.localizedStandardContains(text) || m.relativePath.localizedStandardContains(text)) &&
-            list.matches(marks[m.id] ?? Mark()) &&
+            list.matches(marks[m.id] ?? Mark(), position: positions[m.id]) &&
             (!includeCategories || matchesCategories(m))
         }.sorted(by: sort.ordered)
     }
@@ -108,11 +108,20 @@ func timestamp(_ seconds: Int) -> String {
     return value >= 3600 ? String(format: "%d:%02d:%02d", value / 3600, (value / 60) % 60, value % 60) : String(format: "%d:%02d", value / 60, value % 60)
 }
 
-struct ResumePosition: Codable {
+struct ResumePosition: Codable, Equatable {
     let seconds: Double
     let duration: Double
+    var fraction: Double { Self.validStart(self) > 0 ? seconds / duration : 0 }
+    var remaining: String { "\(Int(ceil(max(0, duration - seconds) / 60)))m left" }
     static func validStart(_ position: ResumePosition?) -> Double {
         guard let p = position, p.seconds.isFinite, p.duration.isFinite, p.seconds >= 5, p.seconds < p.duration - 10 else { return 0 }
         return p.seconds
     }
+}
+
+// Input is the current filtered view. A reroll repeats only when it is the sole match.
+func pickMovie(_ movies: [Movie], marks: [String: Mark], excluding id: String? = nil) -> Movie? {
+    let candidates = movies.filter { marks[$0.id]?.watched != true }
+    let alternatives = candidates.filter { $0.id != id }
+    return (alternatives.isEmpty ? candidates : alternatives).randomElement()
 }

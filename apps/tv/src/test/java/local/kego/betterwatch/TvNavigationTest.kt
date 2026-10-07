@@ -52,6 +52,50 @@ class TvNavigationTest {
     private fun back() { activity.onActivity { it.onBackPressedDispatcher.onBackPressed() }; compose.waitForIdle() }
     private fun profile(): JSONObject = OkHttpClient().newCall(Request.Builder().url("http://127.0.0.1:3399/api/profile").build()).execute().use { JSONObject(it.body!!.string()) }
 
+    private fun post(path: String, body: String) {
+        OkHttpClient().newCall(Request.Builder().url("http://127.0.0.1:3399/api/profile/$path")
+            .post(body.toRequestBody("application/json".toMediaType())).build()).execute().use { require(it.isSuccessful) }
+    }
+
+    @Test fun continueReceivesRemoteProgressAndCompletionWithoutReconnecting() {
+        post("marks/direct", """{"watched":false}""")
+        post("positions/direct", """{"seconds":30,"duration":90}""")
+        back(); key(Key.DirectionDown); key(Key.DirectionCenter)
+        compose.waitUntil(5000) { compose.onAllNodesWithText("1 films").fetchSemanticsNodes().isNotEmpty() }
+        await("tv-movie-direct")
+        compose.onNodeWithTag("tv-movie-direct").assertIsFocused()
+        compose.onNodeWithText("1m left").assertExists()
+        key(Key.DirectionCenter)
+        compose.onNodeWithTag("tv-play").assertTextContains("Resume 0:30")
+        back()
+        post("positions/direct", """{"seconds":0,"duration":90}""")
+        compose.waitUntil(5000) { compose.onAllNodesWithText("No films to continue").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("tv-pick").assertIsNotEnabled()
+        compose.onNodeWithTag("tv-search").assertIsFocused()
+    }
+
+    @Test fun pickRespectsSearchAndBackRestoresItsRemoteFocus() {
+        post("marks/direct", """{"watched":false}""")
+        key(Key.DirectionUp); key(Key.DirectionCenter)
+        compose.onNodeWithTag("tv-input").performTextReplacement("Direct film")
+        key(Key.DirectionDown); key(Key.DirectionCenter)
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("tv-movie-compatible").fetchSemanticsNodes().isEmpty() }
+        await("tv-movie-direct")
+        compose.onNodeWithTag("tv-search").assertTextContains("Direct film")
+        compose.waitUntil(5000) { compose.onAllNodesWithText("1 films").fetchSemanticsNodes().isNotEmpty() }
+        key(Key.DirectionUp); key(Key.DirectionUp)
+        compose.onNodeWithTag("tv-pick").assertIsFocused()
+        key(Key.DirectionCenter)
+        compose.onNodeWithTag("tv-detail-description").assertExists()
+        compose.onNodeWithText("Direct film").assertExists()
+        key(Key.DirectionDown)
+        compose.onNodeWithTag("tv-pick-again").assertIsFocused()
+        key(Key.DirectionCenter)
+        compose.onNodeWithText("Direct film").assertExists()
+        back()
+        compose.onNodeWithTag("tv-pick").assertIsFocused()
+    }
+
     @Test fun remoteOpensDetailsAndRestoresTheSelectedFilm() {
         compose.onNodeWithTag("tv-movie-compatible").assertIsFocused()
         key(Key.DirectionRight)

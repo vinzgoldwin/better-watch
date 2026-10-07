@@ -1,5 +1,18 @@
 # Integrated playback validation
 
+## Three video tabs, 2026-10-07
+
+Built and installed Mac version 3.2 (build 7) at `/Users/kego/Applications/Better Watch.app`. The installed executable matches the release build, and deep/strict signature verification passed.
+
+- Swift checks passed for the three-film limit, duplicate selection at capacity, closing active/background tabs, Library pausing all films, preservation of manual pause intent, and interleaved resume-file writes. Play after seeking backward from EOF is covered for relative and absolute seeking. The existing library and shared-contract tests also passed.
+- `Integration/check-engine.sh` passed against the packaged libraries using a synthetic MKV. Three actual MPVVideoViews retained their positions and chosen audio/subtitle tracks across switching. Inactive views stopped periodic snapshots and stayed paused. Repeat shutdown and close during initialization completed without callbacks after close.
+- Native view checks used a hidden AppKit window and silent playback. No browser or computer-use verification was performed; visible tab layout, physical keyboard/fullscreen interaction, and long-running three-film memory usage remain unmeasured. The earlier single-player performance samples below do not represent three-tab memory usage.
+- Tests did not modify the personal library's marks or playback positions. No server or mobile source changes were needed for this feature.
+
+The Apple build mirror is now `apps/mac/`. The older, locally modified `native/` tree was preserved. Its root contract fixture was also preserved; the current contract fixture is mirrored under `apps/mac/tests/fixtures/` for this build's tests.
+
+## Earlier single-player validation
+
 Verified 2026-09-19 on this Mac, against the installed `~/Applications/Better Watch.app` and the M1-asahi library through the existing SSH tunnel. Existing uncommitted library/web changes were preserved.
 
 ## Installed behavior

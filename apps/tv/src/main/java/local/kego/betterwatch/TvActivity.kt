@@ -69,17 +69,17 @@ class TvActivity : ComponentActivity() {
 /** One focus treatment for every remote action, including marks and dialog rows. */
 @Composable
 internal fun TvAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
-    selected: Boolean = false, icon: ImageVector? = null) {
+    selected: Boolean = false, icon: ImageVector? = null, enabled: Boolean = true) {
     var focused by remember { mutableStateOf(false) }
     Row(modifier.onFocusChanged { focused = it.isFocused }
         .background(if (focused) Color(0xFF3D3232) else Color.Transparent)
         .border(2.dp, if (focused) Coral else Color.Transparent)
-        .clickable(role = Role.Button, onClick = onClick)
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics { this.selected = selected }
         .padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         icon?.let { Icon(it, null, Modifier.size(22.dp), tint = if (focused || selected) Coral else Color.White) }
-        Text((if (selected) "✓ " else "") + label, color = if (focused || selected) Coral else Color.White,
+        Text((if (selected) "✓ " else "") + label, color = if (!enabled) TvSecondary else if (focused || selected) Coral else Color.White,
             fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -95,12 +95,12 @@ internal fun TvApp(model: LibraryModel) {
     Box(Modifier.fillMaxSize().background(TvBackground).testTag("tv-app")) {
         when {
             model.playing != null -> TvPlayer(model, model.playing!!) { model.playing = null }
-            model.selected != null -> TvDetails(model, model.selected!!, { model.selected = null }) { fromStart ->
+            model.selected != null -> TvDetails(model, model.selected!!, if (results.ready) films else emptyList(), { model.selected = null }) { fromStart ->
                 val movie = model.selected!!
                 if (fromStart) model.save(movie.id, 0.0, movie.duration)
                 model.selected = null; model.playing = movie
             }
-            else -> TvLibrary(model, films, results.categories, grid, sidebar, focusedMovie, { focusedMovie = it }, { settings = true })
+            else -> TvLibrary(model, films, results.ready, results.categories, grid, sidebar, focusedMovie, { focusedMovie = it }, { settings = true })
         }
     }
     if (settings) TvServerSettings(model) { settings = false }
@@ -117,10 +117,12 @@ internal fun TvApp(model: LibraryModel) {
 }
 
 @Composable
-private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<Pair<String, String>>, grid: LazyGridState, sidebar: FocusRequester,
+private fun TvLibrary(model: LibraryModel, films: List<Movie>, ready: Boolean, categories: List<Pair<String, String>>, grid: LazyGridState, sidebar: FocusRequester,
     focusedId: String?, rememberFocus: (String) -> Unit, settings: () -> Unit) {
     val focusFilm = remember { FocusRequester() }
     val searchFocus = remember { FocusRequester() }
+    val pickFocus = remember { FocusRequester() }
+    val canPick = ready && films.any { model.marks[it.id]?.watched != true }
     var sideFocused by remember { mutableStateOf(false) }
     var panel by remember { mutableStateOf<String?>(null) }
     var focusGeneration by remember { mutableIntStateOf(0) }
@@ -140,6 +142,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<
     // Retain the lazy-grid state and stable movie ID across details and playback.
     // Filter updates return to a real item even if a removed favorite disappeared.
     LaunchedEffect(films, focusGeneration) {
+        if (model.picking && canPick && !model.artistsVisible) { pickFocus.requestFocus(); return@LaunchedEffect }
         if (model.artistsVisible || films.isEmpty()) { searchFocus.requestFocus(); return@LaunchedEffect }
         val index = films.indexOfFirst { it.id == focusedId }.coerceAtLeast(0)
         withFrameNanos { }
@@ -177,6 +180,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<
                 Text(if (model.artistsVisible) "Artists" else model.artist.ifEmpty { model.folder.ifEmpty { model.list.label } },
                     Modifier.weight(1f), fontSize = 28.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${films.size} films", color = TvSecondary, fontSize = 14.sp)
+                if (!model.artistsVisible) TvAction("Pick for me", { model.pick(films) }, Modifier.padding(start = 16.dp).focusRequester(pickFocus).testTag("tv-pick"), icon = Icons.Outlined.Shuffle, enabled = canPick)
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TvAction((if (model.artistsVisible) model.artistSearch else model.search).ifBlank { if (model.artistsVisible) "Search artists" else "Search films" }, { panel = "search" },
@@ -194,7 +198,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<
                     }
                 }
             } else if (films.isEmpty()) {
-                Text(if (model.loading) "Connecting to your library…" else "No films found", Modifier.weight(1f).padding(top = 24.dp), color = TvSecondary, fontSize = 18.sp)
+                Text(if (model.loading) "Connecting to your library…" else if (model.list == SavedList.CONTINUING) "No films to continue" else "No films found", Modifier.weight(1f).padding(top = 24.dp), color = TvSecondary, fontSize = 18.sp)
             } else {
                 LazyVerticalGrid(GridCells.Fixed(4), state = grid, modifier = Modifier.weight(1f).testTag("tv-grid"),
                     contentPadding = PaddingValues(5.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -206,12 +210,16 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<
                             }
                             .onFocusChanged { focused = it.isFocused; if (it.isFocused) rememberFocus(movie.id) }
                             .border(2.dp, if (focused) Coral else Color.Transparent)
-                            .clickable(role = Role.Button) { rememberFocus(movie.id); model.selected = movie }
+                            .clickable(role = Role.Button) { rememberFocus(movie.id); model.open(movie) }
                             .padding(4.dp).testTag("tv-movie-${movie.id}")) {
-                            TvCover(model, movie, Modifier.fillMaxWidth().aspectRatio(16f / 9))
+                            val progress = if (model.list == SavedList.CONTINUING) model.positions[movie.id] else null
+                            Box {
+                                TvCover(model, movie, Modifier.fillMaxWidth().aspectRatio(16f / 9))
+                                if (progress != null) FilmProgress(progress, Modifier.align(Alignment.BottomCenter))
+                            }
                             Text(movie.displayTitle, Modifier.padding(top = 8.dp), color = if (focused) Coral else Color.White,
                                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text(movie.facts, Modifier.padding(top = 3.dp), color = TvSecondary, fontSize = 12.sp, maxLines = 1)
+                            Text(progress?.remaining ?: movie.facts, Modifier.padding(top = 3.dp), color = TvSecondary, fontSize = 12.sp, maxLines = 1)
                         }
                     }
                 }
@@ -247,17 +255,20 @@ private fun TvCover(model: LibraryModel, movie: Movie, modifier: Modifier) {
 }
 
 @Composable
-private fun TvDetails(model: LibraryModel, movie: Movie, close: () -> Unit, play: (Boolean) -> Unit) {
+private fun TvDetails(model: LibraryModel, movie: Movie, candidates: List<Movie>, close: () -> Unit, play: (Boolean) -> Unit) {
     val resume = remember { FocusRequester() }
     val seconds = model.position(movie.id)
     BackHandler(onBack = close)
-    LaunchedEffect(Unit) { resume.requestFocus() }
+    LaunchedEffect(movie.id) { resume.requestFocus() }
     Row(Modifier.fillMaxSize().padding(36.dp), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
         Column(Modifier.weight(0.9f).verticalScroll(rememberScrollState())) {
             TvCover(model, movie, Modifier.fillMaxWidth().aspectRatio(16f / 9))
             Spacer(Modifier.height(18.dp))
             TvAction(if (seconds > 0) "Resume ${timestamp(seconds)}" else "Play", { play(false) },
                 Modifier.fillMaxWidth().focusRequester(resume).testTag("tv-play"), icon = Icons.Outlined.PlayArrow)
+            if (model.picking) {
+                TvAction("Pick again", { model.pick(candidates) }, Modifier.fillMaxWidth().testTag("tv-pick-again"), icon = Icons.Outlined.Shuffle, enabled = candidates.any { model.marks[it.id]?.watched != true })
+            }
             if (seconds > 0) TvAction("Play from start", { play(true) }, Modifier.fillMaxWidth().testTag("tv-play-start"))
             listOf("favorite" to "Favorite", "watchLater" to "Watch Later", "watched" to "Watched").forEach { (field, label) ->
                 TvAction(label, { model.toggle(movie, field) }, Modifier.fillMaxWidth().testTag("tv-mark-$field"), selected = (model.marks[movie.id] ?: Marks()).get(field))

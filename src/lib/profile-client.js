@@ -19,8 +19,14 @@ function stored(key) {
   try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
 }
 
-export function useSharedProfile() {
+export function useSharedProfile(observePositions = false) {
   const [state, setState] = useState({ marks: {}, positions: {}, artistMarks: {} });
+  const positions = useRef({});
+  const observing = useRef(observePositions);
+  observing.current = observePositions;
+  useEffect(() => {
+    if (observePositions) setState(current => ({ ...current, positions: positions.current }));
+  }, [observePositions]);
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
   const pending = useRef(Promise.resolve());
@@ -41,9 +47,10 @@ export function useSharedProfile() {
         source = new EventSource('/api/profile/events');
         source.onmessage = event => {
           const update = JSON.parse(event.data);
-          // Playback fetches the latest position when it opens. Progress broadcasts
-          // should not rerender a library containing thousands of covers.
-          if (update.type !== 'positions') setState(current => applyProfileEvent(current, update));
+          // Cache every delta, but only render progress in Continue Watching/details.
+          if (update.type === 'snapshot') positions.current = update.positions;
+          if (update.type === 'positions') positions.current = { ...positions.current, [update.id]: update.value };
+          if (update.type !== 'positions' || observing.current) setState(current => applyProfileEvent(current, update));
           setConnected(true); setError('');
         };
         source.onopen = () => { setConnected(true); setError(''); };

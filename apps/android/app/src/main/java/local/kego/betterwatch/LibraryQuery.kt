@@ -20,7 +20,7 @@ data class FilmQuery(
     fun matchesCategories(movie: Movie) = categories.isEmpty() ||
         if (movie.categories.isEmpty()) "__uncategorized" in categories else movie.categories.any { it.lowercase(Locale.ROOT) in categories }
 
-    fun apply(movies: List<Movie>, marks: Map<String, Marks>): List<Movie> {
+    fun apply(movies: List<Movie>, marks: Map<String, Marks>, positions: Map<String, Position> = emptyMap()): List<Movie> {
         val text = search.trim().searchKey()
         val natural = naturalOrder()
         val titles = compareBy<Movie, String>(natural) { it.title }.thenBy { it.id }
@@ -38,12 +38,19 @@ data class FilmQuery(
             (folder.isEmpty() || m.topFolder == folder) && (subfolder.isEmpty() || m.folder == subfolder || m.folder.startsWith("$subfolder/")) &&
             (artist.isEmpty() || artist in m.artists) && (text.isEmpty() || m.title.searchKey().contains(text) || m.relativePath.searchKey().contains(text)) &&
             matchesCategories(m) &&
-            when (list) { SavedList.ALL -> true; SavedList.FAVORITE -> mark.favorite; SavedList.LATER -> mark.watchLater; SavedList.WATCHED -> mark.watched; SavedList.UNWATCHED -> !mark.watched }
+            when (list) { SavedList.ALL -> true; SavedList.CONTINUING -> !mark.watched && (positions[m.id]?.resume ?: 0.0) > 0; SavedList.FAVORITE -> mark.favorite; SavedList.LATER -> mark.watchLater; SavedList.WATCHED -> mark.watched; SavedList.UNWATCHED -> !mark.watched }
         }.sortedWith(order)
     }
 }
 
-data class LibraryResults(val movies: List<Movie> = emptyList(), val categories: List<Pair<String, String>> = emptyList())
+data class LibraryResults(val movies: List<Movie> = emptyList(), val categories: List<Pair<String, String>> = emptyList(), val query: FilmQuery? = null, val ready: Boolean = false)
+
+// Input is the current filtered view. Reroll repeats only when it is the sole match.
+fun pickMovie(movies: List<Movie>, marks: Map<String, Marks>, excluding: String? = null): Movie? {
+    val candidates = movies.filter { marks[it.id]?.watched != true }
+    val alternatives = candidates.filter { it.id != excluding }
+    return alternatives.ifEmpty { candidates }.randomOrNull()
+}
 
 fun categoryOptions(movies: List<Movie>): List<Pair<String, String>> = movies
     .flatMap { it.categories.ifEmpty { listOf("__uncategorized") } }

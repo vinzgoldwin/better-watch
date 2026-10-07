@@ -35,8 +35,10 @@ data class Marks(val favorite: Boolean = false, val watchLater: Boolean = false,
 }
 data class Position(val seconds: Double, val duration: Double) {
     val resume get() = if (seconds.isFinite() && duration.isFinite() && seconds >= 5 && seconds < duration - 10) seconds else 0.0
+    val fraction get() = if (resume > 0) (seconds / duration).toFloat() else 0f
+    val remaining get() = "${kotlin.math.ceil((duration - seconds).coerceAtLeast(0.0) / 60).toInt()}m left"
 }
-enum class SavedList(val label: String) { ALL("All Films"), FAVORITE("Favorites"), LATER("Watch Later"), UNWATCHED("Unwatched"), WATCHED("Watched") }
+enum class SavedList(val label: String) { ALL("All Films"), CONTINUING("Continue Watching"), FAVORITE("Favorites"), LATER("Watch Later"), UNWATCHED("Unwatched"), WATCHED("Watched") }
 enum class Sort(val label: String) { NAME("Name"), FOLDER("Folder"), DURATION("Duration"), SIZE("Size"), MODIFIED("Newest"), RELEASE_NEW("Newest release"), RELEASE_OLD("Oldest release") }
 
 class LibraryModel(application: Application) : AndroidViewModel(application) {
@@ -46,8 +48,8 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
     private val eventsHttp = http.newBuilder().readTimeout(0, TimeUnit.SECONDS).build()
     var movies by mutableStateOf(emptyList<Movie>()); private set
     var marks by mutableStateOf<Map<String, Marks>>(emptyMap()); private set
-    // Progress events never invalidate the gallery's Compose state.
-    private var positions = mutableMapOf<String, Position>()
+    // Only Continue Watching and open details read this state, keeping other grids idle.
+    val positions = mutableStateMapOf<String, Position>()
     var directories by mutableStateOf(emptyList<String>()); private set
     var loading by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null)
@@ -61,6 +63,7 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
     var artistSearch by mutableStateOf("")
     var artistsVisible by mutableStateOf(false)
     var selected by mutableStateOf<Movie?>(null)
+    var picking by mutableStateOf(false); private set
     var playing by mutableStateOf<Movie?>(null)
     private var events: Job? = null
     private var eventsCall: Call? = null
@@ -108,11 +111,17 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
         val data = j.getJSONObject("marks")
         marks = data.keys().asSequence().associateWith { Marks.parse(data.getJSONObject(it)) }
         val progress = j.getJSONObject("positions")
-        positions = progress.keys().asSequence().associateWith { val p = progress.getJSONObject(it); Position(p.getDouble("seconds"), p.getDouble("duration")) }.toMutableMap()
+        val next = progress.keys().asSequence().associateWith { val p = progress.getJSONObject(it); Position(p.getDouble("seconds"), p.getDouble("duration")) }
+        positions.keys.retainAll(next.keys); positions.putAll(next)
     }
     suspend fun flush() { val done = CompletableDeferred<Unit>(); writes.send(Write(server, "", null, done)); done.await() }
     suspend fun refreshProfile() { flush(); snapshot(request("/api/profile")) }
     fun position(id: String) = positions[id]?.resume ?: 0.0
+    fun open(movie: Movie) { picking = false; selected = movie }
+    fun pick(movies: List<Movie>) {
+        val movie = pickMovie(movies, marks, if (picking) selected?.id else null) ?: return
+        picking = true; selected = movie
+    }
     fun toggle(movie: Movie, field: String) {
         val next = (marks[movie.id] ?: Marks()).toggled(field)
         marks = marks + (movie.id to next)
@@ -151,9 +160,9 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
         }
     }
     fun disconnect() { eventsCall?.cancel(); eventsCall = null; events?.cancel(); events = null }
-    fun choose(value: SavedList) { list = value; folder = ""; subfolder = ""; artist = ""; category = emptySet(); search = ""; sort = Sort.NAME; artistsVisible = false }
+    fun choose(value: SavedList) { picking = false; list = value; folder = ""; subfolder = ""; artist = ""; category = emptySet(); search = ""; sort = Sort.NAME; artistsVisible = false }
     fun chooseArtist(value: String) { choose(SavedList.ALL); artist = value }
-    fun chooseFolder(value: String) { folder = value; subfolder = ""; artist = ""; category = emptySet(); artistsVisible = false }
+    fun chooseFolder(value: String) { picking = false; folder = value; subfolder = ""; artist = ""; category = emptySet(); artistsVisible = false }
     override fun onCleared() { disconnect(); writes.close() }
 }
 
@@ -162,12 +171,13 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
 fun rememberLibraryResults(model: LibraryModel): LibraryResults {
     val movies = model.movies; val marks = model.marks
     val query = FilmQuery(model.folder, model.subfolder, model.search, model.artist, model.category, model.list, model.sort)
-    val results by produceState(LibraryResults(), movies, marks, query) {
+    val positions = if (model.list == SavedList.CONTINUING) model.positions.toMap() else emptyMap()
+    val results by produceState(LibraryResults(), movies, marks, query, positions) {
         delay(120)
         value = withContext(Dispatchers.Default) {
-            val scope = query.copy(categories = emptySet()).apply(movies, marks)
-            LibraryResults(scope.filter(query::matchesCategories), categoryOptions(scope))
+            val scope = query.copy(categories = emptySet()).apply(movies, marks, positions)
+            LibraryResults(scope.filter(query::matchesCategories), categoryOptions(scope), query)
         }
     }
-    return results
+    return results.copy(ready = results.query == query)
 }

@@ -8,7 +8,16 @@ struct RootView: View {
     @State private var categoriesOpen = false
     @State private var categorySearch = ""
     @FocusState private var searchFocused: Bool
-    var body: some View {
+    @FocusState private var pickFocused: Bool
+    @State private var isFullscreen = false
+    @State private var tabsRevealed = false
+    @State private var tabsHideTask: Task<Void, Never>?
+    @State private var tabEventMonitor: Any?
+    private var content: some View {
+        VStack(spacing: 0) {
+        if !store.playbacks.isEmpty && (!isFullscreen || store.playback == nil) {
+            PlaybackTabBar(store: store).zIndex(2)
+        }
         ZStack {
         NavigationSplitView {
             sidebar.navigationSplitViewColumnWidth(min: 170, ideal: 200, max: 270)
@@ -25,12 +34,26 @@ struct RootView: View {
         .opacity(store.playback == nil ? 1 : 0)
         .disabled(store.playback != nil)
         .accessibilityHidden(store.playback != nil)
-        if let playback = store.playback { FilmPlayer(playback:playback,close:store.closePlayback).id(playback.id) }
+        // Keep the surfaces mounted: changing a tab must not destroy its engine or buffers.
+        ForEach(store.playbacks) { playback in
+            FilmPlayer(playback:playback,close:store.showLibrary)
+                .opacity(store.playback === playback ? 1 : 0)
+                .allowsHitTesting(store.playback === playback)
+                .accessibilityHidden(store.playback !== playback)
+                .zIndex(store.playback === playback ? 1 : 0)
+        }
+        }
+        }
+        .overlay(alignment: .top) {
+            if isFullscreen && store.playback != nil && tabsRevealed {
+                PlaybackTabBar(store: store)
+                    .onContinuousHover { phase in if case .active = phase { revealTabs() } }
+            }
         }
         .tint(accent)
         // AppKit handles toolbar visibility, including top-edge reveal in fullscreen.
         .toolbar(.automatic, for: .windowToolbar)
-        .toolbarBackground(store.playback == nil ? .automatic : .hidden, for: .windowToolbar)
+        .toolbarBackground(store.playback == nil || !isFullscreen ? .automatic : .hidden, for: .windowToolbar)
         .toolbar {
             if store.playback == nil {
                 if #available(macOS 26.0, *) {
@@ -48,7 +71,10 @@ struct RootView: View {
                 }
             }
         }
-        .sheet(item: $store.selected, onDismiss: { NotificationCenter.default.post(name: .init("BetterWatchRestoreFocus"), object: store.lastSelectedID) }) { movie in QuickLook(movie: movie).environmentObject(store) }
+    }
+    private var presentedContent: some View {
+        content
+        .sheet(item: $store.selected, onDismiss: { NotificationCenter.default.post(name: .init("BetterWatchRestoreFocus"), object: store.picking ? nil : store.lastSelectedID) }) { movie in QuickLook(movie: movie).environmentObject(store).id(movie.id) }
         .alert("Disconnect this Mac?", isPresented: $store.confirmStop) {
             Button("Keep Watching", role: .cancel) {}
             Button("Disconnect") { Task { _ = await store.stop() } }
@@ -63,8 +89,49 @@ struct RootView: View {
             Button("Delete Permanently", role: .destructive) { if let m = store.deleteCandidate { store.delete(m) }; store.deleteCandidate = nil }
         } message: { Text("This permanently deletes \(store.deleteCandidate?.displayTitle ?? "the video") and its generated previews. It cannot be undone.") }
         .alert("Better Watch", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) { Button("OK") { store.notice = nil } } message: { Text(store.notice ?? "") }
-        .onReceive(NotificationCenter.default.publisher(for: .init("BetterWatchSearch"))) { _ in searchFocused = true }
+    }
+    var body: some View {
+        presentedContent
+        .onReceive(NotificationCenter.default.publisher(for: .init("BetterWatchRestoreFocus"))) { _ in
+            if store.picking { if store.canPick { pickFocused = true } else { searchFocused = true } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .init("BetterWatchSearch"))) { _ in store.showLibrary(); searchFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { notification in
+            if notification.object as? NSWindow === NSApp.mainWindow { isFullscreen = true; revealTabs() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { notification in
+            if notification.object as? NSWindow === NSApp.mainWindow { isFullscreen = false; tabsHideTask?.cancel(); tabsRevealed = false }
+        }
+        .onChange(of: store.playback?.id) { _, _ in if isFullscreen { revealTabs() } }
+        .onAppear { installTabEvents() }
+        .onDisappear {
+            tabsHideTask?.cancel()
+            if let tabEventMonitor { NSEvent.removeMonitor(tabEventMonitor); self.tabEventMonitor = nil }
+        }
         .task { store.start() }
+    }
+    private func revealTabs() {
+        tabsRevealed = true; tabsHideTask?.cancel()
+        tabsHideTask = Task { @MainActor in
+            do { try await Task.sleep(for: .seconds(3)) } catch { return }
+            tabsRevealed = false
+        }
+    }
+    private func installTabEvents() {
+        guard tabEventMonitor == nil else { return }
+        isFullscreen = NSApp.mainWindow?.styleMask.contains(.fullScreen) == true
+        tabEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .mouseMoved, .leftMouseDown]) { event in
+            guard let window = store.playback?.surface?.window, event.window === window, store.selected == nil else { return event }
+            if event.type == .keyDown {
+                if event.modifierFlags.intersection([.command, .shift, .control, .option]) == .command,
+                   event.charactersIgnoringModifiers?.lowercased() == "w" {
+                    store.closeCurrentPlayback(); return nil
+                }
+            } else if isFullscreen && event.locationInWindow.y >= window.contentLayoutRect.maxY - 44 {
+                revealTabs()
+            }
+            return event
+        }
     }
     private var connectionStatus: some ToolbarContent {
         ToolbarItem(placement: .automatic) {
@@ -110,12 +177,15 @@ struct RootView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(store.showArtists ? "Artists" : store.heading).font(.system(size: 26, weight: .bold)).lineLimit(1)
                 Spacer()
+                if !store.showArtists {
+                    Button("Pick for me", systemImage: "shuffle") { store.pick() }.disabled(!store.canPick).focused($pickFocused)
+                }
                 Text("\(store.showArtists ? store.artists.count : store.filtered.count) \(store.showArtists ? "artists" : "films")").foregroundStyle(.secondary).font(.callout).monospacedDigit()
             }.padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 15)
             if store.showArtists { artistBrowser } else {
                 filters
                 Divider().padding(.top, 16)
-                FilmGrid(movies: store.filtered, collection: store.query.folder, marks: store.marks, open: { store.selected = $0 }, play: store.play, toggle: store.toggle, delete: { store.deleteCandidate = $0 })
+                FilmGrid(movies: store.filtered, collection: store.query.folder, marks: store.marks, positions: store.query.list == .continuing ? store.positions : [:], continuing: store.query.list == .continuing, open: store.open, play: store.play, toggle: store.toggle, delete: { store.deleteCandidate = $0 })
                     .id("\(store.query.folder)|\(store.query.subfolder)|\(store.query.list.rawValue)|\(store.query.search)|\(store.query.sort.rawValue)|\(store.query.categories.sorted())|\(store.query.artist)")
             }
         }
@@ -179,6 +249,58 @@ struct RootView: View {
     }
 }
 
+struct PlaybackTabBar: View {
+    @ObservedObject var store: Store
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: store.showLibrary) {
+                Label("Library", systemImage: "square.grid.2x2")
+                    .frame(width: 110, height: 36).contentShape(Rectangle())
+            }
+            .background(store.playback == nil ? Color.white.opacity(0.09) : .clear)
+            .overlay(alignment: .bottom) { if store.playback == nil { accent.frame(height: 2) } }
+            .help("Library (⌘0)")
+            Divider()
+            ForEach(Array(store.playbacks.enumerated()), id: \.element.id) { index, playback in
+                PlaybackTab(playback: playback, selected: store.playback === playback, number: index + 1,
+                            select: { store.selectPlayback(playback) }, close: { store.closePlayback(playback) })
+                Divider()
+            }
+        }
+        .buttonStyle(.plain).font(.system(size: 12)).frame(height: 36)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .overlay(alignment: .bottom) { Color.white.opacity(0.08).frame(height: 1) }
+    }
+}
+
+private struct PlaybackTab: View {
+    @ObservedObject var playback: Playback
+    let selected: Bool
+    let number: Int
+    let select: () -> Void
+    let close: () -> Void
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: select) {
+                HStack(spacing: 8) {
+                    Image(systemName: playback.paused || playback.ended ? "pause.fill" : "play.fill").font(.system(size: 9))
+                    Text(playback.movie.displayTitle).lineLimit(1).truncationMode(.tail)
+                    Spacer(minLength: 0)
+                }.padding(.leading, 12).frame(maxWidth: .infinity, minHeight: 36).contentShape(Rectangle())
+            }
+            .help("\(playback.movie.displayTitle) (⌘\(number))")
+            .accessibilityLabel("Select \(playback.movie.displayTitle)")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            Button(action: close) {
+                Image(systemName: "xmark").font(.system(size: 10)).frame(width: 32, height: 36).contentShape(Rectangle())
+            }.help("Close \(playback.movie.displayTitle)").accessibilityLabel("Close \(playback.movie.displayTitle)")
+        }
+        .foregroundStyle(selected ? .primary : .secondary)
+        .background(selected ? Color.white.opacity(0.09) : .clear)
+        .overlay(alignment: .bottom) { if selected { accent.frame(height: 2) } }
+    }
+}
+
 struct Cover: View {
     let path: String?
     @State private var image: NSImage?
@@ -203,6 +325,8 @@ struct FilmGrid: View {
     let movies: [Movie]
     let collection: String
     let marks: [String: Mark]
+    let positions: [String: ResumePosition]
+    let continuing: Bool
     let open: (Movie) -> Void
     let play: (Movie) -> Void
     let toggle: (Movie, WritableKeyPath<Mark,Bool>) -> Void
@@ -213,7 +337,7 @@ struct FilmGrid: View {
             let count = max(2, Int((geometry.size.width-48)/255))
             ScrollViewReader { reader in
                 ScrollView {
-                    if movies.isEmpty { ContentUnavailableView("No films found", systemImage: "magnifyingglass", description: Text("Try changing your search or filters.")).padding(.top, 90) }
+                    if movies.isEmpty { ContentUnavailableView(continuing ? "No films to continue" : "No films found", systemImage: continuing ? "play.circle" : "magnifyingglass").padding(.top, 90) }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18, alignment: .top), count: count), alignment: .leading, spacing: 24) {
                         ForEach(movies) { movie in
                             Button { focused = movie.id; open(movie) } label: {
@@ -226,11 +350,16 @@ struct FilmGrid: View {
                                                     .background(.black.opacity(0.85)).padding(6)
                                             }
                                         }
+                                        .overlay(alignment: .bottom) {
+                                            if let position = positions[movie.id], position.fraction > 0 {
+                                                GeometryReader { bar in Rectangle().fill(accent).frame(width: bar.size.width * position.fraction) }.frame(height: 3).background(.gray)
+                                            }
+                                        }
                                     Text(movie.displayTitle).font(.system(size: 13, weight: .semibold)).lineLimit(2).frame(height: 34, alignment: .topLeading)
                                     HStack(spacing: 5) {
                                         if marks[movie.id]?.watched == true { Image(systemName: "checkmark.circle.fill").foregroundStyle(accent) }
                                         if marks[movie.id]?.favorite == true { Image(systemName: "heart.fill").foregroundStyle(accent) }
-                                        Text([movie.location(in: collection),movie.year].filter { !$0.isEmpty }.joined(separator: " · ")).lineLimit(1)
+                                        Text(positions[movie.id]?.remaining ?? [movie.location(in: collection),movie.year].filter { !$0.isEmpty }.joined(separator: " · ")).lineLimit(1)
                                     }.font(.caption).foregroundStyle(.secondary)
                                 }.contentShape(Rectangle())
                             }.buttonStyle(.plain).focusable().focusEffectDisabled().focused($focused, equals: movie.id).id(movie.id)
@@ -310,7 +439,10 @@ struct QuickLook: View {
                             let location = movie.location(in:store.query.folder)
                             if !location.isEmpty && !(movie.categories ?? []).contains(location) { Text(location).font(.callout).foregroundStyle(.secondary) }
                             if let tags = movie.categories, !tags.isEmpty { FlowTags(tags:tags) }
-                            Button { preview.stop(); store.play(movie) } label: { Label("Play Film",systemImage:"play.fill").fontWeight(.semibold).padding(.horizontal,8).padding(.vertical,4) }.buttonStyle(.plain).padding(.horizontal,12).padding(.vertical,7).background(Color.white,in:RoundedRectangle(cornerRadius:6)).foregroundStyle(.black)
+                            Button { preview.stop(); store.play(movie) } label: { Label(ResumePosition.validStart(store.positions[movie.id]) > 0 ? "Resume " + timestamp(Int(ResumePosition.validStart(store.positions[movie.id]))) : "Play Film",systemImage:"play.fill").fontWeight(.semibold).padding(.horizontal,8).padding(.vertical,4) }.buttonStyle(.plain).padding(.horizontal,12).padding(.vertical,7).background(Color.white,in:RoundedRectangle(cornerRadius:6)).foregroundStyle(.black)
+                            if store.picking {
+                                Button("Pick again", systemImage: "shuffle") { store.pick() }.disabled(!store.canPick)
+                            }
                             ViewThatFits(in:.horizontal) {
                                 HStack(spacing:15) { marks }
                                 VStack(alignment:.leading,spacing:12) { marks }

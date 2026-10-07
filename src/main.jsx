@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MovieBrowser } from './components/movie-browser.jsx';
 import { FilmPlayer } from './components/film-player.jsx';
 import { useSharedProfile } from './lib/profile-client.js';
-import { relativeMovieFolder } from './lib/gallery.js';
+import { relativeMovieFolder, canContinue, pickMovie } from './lib/gallery.js';
 import { createRoot } from 'react-dom/client';
 import {
+  Shuffle,
+  PlayCircle,
   Circle,
   Folder,
   Menu,
@@ -75,9 +77,11 @@ function App() {
   const [artistSearch, setArtistSearch] = useState('');
   const [artistSort, setArtistSort] = useState('name');
   const [artistList, setArtistList] = useState('all');
-  const profile = useSharedProfile();
-  const movieMarks = profile.marks, artistMarks = profile.artistMarks;
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [picking, setPicking] = useState(false);
   const [playing, setPlaying] = useState(null);
+  const profile = useSharedProfile(!playing && (activeMarkFilter === 'continuing' || selectedMovie !== null));
+  const movieMarks = profile.marks, artistMarks = profile.artistMarks;
   const drawerRef = useRef(null);
   const [libraryError, setLibraryError] = useState('');
   const [cleanupStatus, setCleanupStatus] = useState('');
@@ -170,6 +174,7 @@ function App() {
     return counts;
   }, [movieMarks, movies]);
 
+  const continuePositions = activeMarkFilter === 'continuing' ? profile.positions : null;
   const categoryScopeMovies = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -185,12 +190,12 @@ function App() {
         const marks = movieMarks[movie.id] || {};
         const markMatch =
           activeMarkFilter === 'all' ||
-          (activeMarkFilter === 'notWatched' ? !marks.watched : Boolean(marks[activeMarkFilter]));
+          (activeMarkFilter === 'continuing' ? canContinue(marks, continuePositions[movie.id]) : activeMarkFilter === 'notWatched' ? !marks.watched : Boolean(marks[activeMarkFilter]));
         if (!markMatch) return false;
         if (!query) return true;
         return [movie.title, movie.relativePath, movie.folder].join(' ').toLowerCase().includes(query);
       });
-  }, [activeArtist, activeFolder, activeMarkFilter, activeSubfolder, movieMarks, movies, search]);
+  }, [activeArtist, activeFolder, activeMarkFilter, activeSubfolder, movieMarks, movies, search, continuePositions]);
 
   const categoryOptions = useMemo(() => buildCategoryOptions(categoryScopeMovies), [categoryScopeMovies]);
 
@@ -282,6 +287,7 @@ function App() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not delete the video.');
+      setSelectedMovie(null);
       setLibrary((current) => ({ ...current, movies: current.movies.filter((item) => item.id !== movie.id) }));
       if (result.warning) window.alert(result.warning);
     } catch (error) {
@@ -291,7 +297,12 @@ function App() {
     }
   }
 
-  function openMovie(movie) { setPlaying(movie); }
+  function openMovie(movie) { setSelectedMovie(null); setPlaying(movie); }
+  function pick() {
+    const movie = pickMovie(filteredMovies, movieMarks, picking ? selectedMovie?.id : null);
+    if (movie) { setPicking(true); setSelectedMovie(movie); }
+  }
+  const canPick = filteredMovies.some(movie => !movieMarks[movie.id]?.watched);
 
   async function rescanLibrary() {
     setScanError('');
@@ -335,7 +346,7 @@ function App() {
   }
 
   const lists = [
-    ['all', 'All Films', Grid2X2], ['favorite', 'Favorites', Heart],
+    ['all', 'All Films', Grid2X2], ['continuing', 'Continue Watching', PlayCircle], ['favorite', 'Favorites', Heart],
     ['watchLater', 'Watch Later', Clock], ['notWatched', 'Unwatched', Circle], ['watched', 'Watched', CheckCircle]
   ];
   const heading = activeView === 'artists' ? 'Artists' : activeArtist !== 'All Artists' ? activeArtist : activeFolder !== 'All Films' ? activeFolder : lists.find(([key]) => key === activeMarkFilter)[1];
@@ -414,6 +425,7 @@ function App() {
                   />
 
                   <CategoryPicker value={selectedCategories} onChange={setSelectedCategories} options={categoryOptions} />
+                  <button className="pick-film" type="button" onClick={pick} disabled={!canPick} title={canPick ? 'Choose an unwatched film from this view' : 'No unwatched films match this view'}><Shuffle aria-hidden="true" /> Pick for me</button>
 
                 </div>
               </header>
@@ -422,6 +434,9 @@ function App() {
               <MovieBrowser
                 key={JSON.stringify([activeFolder, activeSubfolder, activeArtist, activeMarkFilter, sortValue, search, selectedCategories.map((item) => item.value)])}
                 movies={filteredMovies} collection={activeFolder} subfolder={activeSubfolder}
+                positions={profile.positions} continuing={activeMarkFilter === 'continuing'}
+                selected={selectedMovie} onSelect={movie => { setPicking(false); setSelectedMovie(movie); }} onClose={() => setSelectedMovie(null)}
+                onPickAgain={picking ? pick : null} canPick={canPick}
                 movieMarks={movieMarks} onToggleMark={toggleMovieMark} onOpen={openMovie} onDelete={deleteMovie}
                 openingId={null} deletingId={deletingMovieId} scanning={library.scanning} />
             </>

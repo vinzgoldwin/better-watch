@@ -32,9 +32,15 @@ TV uses the approved Mac-style sidebar and four-column grid, with visible remote
 
 The latest approved [demo and editable HyperFrames source](videos/better-watch-demo-v3/README.md) live under `videos/`.
 
+## Continue Watching and Pick for me
+
+Every app and the web companion has a **Continue Watching** sidebar list with progress bars and remaining time. It includes unwatched films with a valid saved resume position and removes them when playback finishes. Existing search, category, artist, folder, and sort controls still apply.
+
+**Pick for me** chooses an unwatched film from the complete filtered view and opens its film details. **Pick again** avoids the current film when another match exists. Play or Resume starts the film; the picker is unavailable when no unwatched films match. TV keeps still covers and restores remote focus to the picker after Back.
+
 ## Shared library
 
-Favorites, Watch Later, watched status, and playback positions live in `~/.local/share/better-watch/profile.json` on the server’s internal disk. Mac and existing browser data migrate once, filling missing records without replacing server values. Clients subscribe to small changes over SSE; playback updates do not redraw the movie grid.
+Favorites, Watch Later, watched status, and playback positions live in `~/.local/share/better-watch/profile.json` on the server’s internal disk. Mac and existing browser data migrate once, filling missing records without replacing server values. Clients subscribe to small changes over SSE; playback updates refresh Continue Watching and open details without refiltering other library views.
 
 Progress saves every 15 seconds while playing and on pause/exit. Concurrent playback of the same film uses the latest received save. Resume below five seconds or within ten seconds of completion starts from zero. Sync requires a connection; the Mac also keeps its existing local recovery files.
 

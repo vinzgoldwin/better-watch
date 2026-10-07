@@ -7,16 +7,20 @@ import UniformTypeIdentifiers
     @Published var phase: Phase = .stopped
     @Published var movies: [Movie] = []
     @Published var filtered: [Movie] = []
+    @Published private(set) var positions: [String: ResumePosition] = [:]
+    @Published private(set) var filtering = false
+    @Published private(set) var picking = false
     @Published var folders: [String] = []
     @Published var directories: [String] = []
     @Published var artists: [String] = []
     @Published var categoryOptions: [(name: String, key: String, count: Int)] = []
     @Published var marks: [String: Mark] = [:]
     @Published var query = FilmQuery() { didSet { updateResults() } }
-    @Published var selected: Movie? { didSet { if let selected { lastSelectedID = selected.id } } }
+    @Published var selected: Movie? { didSet { if let selected { lastSelectedID = selected.id; positions = SharedLibrary.shared.positions } } }
     var lastSelectedID: String?
     @Published var error: String?
-    @Published var playback: Playback?
+    @Published private(set) var playbacks: [Playback] = []
+    @Published private(set) var playback: Playback?
     @Published var scanning = false
     @Published var refreshing = false
     @Published var showArtists = false
@@ -36,13 +40,19 @@ import UniformTypeIdentifiers
         marksURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Better Watch/marks.json")
         if let data = try? Data(contentsOf: marksURL), let stored = try? JSONDecoder().decode([String: Mark].self, from: data) { marks = stored }
         SharedLibrary.shared.onMarks = { [weak self] values in self?.marks = values; self?.persistMarks(); self?.updateResults() }
+        // Only the progress view and open details observe playback broadcasts.
+        SharedLibrary.shared.onPositions = { [weak self] values in
+            guard let self, self.playback == nil else { return }
+            if self.query.list == .continuing { self.positions = values; self.updateResults() }
+            else if self.selected != nil { self.positions = values }
+        }
         SharedLibrary.shared.onError = { [weak self] message in self?.notice = message }
     }
     var heading: String { !query.artist.isEmpty ? query.artist : !query.folder.isEmpty ? query.folder : query.list.rawValue }
     var scope: String { query.subfolder.isEmpty ? query.folder : query.subfolder }
     func reconnect() {
         guard phase == .running else { return }
-        closePlayback(); selected = nil; scanTask?.cancel(); requestTask?.cancel(); phase = .stopped; start()
+        closeAllPlayback(); selected = nil; scanTask?.cancel(); requestTask?.cancel(); phase = .stopped; start()
     }
     func start() {
         guard phase == .stopped else { return }
@@ -73,7 +83,7 @@ import UniformTypeIdentifiers
             return phase == .stopped
         }
         guard phase == .running || phase == .stopped else { return false }
-        closePlayback(); phase = .stopping; selected = nil; scanTask?.cancel(); filterTask?.cancel(); requestTask?.cancel()
+        closeAllPlayback(); phase = .stopping; selected = nil; scanTask?.cancel(); filterTask?.cancel(); requestTask?.cancel()
         do {
             await SharedLibrary.shared.flush()
             SharedLibrary.shared.disconnect()
@@ -95,22 +105,31 @@ import UniformTypeIdentifiers
         if scanning { pollScan() }
     }
     func updateResults() {
+        filtering = true
+        let positions = SharedLibrary.shared.positions
+        if query.list == .continuing { self.positions = positions }
         filterTask?.cancel(); generation += 1
         let token = generation, query = query, movies = movies, marks = marks
         filterTask = Task {
             do {
                 try await Task.sleep(for: .milliseconds(120))
                 let result = await Task.detached(priority: .userInitiated) { () -> ([Movie], [(String, String, Int)]) in
-                    let scope = query.apply(movies, marks: marks, includeCategories: false)
+                    let scope = query.apply(movies, marks: marks, positions: positions, includeCategories: false)
                     return (scope.filter(query.matchesCategories), FilmQuery.categoryOptions(in: scope))
                 }.value
                 guard !Task.isCancelled, generation == token else { return }
-                filtered = result.0; categoryOptions = result.1
+                filtered = result.0; categoryOptions = result.1; filtering = false
             } catch { }
         }
     }
     func chooseFolder(_ folder: String) { showArtists = false; query.folder = folder; query.subfolder = ""; query.artist = ""; query.categories = [] }
     func chooseList(_ list: SavedList) { showArtists = false; query = FilmQuery(list: list) }
+    var canPick: Bool { !filtering && filtered.contains { marks[$0.id]?.watched != true } }
+    func open(_ movie: Movie) { picking = false; selected = movie }
+    func pick() {
+        guard !filtering, let movie = pickMovie(filtered, marks: marks, excluding: picking ? selected?.id : nil) else { return }
+        picking = true; selected = movie
+    }
     func toggle(_ movie: Movie, _ field: WritableKeyPath<Mark, Bool>) {
         var mark = marks[movie.id] ?? Mark(); mark[keyPath: field].toggle(); marks[movie.id] = mark
         persistMarks(); updateResults()
@@ -138,19 +157,56 @@ import UniformTypeIdentifiers
     }
     func play(_ movie: Movie) {
         guard phase == .running else { return }
-        closePlayback(); selected = nil; lastSelectedID = movie.id
+        playbackTask?.cancel(); selected = nil
+        if let existing = playbacks.first(where: { $0.movie.id == movie.id }) { selectPlayback(existing); return }
+        guard playbacks.count < 3 else { error = "Close a video tab before opening another. You can keep up to 3 videos open."; return }
         playbackTask = Task {
             do {
                 try await SharedLibrary.shared.refresh()
                 try Task.checkCancellation()
-                playback = Playback(movie: movie, sharedPosition: SharedLibrary.shared.positions[movie.id])
+                openPlayback(movie, sharedPosition: SharedLibrary.shared.positions[movie.id])
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
     }
-    func closePlayback() {
+    // Recheck admission after the asynchronous profile refresh. A movie has one tab.
+    func openPlayback(_ movie: Movie, sharedPosition: ResumePosition?) {
+        guard phase == .running else { return }
+        if let existing = playbacks.first(where: { $0.movie.id == movie.id }) { selectPlayback(existing); return }
+        guard playbacks.count < 3 else { error = "Close a video tab before opening another. You can keep up to 3 videos open."; return }
+        let next = Playback(movie: movie, sharedPosition: sharedPosition)
+        playbacks.append(next)
+        selectPlayback(next)
+    }
+    func selectPlayback(_ next: Playback?) {
+        guard next == nil || playbacks.contains(where: { $0 === next }) else { return }
         playbackTask?.cancel(); playbackTask = nil
-        playback?.close(); playback = nil
-        NotificationCenter.default.post(name:.init("BetterWatchRestoreFocus"),object:lastSelectedID)
+        selected = nil
+        guard playback !== next else { return }
+        playback?.setActive(false)
+        playback = next
+        next?.setActive(true)
+        if let next { lastSelectedID = next.movie.id }
+        else {
+            if query.list == .continuing { updateResults() }
+            NotificationCenter.default.post(name:.init("BetterWatchRestoreFocus"),object:picking ? nil : lastSelectedID)
+        }
+    }
+    func showLibrary() { selectPlayback(nil) }
+    func selectPlayback(at index: Int) {
+        guard playbacks.indices.contains(index) else { return }
+        selectPlayback(playbacks[index])
+    }
+    func closePlayback(_ item: Playback) {
+        guard let index = playbacks.firstIndex(where: { $0 === item }) else { return }
+        item.close()
+        playbacks.remove(at: index)
+        if playback === item { selectPlayback(playbacks.isEmpty ? nil : playbacks[min(index, playbacks.count - 1)]) }
+    }
+    func closeCurrentPlayback() { if let playback { closePlayback(playback) } }
+    func closeAllPlayback() {
+        playbackTask?.cancel(); playbackTask = nil
+        playbacks.forEach { $0.close() }
+        playbacks = []; playback = nil
     }
     func rescan() {
         guard !scanning, phase == .running else { return }
@@ -184,6 +240,7 @@ import UniformTypeIdentifiers
         requestTask = Task {
             do {
                 _ = try await API.data("/api/movie", body:["id":movie.id,"confirm":"delete-from-disk"], method:"DELETE")
+                if let tab = playbacks.first(where: { $0.movie.id == movie.id }) { closePlayback(tab) }
                 selected = nil; try await refresh()
             } catch { self.error = error.localizedDescription }
         }

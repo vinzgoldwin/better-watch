@@ -6,6 +6,8 @@ Tap the video or letterboxing to toggle controls. Double-tap the left or right h
 
 Search, category options, saved lists, sorting, and resume follow the [shared native behavior contract](../../CROSS_PLATFORM.md#shared-contract). Selecting an artist clears unrelated film filters. Selecting the current preview moment replays it; previews pause when the app leaves the foreground.
 
+Continue Watching is available in the sidebar with remaining time and a progress line. Pick for me uses the current filters, excludes Watched films, and opens details with Play/Resume and Pick again. Finishing a film removes it from Continue Watching through the existing shared profile.
+
 ## Build and install
 
 Requires Xcode and XcodeGen on a Mac. Connect and trust the iPad, enable Developer Mode, and use an Apple Development signing identity.
@@ -29,7 +31,7 @@ Install/open Tailscale on the iPad, sign into the server’s tailnet, approve th
 
 Start the fixture from the repository root with `PATH="$HOME/.local/share/better-watch-media/bin:$PATH" node scripts/mobile-fixture.js`. It generates synthetic films and an isolated profile on the internal disk, then removes them when stopped.
 
-Simulator tests use this server at `http://localhost:3399`. A reverse SSH forward (`ssh -N -R 127.0.0.1:3399:127.0.0.1:3399 kego@100.99.243.29`) exposes the Linux fixture server to the Mac simulator. They exercise Quick Look, favorites, search, HLS playback, seeking, resume, and opening the movie description during playback across rotation.
+Simulator tests use this server at `http://localhost:3399`. A reverse SSH forward (`ssh -N -R 127.0.0.1:3399:127.0.0.1:3399 kego@100.99.243.29`) exposes the Linux fixture server to the Mac simulator. They exercise Quick Look, favorites, search, shared Continue Watching updates, filtered picking, HLS playback, seeking, resume, and opening the movie description during playback across rotation.
 
 ```sh
 xcodebuild -project BetterWatchMobile.xcodeproj -scheme BetterWatchMobile \

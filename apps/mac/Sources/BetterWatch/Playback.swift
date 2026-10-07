@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 import MPVKit
 
-struct PlaybackTrack: Identifiable {
+struct PlaybackTrack: Identifiable, Equatable {
     let id: Int
     let type: String
     let title: String
@@ -16,13 +16,32 @@ struct PlaybackTrack: Identifiable {
     }
 }
 
+// All Mac players share one recovery file, so one tab cannot overwrite another's progress.
+@MainActor final class PlaybackPositions {
+    static let shared = PlaybackPositions(url: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Better Watch/resume.json"))
+    private let url: URL
+    private var positions: [String: ResumePosition]
+    init(url: URL) {
+        self.url = url
+        positions = (try? JSONDecoder().decode([String: ResumePosition].self, from: Data(contentsOf: url))) ?? [:]
+    }
+    func save(_ id: String, position: ResumePosition) throws {
+        var updated = positions
+        updated[id] = position
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(updated).write(to: url, options: .atomic)
+        positions = updated
+    }
+}
+
 @MainActor final class Playback: ObservableObject, Identifiable {
     let id = UUID()
     let movie: Movie
     let start: Double
     @Published var position = 0.0
     @Published var duration = 0.0
-    @Published var paused = false
+    @Published private(set) var active = false
+    @Published var paused = true
     @Published var loaded = false
     @Published var buffering = false
     @Published var ended = false
@@ -34,16 +53,14 @@ struct PlaybackTrack: Identifiable {
     weak var surface: MPVVideoView?
     private var subtitleTask: Task<Void, Never>?
     private var closed = false
+    private var wantsToPlay = true
     private var lastSaved = Date.distantPast
-    private var positions: [String: ResumePosition]
-    private let positionsURL: URL
+    private var lastSavedPosition: ResumePosition?
     private var diagnosticFile: FileHandle?
     private var viewingActivity: NSObjectProtocol?
 
     init(movie: Movie, sharedPosition: ResumePosition? = nil) {
         self.movie = movie
-        positionsURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Better Watch/resume.json")
-        positions = (try? JSONDecoder().decode([String: ResumePosition].self, from: Data(contentsOf: positionsURL))) ?? [:]
         start = ResumePosition.validStart(sharedPosition)
         volume = UserDefaults.standard.object(forKey: "playbackVolume") as? Double ?? 70
         if let path = ProcessInfo.processInfo.environment["BW_PLAYBACK_DIAGNOSTICS"] {
@@ -53,35 +70,57 @@ struct PlaybackTrack: Identifiable {
     }
     func receive(_ state: [AnyHashable: Any]) {
         guard !closed else { return }
-        let wasLoaded = loaded
+        let wasLoaded = loaded, wasPaused = paused, wasEnded = ended
         loaded = state["loaded"] as? Bool ?? loaded
         position = state["time-pos"] as? Double ?? position
         duration = state["duration"] as? Double ?? duration
-        paused = state["pause"] as? Bool ?? paused
+        paused = !active || (state["pause"] as? Bool ?? paused)
         buffering = state["paused-for-cache"] as? Bool ?? false
         ended = state["eof-reached"] as? Bool ?? false
-        if loaded && !paused && !ended && viewingActivity == nil {
-            viewingActivity = ProcessInfo.processInfo.beginActivity(options:[.idleDisplaySleepDisabled,.idleSystemSleepDisabled],reason:"Watching a film")
-        } else if (paused || ended), let viewingActivity {
-            ProcessInfo.processInfo.endActivity(viewingActivity); self.viewingActivity=nil
-        }
+        updateViewingActivity()
         volume = state["volume"] as? Double ?? volume
         muted = state["mute"] as? Bool ?? muted
-        tracks = (state["track-list"] as? [[String: Any]] ?? []).compactMap(PlaybackTrack.init)
+        let updatedTracks = (state["track-list"] as? [[String: Any]] ?? []).compactMap(PlaybackTrack.init)
+        if tracks != updatedTracks { tracks = updatedTracks }
         error = state["error"] as? String
         if loaded && !wasLoaded { loadSubtitles() }
-        if loaded && Date().timeIntervalSince(lastSaved) >= 15 { save() }
+        if loaded && (!active || wasPaused != paused || wasEnded != ended || Date().timeIntervalSince(lastSaved) >= 15) { save() }
         record(state)
+    }
+    private func updateViewingActivity() {
+        if active && loaded && !paused && !ended && viewingActivity == nil {
+            viewingActivity = ProcessInfo.processInfo.beginActivity(options:[.idleDisplaySleepDisabled,.idleSystemSleepDisabled],reason:"Watching a film")
+        } else if (!active || paused || ended), let viewingActivity {
+            ProcessInfo.processInfo.endActivity(viewingActivity); self.viewingActivity=nil
+        }
+    }
+    func setActive(_ value: Bool) {
+        guard !closed, active != value else { return }
+        active = value
+        paused = !value || !wantsToPlay || ended
+        command(["set", "pause", paused ? "yes" : "no"])
+        surface?.setActive(value)
+        updateViewingActivity()
+        if !value { save() }
     }
     func command(_ args: [String]) { surface?.command(args) }
     func togglePause() {
-        if ended { seek(to:0); command(["set","pause","no"]) }
-        else { command(["cycle","pause"]) }
+        guard active, !closed else { return }
+        if ended { seek(to:0); wantsToPlay = true; ended = false }
+        else { wantsToPlay.toggle() }
+        paused = !wantsToPlay
+        command(["set", "pause", paused ? "yes" : "no"])
+        updateViewingActivity()
         save()
-        record(["action":"toggle-pause","position":position,"wasPaused":paused])
+        record(["action":"toggle-pause","position":position,"paused":paused])
     }
-    func seek(by seconds: Double) { command(["seek",String(seconds),"relative+exact"]); record(["action":"seek","delta":seconds]) }
+    func seek(by seconds: Double) {
+        // Seeking away from EOF leaves mpv paused until the user presses Play.
+        if ended { wantsToPlay = false }
+        command(["seek",String(seconds),"relative+exact"]); record(["action":"seek","delta":seconds])
+    }
     func seek(to seconds: Double) {
+        if ended { wantsToPlay = false }
         let target=max(0,min(seconds,duration))
         command(["seek",String(target),"absolute+exact"]); record(["action":"seek-to","seconds":target])
     }
@@ -111,17 +150,19 @@ struct PlaybackTrack: Identifiable {
     func retrySubtitles() { subtitleNotice = nil; subtitleTask?.cancel(); loadSubtitles() }
     private func save() {
         guard loaded, duration.isFinite, position.isFinite, duration > 0 else { return }
-        positions[movie.id] = ResumePosition(seconds: ended ? 0 : min(duration, max(0, position)), duration:duration)
-        SharedLibrary.shared.savePosition(movie.id, position: positions[movie.id]!)
+        let position = ResumePosition(seconds: ended ? 0 : min(duration, max(0, position)), duration:duration)
+        lastSaved = Date()
+        // Hidden tabs must not keep resending stale positions over another device's progress.
+        guard position != lastSavedPosition else { return }
+        SharedLibrary.shared.savePosition(movie.id, position: position)
         do {
-            try FileManager.default.createDirectory(at:positionsURL.deletingLastPathComponent(),withIntermediateDirectories:true)
-            try JSONEncoder().encode(positions).write(to:positionsURL,options:.atomic)
-            lastSaved = Date()
+            try PlaybackPositions.shared.save(movie.id, position: position)
+            lastSavedPosition = position
         } catch { self.error = "Could not save playback position: \(error.localizedDescription)" }
     }
     func close() {
         guard !closed else { return }
-        save(); closed = true; subtitleTask?.cancel(); surface?.shutdown(); surface = nil
+        save(); closed = true; active = false; paused = true; subtitleTask?.cancel(); surface?.shutdown(); surface = nil
         if let viewingActivity { ProcessInfo.processInfo.endActivity(viewingActivity); self.viewingActivity=nil }
         record(["action":"closed"]); try? diagnosticFile?.close(); diagnosticFile=nil
     }
@@ -129,18 +170,19 @@ struct PlaybackTrack: Identifiable {
         guard let diagnosticFile else { return }
         var values = state.reduce(into:[String:Any]()) { result,pair in if let key = pair.key as? String { result[key]=pair.value } }
         values["uptime"] = ProcessInfo.processInfo.systemUptime; values["session"] = id.uuidString
-        if let data = try? JSONSerialization.data(withJSONObject:values,options:.sortedKeys) { try? diagnosticFile.write(contentsOf:data + Data([10])) }
+        if let data = try? JSONSerialization.data(withJSONObject:values,options:.sortedKeys) { _ = try? diagnosticFile.seekToEnd(); try? diagnosticFile.write(contentsOf:data + Data([10])) }
     }
 }
 
 struct MPVSurface: NSViewRepresentable {
     let playback: Playback
     func makeNSView(context: Context) -> MPVVideoView {
-        let view = MPVVideoView(url:API.url("/api/stream/" + playback.movie.id).absoluteString,start:playback.start,volume:playback.volume) { [weak playback] state in
+        let view = MPVVideoView(url:API.url("/api/stream/" + playback.movie.id).absoluteString,start:playback.start,volume:playback.volume,paused:playback.paused) { [weak playback] state in
             // MPVKit delivers snapshots only on the main queue.
             MainActor.assumeIsolated { playback?.receive(state) }
         }
         playback.surface = view
+        view.setActive(playback.active)
         return view
     }
     func updateNSView(_ view: MPVVideoView, context: Context) {}
@@ -220,9 +262,12 @@ struct FilmPlayer: View {
         .onContinuousHover { phase in if case .active = phase { reveal() } }
         .onAppear {
             isFullscreen = (playback.surface?.window ?? NSApp.keyWindow)?.styleMask.contains(.fullScreen) == true
-            installKeys(); reveal()
+            if playback.active { installKeys(); reveal() }
         }
-        .onDisappear { hideTask?.cancel(); if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }; showCursor(); playback.close() }
+        .onDisappear { deactivateControls() }
+        .onChange(of:playback.active) { _, active in
+            if active { installKeys(); reveal() } else { deactivateControls() }
+        }
         .onChange(of:showDescription) { _,_ in reveal() }
         .onChange(of:showTracks) { _,_ in reveal() }
         .onReceive(NotificationCenter.default.publisher(for:NSApplication.didResignActiveNotification)) { _ in showCursor() }
@@ -254,6 +299,7 @@ struct FilmPlayer: View {
         Button(action:action) { Image(systemName:symbol).font(.system(size:22,weight:.medium)).frame(width:30,height:32).contentShape(Rectangle()) }.buttonStyle(.plain).help(label).accessibilityLabel(label)
     }
     private func reveal() {
+        guard playback.active else { return }
         controls=true; showCursor(); hideTask?.cancel()
         hideTask=Task { @MainActor in
             do { try await Task.sleep(for:.seconds(3)) } catch { return }
@@ -263,6 +309,12 @@ struct FilmPlayer: View {
         }
     }
     private func showCursor() { if cursorHidden { NSCursor.unhide(); cursorHidden=false } }
+    private func deactivateControls() {
+        hideTask?.cancel(); hideTask = nil
+        if let eventMonitor { NSEvent.removeMonitor(eventMonitor); self.eventMonitor = nil }
+        showDescription = false; showTracks = false; seeking = false; controls = false
+        showCursor()
+    }
     private func fullscreen() { playback.surface?.window?.toggleFullScreen(nil) }
     private func exit() {
         showCursor()
@@ -270,8 +322,9 @@ struct FilmPlayer: View {
         close()
     }
     private func installKeys() {
+        guard eventMonitor == nil else { return }
         eventMonitor=NSEvent.addLocalMonitorForEvents(matching:[.keyDown,.mouseMoved,.leftMouseDown]) { event in
-            guard event.window == playback.surface?.window else { return event }
+            guard playback.active, event.window == playback.surface?.window else { return event }
             if event.type != .keyDown { reveal(); return event }
             if showDescription || showTracks { return event }
             guard event.modifierFlags.intersection([.command,.control,.option]).isEmpty else { return event }

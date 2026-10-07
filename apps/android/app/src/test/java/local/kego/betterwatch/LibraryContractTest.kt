@@ -17,7 +17,7 @@ class LibraryContractTest {
         val fixture = JSONObject(File("../../../tests/fixtures/native-library-contract.json").readText())
         val movies = fixture.getJSONArray("movies").let { rows -> (0 until rows.length()).map { Movie.parse(rows.getJSONObject(it)) } }
         val marks = fixture.getJSONObject("marks").let { rows -> rows.keys().asSequence().associateWith { Marks.parse(rows.getJSONObject(it)) } }
-        val lists = mapOf("favorite" to SavedList.FAVORITE, "watchLater" to SavedList.LATER, "unwatched" to SavedList.UNWATCHED, "watched" to SavedList.WATCHED)
+        val lists = mapOf("continuing" to SavedList.CONTINUING, "favorite" to SavedList.FAVORITE, "watchLater" to SavedList.LATER, "unwatched" to SavedList.UNWATCHED, "watched" to SavedList.WATCHED)
         val sorts = mapOf("folder" to Sort.FOLDER, "duration" to Sort.DURATION, "size" to Sort.SIZE, "modified" to Sort.MODIFIED, "releaseNewest" to Sort.RELEASE_NEW, "releaseOldest" to Sort.RELEASE_OLD)
         val cases = fixture.getJSONArray("cases")
         val failures = mutableListOf<String>()
@@ -26,7 +26,13 @@ class LibraryContractTest {
             val query = FilmQuery(q.optString("folder"), q.optString("subfolder"), q.optString("search"), q.optString("artist"),
                 q.optJSONArray("categories")?.strings()?.toSet() ?: emptySet(), lists[q.optString("list")] ?: SavedList.ALL, sorts[q.optString("sort")] ?: Sort.NAME)
             val expected = case.getJSONArray("expected").strings()
-            val actual = query.apply(movies, marks).map { it.id }
+            val positions = (case.optJSONObject("positions") ?: fixture.getJSONObject("positions")).let { rows -> rows.keys().asSequence().associateWith { val p = rows.getJSONObject(it); Position(p.getDouble("seconds"), p.getDouble("duration")) } }
+            val results = query.apply(movies, marks, positions)
+            val actual = results.map { it.id }
+            case.optJSONArray("expectedPick")?.strings()?.let { allowed ->
+                val picked = pickMovie(results, marks, case.optString("pickExcluding"))?.id
+                if (if (allowed.isEmpty()) picked != null else picked !in allowed) failures += "${case.getString("name")}: invalid pick $picked"
+            }
             if (actual != expected) failures += "${case.getString("name")}: expected $expected, got $actual"
         }
         assertEquals(failures.joinToString("\n"), emptyList<String>(), failures)

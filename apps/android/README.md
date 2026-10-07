@@ -10,6 +10,8 @@ During playback, tap the video to toggle controls. Double-tap the left or right 
 
 Phone and TV use the same query implementation for natural sorting, title/filename search, category OR matching including Uncategorized, and saved lists. The [shared native behavior contract](../../CROSS_PLATFORM.md#shared-contract) documents matching Apple behavior and intentional input differences. Selecting the current preview moment explicitly replays it.
 
+Continue Watching is available in the sidebar with remaining time and a progress line. Pick for me uses the current filters, excludes Watched films, and opens details with Play/Resume and Pick again. Finishing a film removes it from Continue Watching through the existing shared profile.
+
 ## Build and install
 
 Build and test on M1 Asahi. The local toolchain is in `~/.local/share/better-watch-android`: ARM64 JDK 17, SDK 36, Gradle 8.13, native ADB, and an ARM64 AAPT2 override. The Mac is only needed for Apple apps.

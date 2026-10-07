@@ -42,3 +42,9 @@ The shared fixture previously waited for a second child exit event after termina
 `TvDeviceTest` compiles but has **not run**. Follow [README.md](README.md#physical-device-e2e) once an authorized TV is connected. It covers real Android key injection, direct and HLS playback, the first rendered video frame, advancing time, auto-hidden controls, five-second seeking, descriptions, audio/subtitle panels, and saved-position reopening. Test screenshots must also be inspected for layout, legibility, focus visibility, and actual video output.
 
 The TV's system keyboard, hardware remote buttons, suspend/resume behavior, decoder, and actual Tailscale connection remain unverified. A final real-server playback check on the TCL is still needed. Personal-library marks were not used for local tests.
+
+## Continue Watching and Pick for me: 2026-10-07
+
+Build 5 adds the approved sidebar list, progress/remaining time, filtered random selection, Pick again, and remote focus restoration to the picker. All 14 Android checks passed, including eight TV navigation tests, three TV control tests, two phone checks, and the shared library contract. Builds and lint passed; the signed phone/TV APK is recorded in [native verification](../VERIFICATION.md#continue-watching-and-pick-for-me-2026-10-07).
+
+These are local Compose/Robolectric results. No physical TV was connected, so installation and real remote/decoder verification remain pending.

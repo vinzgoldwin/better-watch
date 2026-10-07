@@ -626,3 +626,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
   .movie-expanded { max-height:none; padding:50px 18px 18px; gap:18px; grid-template-columns:minmax(0,1.2fr) minmax(240px,1fr); }
   .preview-info { overflow:visible; }
 }
+
+.pick-film { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 14px; border:1px solid #68504d; border-radius:4px; background:transparent; color:var(--accent); font:inherit; font-size:13px; cursor:pointer; order:3; white-space:nowrap; }
+.pick-film svg { width:18px; height:18px; }
+.pick-film:disabled { opacity:.45; cursor:default; }
+.cover-progress { position:absolute; bottom:0; left:0; right:0; height:3px; background:#63636d; }
+.cover-progress i { display:block; height:100%; background:var(--accent); }

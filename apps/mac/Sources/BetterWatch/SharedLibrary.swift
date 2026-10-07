@@ -11,6 +11,7 @@ struct SharedSnapshot: Decodable {
     static let shared = SharedLibrary()
     private(set) var positions: [String: ResumePosition] = [:]
     var onMarks: (([String: Mark]) -> Void)?
+    var onPositions: (([String: ResumePosition]) -> Void)?
     var onError: ((String) -> Void)?
     private var marks: [String: Mark] = [:]
     private var stream: Task<Void, Never>?
@@ -32,13 +33,13 @@ struct SharedSnapshot: Decodable {
         await flush()
         let data = try await API.data("/api/profile")
         let snapshot = try JSONDecoder().decode(SharedSnapshot.self, from: data)
-        marks = snapshot.marks; positions = snapshot.positions; onMarks?(marks)
+        apply(snapshot)
     }
     func setMark(_ id: String, field: String, value: Bool) {
         enqueue("/api/profile/marks/" + id, body: [field: value])
     }
     func savePosition(_ id: String, position: ResumePosition) {
-        positions[id] = position
+        updatePosition(id, position)
         enqueue("/api/profile/positions/" + id, body: ["seconds": position.seconds, "duration": position.duration])
     }
     func importMarks(_ values: [String: Mark]) async throws {
@@ -58,6 +59,14 @@ struct SharedSnapshot: Decodable {
     }
     func flush() async { await writes?.value }
     func disconnect() { stream?.cancel(); stream = nil }
+    private func apply(_ snapshot: SharedSnapshot) {
+        marks = snapshot.marks; positions = snapshot.positions
+        onMarks?(marks); onPositions?(positions)
+    }
+    private func updatePosition(_ id: String, _ position: ResumePosition) {
+        guard positions[id] != position else { return }
+        positions[id] = position; onPositions?(positions)
+    }
     private func subscribe() {
         stream = Task {
             while !Task.isCancelled {
@@ -70,11 +79,11 @@ struct SharedSnapshot: Decodable {
                         let event = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                         if event?["type"] as? String == "snapshot" {
                             let snapshot = try JSONDecoder().decode(SharedSnapshot.self, from: data)
-                            marks = snapshot.marks; positions = snapshot.positions; onMarks?(marks)
+                            apply(snapshot)
                         } else if let type = event?["type"] as? String, let id = event?["id"] as? String, let value = event?["value"], type == "marks" || type == "positions" {
                             let payload = try JSONSerialization.data(withJSONObject: value)
                             if type == "marks" { marks[id] = try JSONDecoder().decode(Mark.self, from: payload); onMarks?(marks) }
-                            if type == "positions" { positions[id] = try JSONDecoder().decode(ResumePosition.self, from: payload) }
+                            if type == "positions" { updatePosition(id, try JSONDecoder().decode(ResumePosition.self, from: payload)) }
                         }
                     }
                 } catch {

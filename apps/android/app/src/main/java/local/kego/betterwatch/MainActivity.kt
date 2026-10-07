@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BetterWatch(model: LibraryModel) {
+    val results = rememberLibraryResults(model)
     var settings by remember { mutableStateOf(false) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -68,13 +69,13 @@ fun BetterWatch(model: LibraryModel) {
         BoxWithConstraints(Modifier.safeDrawingPadding()) {
             val wide = maxWidth >= 900.dp
             val side: @Composable () -> Unit = { Sidebar(model, { settings = true }) { scope.launch { drawer.close() } } }
-            if (wide) Row { Box(Modifier.width(220.dp).fillMaxHeight()) { side() }; VerticalDivider(); Library(model, Modifier.weight(1f)) {} }
+            if (wide) Row { Box(Modifier.width(220.dp).fillMaxHeight()) { side() }; VerticalDivider(); Library(model, results, Modifier.weight(1f)) {} }
             else ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet(Modifier.width(280.dp)) { side() } }) {
-                Library(model, Modifier.fillMaxSize()) { scope.launch { drawer.open() } }
+                Library(model, results, Modifier.fillMaxSize()) { scope.launch { drawer.open() } }
             }
         }
     }
-    model.selected?.let { movie -> QuickLook(model, movie, { model.selected = null }) { model.selected = null; model.playing = movie } }
+    model.selected?.let { movie -> key(movie.id) { QuickLook(model, movie, if (results.ready) results.movies else emptyList(), { model.selected = null }) { model.selected = null; model.playing = movie } } }
     model.playing?.let { movie -> NativePlayer(model, movie) { model.playing = null } }
     if (settings) ServerSettings(model) { settings = false }
     model.error?.let { message -> AlertDialog(onDismissRequest = { model.error = null }, title = { Text("Better Watch") }, text = { Text(message) }, confirmButton = { TextButton(onClick = { model.error = null; model.connect() }) { Text("Reconnect") } }, dismissButton = { TextButton(onClick = { model.error = null }) { Text("OK") } }) }
@@ -86,7 +87,7 @@ private fun Sidebar(model: LibraryModel, settings: () -> Unit, close: () -> Unit
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(12.dp)) {
         item { Text("Better Watch", Modifier.padding(horizontal = 8.dp, vertical = 20.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold) }
         items(SavedList.entries) { list ->
-            val icon = when (list) { SavedList.ALL -> Icons.Outlined.GridView; SavedList.FAVORITE -> Icons.Outlined.FavoriteBorder; SavedList.LATER -> Icons.Outlined.Schedule; SavedList.UNWATCHED -> Icons.Outlined.RadioButtonUnchecked; SavedList.WATCHED -> Icons.Outlined.CheckCircle }
+            val icon = when (list) { SavedList.ALL -> Icons.Outlined.GridView; SavedList.CONTINUING -> Icons.Outlined.PlayCircleOutline; SavedList.FAVORITE -> Icons.Outlined.FavoriteBorder; SavedList.LATER -> Icons.Outlined.Schedule; SavedList.UNWATCHED -> Icons.Outlined.RadioButtonUnchecked; SavedList.WATCHED -> Icons.Outlined.CheckCircle }
             TextButton(onClick = { model.choose(list); close() }, modifier = Modifier.fillMaxWidth().testTag("nav-${list.name}"), colors = ButtonDefaults.textButtonColors(contentColor = if (model.list == list && model.folder.isEmpty() && !model.artistsVisible) Coral else Color.White)) {
                 Icon(icon, null, Modifier.size(19.dp)); Spacer(Modifier.width(12.dp)); Text(list.label, Modifier.weight(1f))
             }
@@ -101,9 +102,8 @@ private fun Sidebar(model: LibraryModel, settings: () -> Unit, close: () -> Unit
 }
 
 @Composable
-private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
+private fun Library(model: LibraryModel, results: LibraryResults, modifier: Modifier, menu: () -> Unit) {
     val movies = model.movies; val marks = model.marks; val search = model.search; val folder = model.folder; val subfolder = model.subfolder; val artist = model.artist; val categories = model.category; val list = model.list; val sort = model.sort
-    val results = rememberLibraryResults(model)
     val filtered = results.movies
     val availableCategories = results.categories
     val artists = remember(movies) { movies.flatMap { it.artists }.distinct().sorted() }
@@ -114,7 +114,12 @@ private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
             Text(if (model.artistsVisible) "Artists" else artist.ifEmpty { folder.ifEmpty { list.label } }, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${filtered.size} films", Modifier.padding(end = 12.dp), color = Color.Gray, fontSize = 12.sp)
         }
-        OutlinedTextField(if (model.artistsVisible) model.artistSearch else model.search, { if (model.artistsVisible) model.artistSearch = it else model.search = it }, Modifier.fillMaxWidth().padding(horizontal = 20.dp).testTag("film-search"), singleLine = true, placeholder = { Text(if (model.artistsVisible) "Search artists" else "Search films") }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(if (model.artistsVisible) model.artistSearch else model.search, { if (model.artistsVisible) model.artistSearch = it else model.search = it }, Modifier.weight(1f).testTag("film-search"), singleLine = true, placeholder = { Text(if (model.artistsVisible) "Search artists" else "Search films", maxLines = 1) }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
+            if (!model.artistsVisible) TextButton(onClick = { model.pick(filtered) }, enabled = results.ready && filtered.any { marks[it.id]?.watched != true }, modifier = Modifier.testTag("pick-film")) {
+                Icon(Icons.Outlined.Shuffle, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Pick for me", fontSize = 12.sp)
+            }
+        }
         if (model.artistsVisible) {
             LazyColumn(Modifier.fillMaxSize().padding(20.dp)) {
                 items(artists.filter { model.artistSearch.isEmpty() || it.contains(model.artistSearch, true) }, key = { it }) { name -> TextButton(onClick = { model.chooseArtist(name) }, modifier = Modifier.fillMaxWidth()) { Text(name, Modifier.weight(1f)); Icon(Icons.Outlined.ChevronRight, null) } }
@@ -143,7 +148,7 @@ private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
             }
             HorizontalDivider()
             if (model.loading && movies.isEmpty()) Text("Connecting to your library…", Modifier.padding(20.dp), color = Color.Gray)
-            else if (filtered.isEmpty()) Text("No films found", Modifier.padding(20.dp), color = Color.Gray)
+            else if (filtered.isEmpty()) Text(if (list == SavedList.CONTINUING) "No films to continue" else "No films found", Modifier.padding(20.dp), color = Color.Gray)
             else BoxWithConstraints(Modifier.fillMaxSize()) {
                 val columns = maxOf(2, ((maxWidth - 40.dp) / 240.dp).toInt())
                 key(folder, subfolder, list, search, sort, categories, artist) {
@@ -163,9 +168,11 @@ private fun Cover(model: LibraryModel, movie: Movie, modifier: Modifier = Modifi
 
 @Composable
 private fun FilmTile(model: LibraryModel, movie: Movie, marks: Marks) {
-    Column(Modifier.clickable { model.selected = movie }.testTag("movie-${movie.id}")) {
+    val progress = if (model.list == SavedList.CONTINUING) model.positions[movie.id] else null
+    Column(Modifier.clickable { model.open(movie) }.testTag("movie-${movie.id}")) {
         Box {
             Cover(model, movie, Modifier.fillMaxWidth())
+            if (progress != null) FilmProgress(progress, Modifier.align(Alignment.BottomCenter))
             if (movie.english) Text("English Sub", Modifier.align(Alignment.TopStart).padding(5.dp).background(Color.Black.copy(alpha = 0.85f)).padding(4.dp), fontSize = 10.sp)
             Text("${(movie.duration / 60).toInt().coerceAtLeast(1)}m", Modifier.align(Alignment.BottomEnd).padding(5.dp).background(Color.Black.copy(alpha = 0.85f)).padding(4.dp), fontSize = 10.sp)
         }
@@ -173,14 +180,14 @@ private fun FilmTile(model: LibraryModel, movie: Movie, marks: Marks) {
         Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             if (marks.favorite) Icon(Icons.Outlined.Favorite, "Favorite", Modifier.size(13.dp), tint = Coral)
             if (marks.watched) Icon(Icons.Outlined.CheckCircle, "Watched", Modifier.size(13.dp), tint = Coral)
-            Text(listOf(movie.folder.removePrefix(model.folder).trimStart('/'), movie.release.take(4)).filter { it.isNotEmpty() }.joinToString(" · "), fontSize = 11.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(progress?.remaining ?: listOf(movie.folder.removePrefix(model.folder).trimStart('/'), movie.release.take(4)).filter { it.isNotEmpty() }.joinToString(" · "), fontSize = 11.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
-private fun QuickLook(model: LibraryModel, movie: Movie, close: () -> Unit, play: () -> Unit) {
+private fun QuickLook(model: LibraryModel, movie: Movie, candidates: List<Movie>, close: () -> Unit, play: () -> Unit) {
     val context = LocalContext.current; var moment by remember { mutableIntStateOf(0) }; var previewRequest by remember { mutableIntStateOf(0) }; var previewError by remember { mutableStateOf(false) }; var previewReady by remember { mutableStateOf(false) }
     val preview = remember(movie.id) { ExoPlayer.Builder(context).build().apply { volume = 0.4f } }
     val lifecycle = LocalLifecycleOwner.current
@@ -217,7 +224,10 @@ private fun QuickLook(model: LibraryModel, movie: Movie, close: () -> Unit, play
                     if (previewError) Text("Preview unavailable. You can still play the film.", color = Color.Gray, fontSize = 12.sp)
                     Text(movie.displayTitle, fontSize = 23.sp, fontWeight = FontWeight.Bold)
                     Text(movie.facts, color = Color.Gray, fontSize = 13.sp)
-                    Button(onClick = { preview.pause(); play() }, modifier = Modifier.fillMaxWidth().testTag("play-film"), shape = MaterialTheme.shapes.small) { Icon(Icons.Outlined.PlayArrow, null); Text("Play") }
+                    Button(onClick = { preview.pause(); play() }, modifier = Modifier.fillMaxWidth().testTag("play-film"), shape = MaterialTheme.shapes.small) { Icon(Icons.Outlined.PlayArrow, null); Text(if (model.position(movie.id) > 0) "Resume ${timestamp(model.position(movie.id))}" else "Play") }
+                    if (model.picking) {
+                        TextButton(onClick = { model.pick(candidates) }, enabled = candidates.any { model.marks[it.id]?.watched != true }, modifier = Modifier.testTag("pick-again")) { Icon(Icons.Outlined.Shuffle, null); Text("Pick again") }
+                    }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         listOf(Triple("favorite", "Favorite", Icons.Outlined.FavoriteBorder), Triple("watchLater", "Watch Later", Icons.Outlined.Schedule), Triple("watched", "Watched", Icons.Outlined.CheckCircle)).forEach { (field, label, icon) ->
                             val on = (model.marks[movie.id] ?: Marks()).get(field)
@@ -329,4 +339,11 @@ private fun ServerSettings(model: LibraryModel, close: () -> Unit) {
         val uri = android.net.Uri.parse(address.trim())
         if (uri.scheme !in listOf("http", "https") || uri.host.isNullOrEmpty()) invalid = true else { model.configure(address); close() }
     }) { Text("Connect") } }, dismissButton = { TextButton(onClick = close) { Text("Cancel") } })
+}
+
+@Composable
+internal fun FilmProgress(position: Position, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().height(3.dp).background(Color.Gray)) {
+        Box(Modifier.fillMaxWidth(position.fraction).fillMaxHeight().background(Coral))
+    }
 }

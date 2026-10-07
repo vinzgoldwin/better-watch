@@ -58,7 +58,7 @@ struct MobileRoot: View {
             .navigationTitle(store.heading).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Text("\(store.filtered.count) films").font(.caption).foregroundStyle(.secondary) } }
         }
-        .sheet(item: $store.selected, onDismiss: { store.previewDismissed() }) { MobileQuickLook(movie: $0).environmentObject(store) }
+        .sheet(item: $store.selected, onDismiss: { store.previewDismissed() }) { MobileQuickLook(movie: $0).environmentObject(store).id($0.id) }
         .fullScreenCover(item: $store.playing) { MobilePlayer(playback: $0, close: store.closePlayback) }
         .sheet(isPresented: $settings) { ServerSettings().environmentObject(store) }
         .alert("Better Watch", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
@@ -68,7 +68,11 @@ struct MobileRoot: View {
     private var library: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
-                TextField("Search films", text: $store.query.search).textFieldStyle(.roundedBorder).accessibilityIdentifier("film-search")
+                HStack(spacing: 12) {
+                    TextField("Search films", text: $store.query.search).textFieldStyle(.roundedBorder).accessibilityIdentifier("film-search")
+                    Button { store.pick() } label: { Label("Pick for me", systemImage: "shuffle").fixedSize().frame(minHeight: 44) }
+                        .disabled(!store.canPick).accessibilityIdentifier("pick-film")
+                }
                 HStack(spacing: 18) {
                     if !store.query.folder.isEmpty {
                         Menu {
@@ -96,22 +100,27 @@ struct MobileRoot: View {
                 ScrollView {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16, alignment: .top), count: columns), alignment: .leading, spacing: 24) {
                         ForEach(store.filtered) { movie in
-                            Button { store.selected = movie } label: {
+                            Button { store.open(movie) } label: {
                                 VStack(alignment: .leading, spacing: 7) {
                                     MobileCover(path: movie.thumbnail)
                                         .overlay(alignment: .bottomTrailing) { Text(movie.minutes).font(.caption2).padding(4).background(.black.opacity(0.85)).padding(5) }
                                         .overlay(alignment: .topLeading) { if movie.hasEnglishSub == true { Text("English Sub").font(.caption2).padding(4).background(.black.opacity(0.85)).padding(5) } }
+                                        .overlay(alignment: .bottom) {
+                                            if store.query.list == .continuing, let position = store.positions[movie.id], position.fraction > 0 {
+                                                GeometryReader { bar in Rectangle().fill(coral).frame(width: bar.size.width * position.fraction) }.frame(height: 3).background(.gray)
+                                            }
+                                        }
                                     Text(movie.displayTitle).font(.system(size: 13, weight: .semibold)).lineLimit(2).frame(height: 34, alignment: .topLeading)
                                     HStack(spacing: 5) {
                                         if store.marks[movie.id]?.favorite == true { Image(systemName: "heart.fill").foregroundStyle(coral) }
                                         if store.marks[movie.id]?.watched == true { Image(systemName: "checkmark.circle.fill").foregroundStyle(coral) }
-                                        Text([movie.location(in: store.query.folder), movie.year].filter { !$0.isEmpty }.joined(separator: " · ")).lineLimit(1)
+                                        Text(store.query.list == .continuing ? (store.positions[movie.id]?.remaining ?? "") : [movie.location(in: store.query.folder), movie.year].filter { !$0.isEmpty }.joined(separator: " · ")).lineLimit(1)
                                     }.font(.caption).foregroundStyle(.secondary)
                                 }.contentShape(Rectangle()).foregroundStyle(.primary)
                             }.buttonStyle(.plain).accessibilityIdentifier("movie-\(movie.id)")
                         }
                     }.padding(20)
-                    if store.filtered.isEmpty { ContentUnavailableView("No films found", systemImage: "film") }
+                    if store.filtered.isEmpty { ContentUnavailableView(store.query.list == .continuing ? "No films to continue" : "No films found", systemImage: "film") }
                 }.accessibilityIdentifier("film-grid")
                     .id("\(store.query.folder)|\(store.query.subfolder)|\(store.query.list.rawValue)|\(store.query.search)|\(store.query.sort.rawValue)|\(store.query.categories.sorted())|\(store.query.artist)")
             }
@@ -154,7 +163,11 @@ struct MobileQuickLook: View {
                     }.buttonStyle(.plain)
                     Text(movie.displayTitle).font(.title2.bold())
                     Text(movie.facts).font(.subheadline).foregroundStyle(.secondary)
-                    Button { preview?.pause(); store.play(movie) } label: { Label("Play", systemImage: "play.fill").frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).foregroundStyle(.black).accessibilityIdentifier("play-film")
+                    Button { preview?.pause(); store.play(movie) } label: { Label(ResumePosition.validStart(store.positions[movie.id]) > 0 ? "Resume " + timestamp(Int(ResumePosition.validStart(store.positions[movie.id]))) : "Play", systemImage: "play.fill").frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).foregroundStyle(.black).accessibilityIdentifier("play-film")
+                    if store.picking {
+                        Button { store.pick() } label: { Label("Pick again", systemImage: "shuffle").frame(minHeight: 44) }
+                            .disabled(!store.canPick).accessibilityIdentifier("pick-again")
+                    }
                     HStack {
                         mark("Favorite", icon: "heart", field: \Mark.favorite)
                         Spacer(); mark("Watch Later", icon: "clock", field: \Mark.watchLater)

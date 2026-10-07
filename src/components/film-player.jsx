@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Maximize, Pause, Play, RotateCcw, RotateCw, Settings2, Volume2, VolumeX } from 'lucide-react';
 import { api } from '../lib/profile-client.js';
-
-export function resumeStart(position) {
-  return position && position.seconds >= 5 && position.seconds < position.duration - 10 ? position.seconds : 0;
-}
+import { resumeStart } from '../lib/gallery.js';
 const time = value => {
   const seconds = Math.max(0, Math.floor(value || 0));
   return seconds >= 3600 ? `${Math.floor(seconds / 3600)}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;

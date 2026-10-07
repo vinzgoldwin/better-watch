@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle, Clock, Heart, Play, Trash2, X } from 'lucide-react';
-import { PREVIEW_MOMENTS, previewStart, relativeMovieFolder } from '../lib/gallery.js';
+import { CheckCircle, Clock, Heart, Play, Shuffle, Trash2, X } from 'lucide-react';
+import { PREVIEW_MOMENTS, previewStart, relativeMovieFolder, resumeStart } from '../lib/gallery.js';
 import { formatReleaseDate } from '../lib/release-date.js';
 
 const PAGE_SIZE = 24;
@@ -9,12 +9,11 @@ const marks = [{ key: 'favorite', label: 'Favorite', Icon: Heart }, { key: 'watc
 const durationLabel = (seconds) => seconds ? `${Math.floor(seconds / 60)}m` : 'Unknown duration';
 const timestamp = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
-export function MovieBrowser({ movies, collection, subfolder, movieMarks, onToggleMark, onOpen, onDelete, openingId, deletingId, scanning }) {
+export function MovieBrowser({ movies, collection, subfolder, movieMarks, positions, continuing, selected, onSelect, onClose, onPickAgain, canPick, onToggleMark, onOpen, onDelete, openingId, deletingId, scanning }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const [selectedId, setSelectedId] = useState(null);
   const sentinelRef = useRef(null);
   const visible = movies.slice(0, limit);
-  const selectedIndex = visible.findIndex((movie) => movie.id === selectedId);
+  const selectedId = selected?.id;
   useEffect(() => {
     if (limit >= movies.length) return;
     const observer = new IntersectionObserver((entries) => {
@@ -25,28 +24,30 @@ export function MovieBrowser({ movies, collection, subfolder, movieMarks, onTogg
   }, [limit, movies.length]);
 
   function close() {
-    setSelectedId(null);
+    onClose();
   }
 
   return <>
     <section className="movie-grid" aria-label="Movies">
       {visible.map((movie) => <button key={movie.id}
           type="button" data-movie-id={movie.id} className="movie-tile" aria-expanded={selectedId === movie.id}
-          aria-controls={selectedId === movie.id ? 'movie-preview' : undefined} onClick={() => setSelectedId(movie.id)}>
+          aria-controls={selectedId === movie.id ? 'movie-preview' : undefined} onClick={() => onSelect(movie)}>
           <span className="movie-cover">
             {movie.thumbnail ? <img loading="lazy" decoding="async" src={`${movie.thumbnail}?quality=cover&width=480`} srcSet={`${movie.thumbnail}?quality=cover&width=480 480w, ${movie.thumbnail}?quality=cover&width=960 960w`} sizes="(max-width: 650px) calc((100vw - 42px) / 2), (max-width: 1050px) calc((100vw - 92px) / 3), (min-width: 1800px) 422px, calc((100vw - 110px) / 4)" alt="" /> : <span className="cover-missing">No preview</span>}
             <span className="cover-duration">{durationLabel(movie.duration)}</span>
             {movie.hasEnglishSub && <span className="cover-subtitle">English Sub</span>}
             {movieMarks[movie.id]?.watched && <span className="cover-watched" aria-label="Watched"><CheckCircle aria-hidden="true" /></span>}
+            {continuing && resumeStart(positions[movie.id]) > 0 && <span className="cover-progress"><i style={{ width: `${positions[movie.id].seconds / positions[movie.id].duration * 100}%` }} /></span>}
           </span>
           <span className="movie-title">{movie.title || movie.relativePath}</span>
-          <span className="movie-caption">{[relativeMovieFolder(movie.folder, collection, subfolder), movie.releaseDate?.slice(0, 4)].filter(Boolean).join(' · ')}</span>
+          <span className="movie-caption">{continuing && positions[movie.id] ? `${Math.ceil((positions[movie.id].duration - positions[movie.id].seconds) / 60)}m left` : [relativeMovieFolder(movie.folder, collection, subfolder), movie.releaseDate?.slice(0, 4)].filter(Boolean).join(' · ')}</span>
         </button>)}
-      {!movies.length && <div className="empty">{scanning ? 'Indexing movies...' : 'No films match this view.'}</div>}
+      {!movies.length && <div className="empty">{scanning ? 'Indexing movies...' : continuing ? 'No films to continue.' : 'No films match this view.'}</div>}
     </section>
-    {selectedIndex >= 0 && <MoviePreview key={selectedId} movie={visible[selectedIndex]} marks={movieMarks[selectedId] || {}}
-          folder={relativeMovieFolder(visible[selectedIndex].folder, collection, subfolder)}
-          onClose={close} onOpen={() => { const movie = visible[selectedIndex]; close(); onOpen(movie); }} onDelete={() => onDelete(visible[selectedIndex])}
+    {selected && <MoviePreview key={selectedId} movie={selected} marks={movieMarks[selectedId] || {}}
+          position={positions[selectedId]} onPickAgain={onPickAgain} canPick={canPick}
+          folder={relativeMovieFolder(selected.folder, collection, subfolder)}
+          onClose={close} onOpen={() => { close(); onOpen(selected); }} onDelete={() => onDelete(selected)}
           onToggleMark={(key) => onToggleMark(selectedId, key)} opening={openingId === selectedId}
           deleting={deletingId === selectedId} deleteDisabled={scanning || deletingId !== null}
           />}
@@ -54,7 +55,7 @@ export function MovieBrowser({ movies, collection, subfolder, movieMarks, onTogg
   </>;
 }
 
-function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDelete, onToggleMark, opening, deleting, deleteDisabled }) {
+function MoviePreview({ movie, marks: movieMarks, position, onPickAgain, canPick, folder, onClose, onOpen, onDelete, onToggleMark, opening, deleting, deleteDisabled }) {
   const [moment, setMoment] = useState(0);
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -163,7 +164,8 @@ function MoviePreview({ movie, marks: movieMarks, folder, onClose, onOpen, onDel
         {movie.categories?.length > 0 && <ul className="preview-categories" aria-label="Categories">{movie.categories.map((category) => <li key={category}>{category}</li>)}</ul>}
       </div>
       <div className="preview-actions">
-        <button className="play-movie" type="button" onClick={onOpen} disabled={opening}><Play aria-hidden="true" />{opening ? 'Opening...' : 'Play'}</button>
+        <button className="play-movie" type="button" onClick={onOpen} disabled={opening}><Play aria-hidden="true" />{opening ? 'Opening...' : resumeStart(position) > 0 ? `Resume ${timestamp(resumeStart(position))}` : 'Play'}</button>
+        {onPickAgain && <button type="button" onClick={onPickAgain} disabled={!canPick}><Shuffle aria-hidden="true" /> Pick again</button>}
       </div>
       <div className="preview-marks" aria-label="Movie lists">{marks.map(({ key, label, Icon }) => <button key={key} type="button" aria-label={label} title={label} aria-pressed={Boolean(movieMarks[key])} onClick={() => onToggleMark(key)}><Icon aria-hidden="true" /><span>{label}</span></button>)}</div>
       {movie.description?.trim() && <details className="preview-description" open><summary>Description</summary><p>{movie.description}</p></details>}
