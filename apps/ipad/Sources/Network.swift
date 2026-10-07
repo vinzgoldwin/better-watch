@@ -30,13 +30,14 @@ actor MobileCovers {
     private let cache = NSCache<NSString, UIImage>()
     init() { cache.totalCostLimit = 48 * 1024 * 1024; cache.countLimit = 160 }
     func image(_ path: String) async throws -> UIImage {
-        if let image = cache.object(forKey: path as NSString) { return image }
-        let data = try await API.data(path + "?quality=cover&width=480")
+        let url = API.url(path + "?quality=cover&width=480").absoluteString
+        if let image = cache.object(forKey: url as NSString) { return image }
+        let data = try await API.data(url)
         try Task.checkCancellation()
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 480] as CFDictionary) else { throw ServiceError(message: "Cover unavailable") }
         let image = UIImage(cgImage: cg)
-        cache.setObject(image, forKey: path as NSString, cost: cg.bytesPerRow * cg.height)
+        cache.setObject(image, forKey: url as NSString, cost: cg.bytesPerRow * cg.height)
         return image
     }
 }

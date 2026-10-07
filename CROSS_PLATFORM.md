@@ -19,7 +19,7 @@ The iPad [XcodeGen project](apps/ipad/project.yml) directly references the Mac m
 
 Platform source lives in `apps/mac/`, `apps/ipad/`, `apps/android/`, and `apps/tv/`. Android's Gradle app includes TV's source, resources, unit tests, and device tests through source sets. Keep the shared Android manifest and dependencies in `apps/android/app/`.
 
-Phone and TV ship in **one Android APK**. The TV launcher opens [TvActivity.kt](apps/tv/src/main/java/local/kego/betterwatch/TvActivity.kt); the phone launcher opens MainActivity. Both directly use LibraryModel, `rememberFilteredMovies`, and PlaybackSession. The Android column above applies to both, with TV-specific navigation, film details, playback controls, and remote dialogs in TvActivity. No separate server or profile exists for TV.
+Phone and TV ship in **one Android APK**. The TV launcher opens [TvActivity.kt](apps/tv/src/main/java/local/kego/betterwatch/TvActivity.kt); the phone launcher opens MainActivity. Both directly use LibraryModel, `rememberLibraryResults`, and PlaybackSession. The Android column above applies to both, with TV-specific navigation, film details, playback controls, and remote dialogs in TvActivity. No separate server or profile exists for TV.
 
 Shared server or Android playback/sync changes therefore reach TV as well. UI changes must be applied to both native Android interfaces where relevant, rebuilt, and installed. TV has still film details instead of automatic Quick Look previews, avoiding remote-focus-triggered streaming. Its launcher banner uses the same approved icon, packaged by [build-tv-banner.mjs](scripts/build-tv-banner.mjs).
 
@@ -30,6 +30,25 @@ See [TV instructions](apps/tv/README.md) for controls, installation, local nativ
 All apps fetch `GET /api/library` during Connect/foreground reconnect. On Fedora this explicitly wakes the HDD before returning the cached library. No client rebuild is needed for this contract. The root idle monitor requests standby after 10 minutes without I/O or server activity. Scanning and changed playback-position reports protect buffered playback; unchanged paused positions and SSE heartbeats do not reset idle. The server stores activity on the internal runtime filesystem. See [installation and physical verification](scripts/remote/README.md#drive-power-verification).
 
 ## Shared contract
+
+| Behavior | Native app contract |
+| --- | --- |
+| Search and sorting | Search titles and relative filenames, ignoring case and accents. Names and folders use natural number order; equal titles use stable movie IDs. All seven sorts are available; missing release dates sort last in either direction. Platform locale collation can differ for punctuation and non-Latin scripts. |
+| Filters | Folder boundaries include descendants without matching similarly named siblings. Category selections use case-insensitive OR matching, include Uncategorized, and show options from the current list/folder/search/artist scope. |
+| Navigation | Choosing a saved list resets the query and sort. Choosing a folder retains the saved list, search, and sort, and clears subfolder, artist, and categories. Choosing an artist starts a fresh All Films query. Artist search is separate from film search. |
+| Saved lists | Favorite, Watch Later, and Watched are independent boolean fields. Unwatched is the inverse of Watched. Progress does not automatically mark a film Watched. |
+| Resume | Refresh shared progress before playback. Resume at five seconds or later, except within ten seconds of the end. Save during playback and on pause/close; completion saves zero. |
+| Player controls | Hide after three seconds, including while paused. Open description/audio/subtitle panels, active timeline scrubbing, and playback errors keep controls available. Play/pause and normal control interactions reveal/reset them. |
+| Quick seeking | Seek exactly five seconds without revealing hidden controls or restarting their timer. Mac/iPad/phone keyboard arrows and phone/iPad double taps use this rule. Hidden TV controls use left/right; visible TV arrows navigate controls, with timeline arrows seeking. Loading feedback can appear separately from the controls. |
+| Previews | Mac, iPad, and phone start the first of three preview moments once at 40% volume. Selecting a moment explicitly restarts it. Opening full playback releases the preview. |
+| Tracks | Prefer English subtitles when available. Allow audio selection and subtitles Off. Track support follows the platform decoder; Mac uses mpv, mobile and TV use the compatibility API. |
+| Lifecycle and network | Mobile and TV pause on leaving the app and reconnect on foreground. Progress events do not refilter the gallery. Profile writes are serialized and remain addressed to their original server. |
+
+Platform-specific behavior remains deliberate: TV uses still details instead of autoplay previews and D-pad focus instead of touch gestures. Mac retains desktop window/fullscreen, volume, and library maintenance tools; mobile devices use system volume and full-screen playback. Mac can keep playing while another desktop app is active. Image-based subtitles require the Mac player. The Mac hides the description button for missing metadata; mobile/TV show a fallback description.
+
+The shared [native library fixture](tests/fixtures/native-library-contract.json) runs through the actual Swift query used by Mac/iPad and the Kotlin query used by phone/TV. It protects search, category/list combinations, folder boundaries, and all seven sorts. Phone/TV Robolectric tests exercise control hiding, quiet seeking, and focus through their real Compose interfaces. Builds and these checks do not verify physical iPad/Android/TV input, rotation, or decoding.
+
+Code verification on 2026-10-07: the 18-case library fixture passed on both implementations; all 11 Mac and 12 Android unit/integration tests passed. Android app/test APK builds and lint, the unsigned iPad device build, and the shared-profile/mobile-stream Node tests passed. Android/TV devices were disconnected and the iPad was unavailable, so installation and physical-device verification remain pending.
 
 - `GET /api/profile`: `{ marks, positions, artistMarks }`.
 - `GET /api/profile/events`: SSE. Initial/reconnect snapshot: `{ type: "snapshot", marks, positions, artistMarks }`. Delta: `{ type, id, value }`. Heartbeats touch no HDD files.

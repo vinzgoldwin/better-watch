@@ -1,0 +1,314 @@
+{
+  "movies": [
+    {
+      "id": "a",
+      "title": "Film 2 [HD]",
+      "folder": "Collection/Sub",
+      "topFolder": "Collection",
+      "relativePath": "Collection/Sub/archive-code.mp4",
+      "size": 100,
+      "modified": 10,
+      "duration": 60,
+      "height": 720,
+      "releaseDate": "2020-01-01",
+      "categories": [
+        "Drama"
+      ],
+      "artists": [
+        "Example Artist"
+      ]
+    },
+    {
+      "id": "b",
+      "title": "Film 2 [HD]",
+      "folder": "Collection/Sub",
+      "topFolder": "Collection",
+      "relativePath": "Collection/Sub/film.mp4",
+      "size": 100,
+      "modified": 10,
+      "duration": 120,
+      "height": 720,
+      "releaseDate": "2025-01-01",
+      "categories": [
+        "drama"
+      ],
+      "artists": [
+        "Example Artist"
+      ]
+    },
+    {
+      "id": "c",
+      "title": "Café 3",
+      "folder": "Collection/Sub/Child",
+      "topFolder": "Collection",
+      "relativePath": "Collection/Sub/Child/film.mp4",
+      "size": 100,
+      "modified": 10,
+      "duration": 90,
+      "height": 720,
+      "releaseDate": null,
+      "categories": [],
+      "artists": [
+        "Example Artist"
+      ]
+    },
+    {
+      "id": "d",
+      "title": "Film 1",
+      "folder": "Collection/Submarine",
+      "topFolder": "Collection",
+      "relativePath": "Collection/Submarine/film.mp4",
+      "size": 100,
+      "modified": 10,
+      "duration": 0,
+      "height": 720,
+      "releaseDate": "",
+      "categories": [
+        "Comedy"
+      ],
+      "artists": [
+        "Example Artist"
+      ]
+    },
+    {
+      "id": "e",
+      "title": "Film 10",
+      "folder": "Collection/Sub",
+      "topFolder": "Collection",
+      "relativePath": "Collection/Sub/film.mp4",
+      "size": 100,
+      "modified": 10,
+      "duration": 60,
+      "height": 720,
+      "releaseDate": "2010-01-01",
+      "categories": [
+        "Action"
+      ],
+      "artists": [
+        "Example Artist"
+      ]
+    }
+  ],
+  "marks": {
+    "a": {
+      "favorite": true
+    },
+    "b": {
+      "watchLater": true
+    },
+    "c": {
+      "watched": true
+    }
+  },
+  "cases": [
+    {
+      "name": "natural names and stable ties",
+      "query": {},
+      "expected": [
+        "c",
+        "d",
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "filename search",
+      "query": {
+        "search": " archive-code "
+      },
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "name": "accent insensitive search",
+      "query": {
+        "search": "cafe"
+      },
+      "expected": [
+        "c"
+      ]
+    },
+    {
+      "name": "nested folder boundary",
+      "query": {
+        "folder": "Collection",
+        "subfolder": "Collection/Sub"
+      },
+      "expected": [
+        "c",
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "category case",
+      "query": {
+        "categories": [
+          "drama"
+        ]
+      },
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "uncategorized",
+      "query": {
+        "categories": [
+          "__uncategorized"
+        ]
+      },
+      "expected": [
+        "c"
+      ]
+    },
+    {
+      "name": "category OR",
+      "query": {
+        "categories": [
+          "drama",
+          "__uncategorized"
+        ]
+      },
+      "expected": [
+        "c",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "favorites",
+      "query": {
+        "list": "favorite"
+      },
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "name": "watch later",
+      "query": {
+        "list": "watchLater"
+      },
+      "expected": [
+        "b"
+      ]
+    },
+    {
+      "name": "unwatched",
+      "query": {
+        "list": "unwatched"
+      },
+      "expected": [
+        "d",
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "watched",
+      "query": {
+        "list": "watched"
+      },
+      "expected": [
+        "c"
+      ]
+    },
+    {
+      "name": "oldest release with unknown last",
+      "query": {
+        "sort": "releaseOldest"
+      },
+      "expected": [
+        "e",
+        "a",
+        "b",
+        "c",
+        "d"
+      ]
+    },
+    {
+      "name": "newest release with unknown last",
+      "query": {
+        "sort": "releaseNewest"
+      },
+      "expected": [
+        "b",
+        "a",
+        "e",
+        "c",
+        "d"
+      ]
+    },
+    {
+      "name": "duration descending",
+      "query": {
+        "sort": "duration"
+      },
+      "expected": [
+        "b",
+        "c",
+        "a",
+        "e",
+        "d"
+      ]
+    },
+    {
+      "name": "size ties use natural title order",
+      "query": {
+        "sort": "size"
+      },
+      "expected": [
+        "c",
+        "d",
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "modified ties use natural title order",
+      "query": {
+        "sort": "modified"
+      },
+      "expected": [
+        "c",
+        "d",
+        "a",
+        "b",
+        "e"
+      ]
+    },
+    {
+      "name": "folders",
+      "query": {
+        "sort": "folder"
+      },
+      "expected": [
+        "a",
+        "b",
+        "e",
+        "c",
+        "d"
+      ]
+    },
+    {
+      "name": "combined artist and saved list",
+      "query": {
+        "artist": "Example Artist",
+        "categories": [
+          "drama"
+        ],
+        "list": "watchLater"
+      },
+      "expected": [
+        "b"
+      ]
+    }
+  ]
+}

@@ -51,7 +51,7 @@ struct MobileRoot: View {
                 if store.loading && store.movies.isEmpty { Text("Connecting to your library…").foregroundStyle(.secondary) }
                 else if store.artistsVisible {
                     List(store.artists.filter { artistSearch.isEmpty || $0.localizedStandardContains(artistSearch) }, id: \.self) { artist in
-                        Button { store.query.artist = artist; store.artistsVisible = false } label: { HStack { Text(artist); Spacer(); Image(systemName: "chevron.right") } }
+                        Button { store.query = FilmQuery(artist: artist); store.artistsVisible = false } label: { HStack { Text(artist); Spacer(); Image(systemName: "chevron.right") } }
                     }.searchable(text: $artistSearch, prompt: "Search artists")
                 } else { library }
             }
@@ -80,9 +80,9 @@ struct MobileRoot: View {
                     }
                     Menu {
                         Button("All categories") { store.query.categories = [] }
-                        ForEach(store.categories, id: \.self) { category in
-                            Button { if store.query.categories.contains(category.lowercased()) { store.query.categories.remove(category.lowercased()) } else { store.query.categories.insert(category.lowercased()) } } label: {
-                                if store.query.categories.contains(category.lowercased()) { Label(category, systemImage: "checkmark") } else { Text(category) }
+                        ForEach(store.categoryOptions, id: \.key) { category in
+                            Button { if store.query.categories.contains(category.key) { store.query.categories.remove(category.key) } else { store.query.categories.insert(category.key) } } label: {
+                                if store.query.categories.contains(category.key) { Label(category.name, systemImage: "checkmark") } else { Text(category.name) }
                             }
                         }
                     } label: { Label(store.query.categories.isEmpty ? "All categories" : "\(store.query.categories.count) categories", systemImage: "line.3.horizontal.decrease") }
@@ -136,7 +136,9 @@ struct MobileQuickLook: View {
     let movie: Movie
     @EnvironmentObject var store: MobileStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var preview: AVPlayer?
+    @State private var previewRequest = UUID()
     @State private var moment = 0
     @State private var previewError: String?
     var body: some View {
@@ -146,7 +148,7 @@ struct MobileQuickLook: View {
                     Group { if let preview { VideoPlayer(player: preview) } else { MobileCover(path: movie.thumbnail) } }.aspectRatio(16/9, contentMode: .fit)
                     HStack {
                         ForEach(0..<3) { index in
-                            Button { moment = index } label: { Text(timestamp(momentSeconds(movie.duration, index))).frame(maxWidth: .infinity, minHeight: 44).overlay(alignment: .top) { Rectangle().fill(moment == index ? coral : .secondary).frame(height: 2) } }
+                            Button { moment = index; previewRequest = UUID() } label: { Text(timestamp(momentSeconds(movie.duration, index))).frame(maxWidth: .infinity, minHeight: 44).overlay(alignment: .top) { Rectangle().fill(moment == index ? coral : .secondary).frame(height: 2) } }
                                 .foregroundStyle(moment == index ? coral : .secondary).accessibilityIdentifier("preview-moment-\(index)")
                         }
                     }.buttonStyle(.plain)
@@ -162,7 +164,7 @@ struct MobileQuickLook: View {
                     if let previewError { Text(previewError).foregroundStyle(.secondary).font(.caption) }
                 }.padding(20)
             }.toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Close", systemImage: "xmark") { dismiss() } } }
-        }.task(id: moment) {
+        }.task(id: previewRequest) {
             preview?.pause(); preview = nil; previewError = nil
             do {
                 let data = try await API.data("/api/preview", body: ["id": movie.id, "moment": moment])
@@ -170,7 +172,8 @@ struct MobileQuickLook: View {
                 try Task.checkCancellation()
                 if let path = value?["preview"] { let player = AVPlayer(url: API.url(path)); player.volume = 0.4; player.actionAtItemEnd = .pause; preview = player; player.play() }
             } catch { if !Task.isCancelled { previewError = "Preview unavailable. You can still play the film." } }
-        }.onDisappear { preview?.pause(); preview?.replaceCurrentItem(with: nil); preview = nil }
+        }.onChange(of: scenePhase) { _, phase in if phase != .active { preview?.pause() } }
+        .onDisappear { preview?.pause(); preview?.replaceCurrentItem(with: nil); preview = nil }
     }
     private func mark(_ label: String, icon: String, field: WritableKeyPath<Mark, Bool>) -> some View {
         let selected = (store.marks[movie.id] ?? Mark())[keyPath: field]
@@ -185,6 +188,9 @@ struct MobilePlayer: View {
     @State private var reveal = UUID()
     @State private var scrub: Double?
     @State private var showDescription = false
+    @State private var showTracks = false
+    @FocusState private var playerFocused: Bool
+    private func revealControls() { visible = true; reveal = UUID() }
     private var descriptionText: String {
         let text = playback.movie.description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return text.isEmpty ? "No description available." : text
@@ -200,18 +206,17 @@ struct MobilePlayer: View {
                         switch event {
                         case .first(let tap):
                             playback.seek(playback.position + (tap.location.x < geometry.size.width / 2 ? -5 : 5))
-                            visible = true
                         case .second:
-                            visible.toggle()
+                            visible.toggle(); reveal = UUID()
                         }
-                        reveal = UUID()
                     })
             }
             if !playback.subtitleText.isEmpty {
-                VStack { Spacer(); Text(playback.subtitleText).font(.title3.weight(.medium)).multilineTextAlignment(.center).padding(8).background(.black.opacity(0.75)).padding(.horizontal, 30).padding(.bottom, visible || playback.paused ? 130 : 35) }
+                VStack { Spacer(); Text(playback.subtitleText).font(.title3.weight(.medium)).multilineTextAlignment(.center).padding(8).background(.black.opacity(0.75)).padding(.horizontal, 30).padding(.bottom, visible || playback.error != nil ? 130 : 35) }
                     .allowsHitTesting(false).accessibilityIdentifier("subtitle-text")
             }
-            if visible || playback.paused || playback.loading || playback.error != nil {
+            if playback.loading { Text("Preparing playback…").foregroundStyle(.white).allowsHitTesting(false) }
+            if visible || playback.error != nil {
                 VStack {
                     HStack {
                         Button(action: close) { Image(systemName: "arrow.left").frame(width: 44, height: 44) }.accessibilityLabel("Back to library")
@@ -231,7 +236,6 @@ struct MobilePlayer: View {
                             }
                     }.padding(.horizontal, 12).background(.black.opacity(0.8))
                     Spacer()
-                    if playback.loading { Text("Preparing playback…") }
                     if let error = playback.error { Text(error).padding().background(.black.opacity(0.8)) }
                     Spacer()
                     VStack(spacing: 4) {
@@ -244,21 +248,57 @@ struct MobilePlayer: View {
                             Button { playback.seek(playback.position + 5); reveal = UUID() } label: { Image(systemName: "goforward.5").frame(width: 44, height: 44) }.accessibilityLabel("Forward 5 seconds")
                             Text("\(timestamp(Int(playback.position))) / \(timestamp(Int(playback.duration)))").font(.caption.monospacedDigit()).accessibilityIdentifier("playback-time")
                             Spacer()
-                            Menu {
-                                Section("Audio") { ForEach(playback.media?.audioTracks ?? []) { track in Button(track.title) { playback.selectAudio(track.id) } } }
-                                Section("Subtitles") {
-                                    Button("Off") { playback.selectSubtitle("off") }
-                                    ForEach(playback.media?.subtitles ?? []) { track in Button(track.title) { playback.selectSubtitle(track.id) } }
+                            Button { showTracks = true; revealControls() } label: { Image(systemName: "captions.bubble").frame(width: 44, height: 44) }
+                                .accessibilityLabel("Audio and subtitles")
+                                .popover(isPresented: $showTracks) {
+                                    ScrollView {
+                                        VStack(alignment: .leading, spacing: 16) {
+                                            Text("Audio").font(.headline)
+                                            ForEach(playback.media?.audioTracks ?? []) { track in
+                                                Button { playback.selectAudio(track.id) } label: { Label(track.title, systemImage: playback.media?.audio == track.id ? "checkmark.circle.fill" : "circle") }
+                                            }
+                                            Divider(); Text("Subtitles").font(.headline)
+                                            Button { playback.selectSubtitle("off") } label: { Label("Off", systemImage: playback.subtitle == "off" ? "checkmark.circle.fill" : "circle") }
+                                            ForEach(playback.media?.subtitles ?? []) { track in
+                                                Button { playback.selectSubtitle(track.id) } label: { Label(track.title, systemImage: playback.subtitle == track.id ? "checkmark.circle.fill" : "circle") }
+                                            }
+                                            if let note = playback.media?.subtitleNotice { Text(note).font(.caption) }
+                                        }.buttonStyle(.plain).padding(20)
+                                    }.frame(idealWidth: 350, maxHeight: 430).presentationCompactAdaptation(.sheet)
                                 }
-                                if let note = playback.media?.subtitleNotice { Text(note) }
-                            } label: { Image(systemName: "captions.bubble") }.accessibilityLabel("Audio and subtitles")
                         }.font(.title2).buttonStyle(.plain).frame(minHeight: 44)
                     }.padding(.horizontal, 20).padding(.bottom, 12).background(.black.opacity(0.8))
                 }.foregroundStyle(.white)
             }
         }.statusBarHidden()
-            .onChange(of: showDescription) { _, _ in visible = true; reveal = UUID() }
-            .task(id: reveal) { try? await Task.sleep(for: .seconds(3)); if !Task.isCancelled && !showDescription { visible = false } }
+            .focusable().focusEffectDisabled().focused($playerFocused)
+            .onAppear { playerFocused = true }
+            .onContinuousHover { if case .active = $0 { revealControls() } }
+            .onChange(of: playback.paused) { _, _ in revealControls() }
+            .onChange(of: playback.error) { _, _ in revealControls() }
+            .onChange(of: scrub != nil) { _, _ in revealControls() }
+            .onChange(of: showDescription) { _, shown in revealControls(); if !shown { playerFocused = true } }
+            .onChange(of: showTracks) { _, shown in revealControls(); if !shown { playerFocused = true } }
+            .onKeyPress(.leftArrow) {
+                guard !showDescription, !showTracks else { return .ignored }
+                playback.seek(playback.position - 5); return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                guard !showDescription, !showTracks else { return .ignored }
+                playback.seek(playback.position + 5); return .handled
+            }
+            .onKeyPress(.space) {
+                guard !showDescription, !showTracks else { return .ignored }
+                playback.toggle(); revealControls(); return .handled
+            }
+            .onKeyPress(.escape) {
+                guard !showDescription, !showTracks else { return .ignored }
+                close(); return .handled
+            }
+            .task(id: reveal) {
+                do { try await Task.sleep(for: .seconds(3)) } catch { return }
+                if !showDescription && !showTracks && scrub == nil && playback.error == nil { visible = false; playerFocused = true }
+            }
     }
 }
 
@@ -272,9 +312,10 @@ struct ServerSettings: View {
                 .navigationTitle("Server").toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) { Button("Connect") {
-                        guard let url = URL(string: address), ["http", "https"].contains(url.scheme), url.host != nil else { return }
-                        SharedLibrary.shared.disconnect(); UserDefaults.standard.set(address, forKey: "serverURL"); dismiss(); Task { await store.connect() }
-                    } }
+                        let normalized = address.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                        guard let url = URL(string: normalized), ["http", "https"].contains(url.scheme), url.host != nil else { return }
+                        dismiss(); Task { await store.configure(normalized) }
+                    }.disabled(store.loading) }
                 }
         }
     }

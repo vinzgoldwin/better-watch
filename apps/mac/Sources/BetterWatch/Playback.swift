@@ -276,8 +276,9 @@ struct FilmPlayer: View {
             if showDescription || showTracks { return event }
             guard event.modifierFlags.intersection([.command,.control,.option]).isEmpty else { return event }
             switch event.keyCode {
-            case 123: playback.seek(by:-5)
-            case 124: playback.seek(by:5)
+            // Arrow-key seeking leaves the overlay and its hide timer unchanged.
+            case 123: playback.seek(by:-5); return nil
+            case 124: playback.seek(by:5); return nil
             case 125: playback.setVolume(playback.volume-5)
             case 126: playback.setVolume(playback.volume+5)
             case 49: playback.togglePause()

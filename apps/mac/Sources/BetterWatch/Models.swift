@@ -70,6 +70,24 @@ struct FilmQuery {
     var categories: Set<String> = []
     var list: SavedList = .all
     var sort: Sort = .name
+    func matchesCategories(_ movie: Movie) -> Bool {
+        let values = movie.categories ?? []
+        return categories.isEmpty || (values.isEmpty ? categories.contains("__uncategorized") : values.contains { categories.contains($0.lowercased()) })
+    }
+    static func categoryOptions(in movies: [Movie]) -> [(name: String, key: String, count: Int)] {
+        var counts: [String: (String, Int)] = [:]
+        for movie in movies {
+            let values = movie.categories ?? []
+            var seen: Set<String> = []
+            for value in values.isEmpty ? ["__uncategorized"] : values {
+                let key = value.lowercased()
+                guard seen.insert(key).inserted else { continue }
+                let old = counts[key]
+                counts[key] = (old?.0 ?? (value == "__uncategorized" ? "Uncategorized" : value), (old?.1 ?? 0) + 1)
+            }
+        }
+        return counts.map { ($0.value.0, $0.key, $0.value.1) }.sorted { $0.0.localizedStandardCompare($1.0) == .orderedAscending }
+    }
     func apply(_ movies: [Movie], marks: [String: Mark], includeCategories: Bool = true) -> [Movie] {
         let text = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return movies.filter { m in
@@ -78,14 +96,17 @@ struct FilmQuery {
             (artist.isEmpty || (m.artists ?? []).contains(artist)) &&
             (text.isEmpty || m.title.localizedStandardContains(text) || m.relativePath.localizedStandardContains(text)) &&
             list.matches(marks[m.id] ?? Mark()) &&
-            (!includeCategories || categories.isEmpty || ((m.categories ?? []).isEmpty ? categories.contains("__uncategorized") : (m.categories ?? []).contains { categories.contains($0.lowercased()) }))
+            (!includeCategories || matchesCategories(m))
         }.sorted(by: sort.ordered)
     }
 }
 func momentSeconds(_ duration: Double?, _ index: Int) -> Int {
     Int(min(max(0, (duration ?? 0) - 6), max(0, (duration ?? 0) * [0.12, 0.5, 0.78][max(0, min(2,index))])))
 }
-func timestamp(_ seconds: Int) -> String { String(format: "%d:%02d", seconds / 60, seconds % 60) }
+func timestamp(_ seconds: Int) -> String {
+    let value = max(0, seconds)
+    return value >= 3600 ? String(format: "%d:%02d:%02d", value / 3600, (value / 60) % 60, value % 60) : String(format: "%d:%02d", value / 60, value % 60)
+}
 
 struct ResumePosition: Codable {
     let seconds: Double

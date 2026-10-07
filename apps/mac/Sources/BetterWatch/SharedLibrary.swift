@@ -49,9 +49,10 @@ struct SharedSnapshot: Decodable {
     }
     private func enqueue(_ path: String, body: [String: Any]) {
         let previous = writes
+        let endpoint = API.url(path).absoluteString
         writes = Task {
             await previous?.value
-            do { _ = try await API.data(path, body: body) }
+            do { _ = try await API.data(endpoint, body: body) }
             catch { onError?("Could not sync with your other devices: \(error.localizedDescription)") }
         }
     }

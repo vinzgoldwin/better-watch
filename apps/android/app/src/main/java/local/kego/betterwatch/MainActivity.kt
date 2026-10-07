@@ -21,6 +21,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -100,8 +103,9 @@ private fun Sidebar(model: LibraryModel, settings: () -> Unit, close: () -> Unit
 @Composable
 private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
     val movies = model.movies; val marks = model.marks; val search = model.search; val folder = model.folder; val subfolder = model.subfolder; val artist = model.artist; val categories = model.category; val list = model.list; val sort = model.sort
-    val filtered = rememberFilteredMovies(model)
-    val availableCategories = remember(movies) { movies.flatMap { it.categories }.distinct().sorted() }
+    val results = rememberLibraryResults(model)
+    val filtered = results.movies
+    val availableCategories = results.categories
     val artists = remember(movies) { movies.flatMap { it.artists }.distinct().sorted() }
     var categoryMenu by remember { mutableStateOf(false) }; var sortMenu by remember { mutableStateOf(false) }; var folderMenu by remember { mutableStateOf(false) }
     Column(modifier) {
@@ -110,10 +114,10 @@ private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
             Text(if (model.artistsVisible) "Artists" else artist.ifEmpty { folder.ifEmpty { list.label } }, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${filtered.size} films", Modifier.padding(end = 12.dp), color = Color.Gray, fontSize = 12.sp)
         }
-        OutlinedTextField(model.search, { model.search = it }, Modifier.fillMaxWidth().padding(horizontal = 20.dp).testTag("film-search"), singleLine = true, placeholder = { Text(if (model.artistsVisible) "Search artists" else "Search films") }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
+        OutlinedTextField(if (model.artistsVisible) model.artistSearch else model.search, { if (model.artistsVisible) model.artistSearch = it else model.search = it }, Modifier.fillMaxWidth().padding(horizontal = 20.dp).testTag("film-search"), singleLine = true, placeholder = { Text(if (model.artistsVisible) "Search artists" else "Search films") }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
         if (model.artistsVisible) {
             LazyColumn(Modifier.fillMaxSize().padding(20.dp)) {
-                items(artists.filter { search.isEmpty() || it.contains(search, true) }, key = { it }) { name -> TextButton(onClick = { model.artist = name; model.search = ""; model.artistsVisible = false }, modifier = Modifier.fillMaxWidth()) { Text(name, Modifier.weight(1f)); Icon(Icons.Outlined.ChevronRight, null) } }
+                items(artists.filter { model.artistSearch.isEmpty() || it.contains(model.artistSearch, true) }, key = { it }) { name -> TextButton(onClick = { model.chooseArtist(name) }, modifier = Modifier.fillMaxWidth()) { Text(name, Modifier.weight(1f)); Icon(Icons.Outlined.ChevronRight, null) } }
             }
         } else {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -121,7 +125,7 @@ private fun Library(model: LibraryModel, modifier: Modifier, menu: () -> Unit) {
                     TextButton(onClick = { categoryMenu = true }) { Text(if (categories.isEmpty()) "All categories" else "${categories.size} categories", fontSize = 12.sp) }
                     DropdownMenu(categoryMenu, { categoryMenu = false }) {
                         DropdownMenuItem(text = { Text("All categories") }, onClick = { model.category = emptySet(); categoryMenu = false })
-                        availableCategories.forEach { name -> DropdownMenuItem(text = { Text((if (name in categories) "✓ " else "") + name) }, onClick = { model.category = if (name in categories) categories - name else categories + name }) }
+                        availableCategories.forEach { (key, name) -> DropdownMenuItem(text = { Text((if (key in categories) "✓ " else "") + name) }, onClick = { model.category = if (key in categories) categories - key else categories + key }) }
                     }
                 }
                 if (folder.isNotEmpty()) Box {
@@ -165,7 +169,7 @@ private fun FilmTile(model: LibraryModel, movie: Movie, marks: Marks) {
             if (movie.english) Text("English Sub", Modifier.align(Alignment.TopStart).padding(5.dp).background(Color.Black.copy(alpha = 0.85f)).padding(4.dp), fontSize = 10.sp)
             Text("${(movie.duration / 60).toInt().coerceAtLeast(1)}m", Modifier.align(Alignment.BottomEnd).padding(5.dp).background(Color.Black.copy(alpha = 0.85f)).padding(4.dp), fontSize = 10.sp)
         }
-        Text(movie.title, Modifier.padding(top = 7.dp).height(38.dp), fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(movie.displayTitle, Modifier.padding(top = 7.dp).height(38.dp), fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             if (marks.favorite) Icon(Icons.Outlined.Favorite, "Favorite", Modifier.size(13.dp), tint = Coral)
             if (marks.watched) Icon(Icons.Outlined.CheckCircle, "Watched", Modifier.size(13.dp), tint = Coral)
@@ -177,7 +181,7 @@ private fun FilmTile(model: LibraryModel, movie: Movie, marks: Marks) {
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 private fun QuickLook(model: LibraryModel, movie: Movie, close: () -> Unit, play: () -> Unit) {
-    val context = LocalContext.current; var moment by remember { mutableIntStateOf(0) }; var previewReady by remember { mutableStateOf(false) }
+    val context = LocalContext.current; var moment by remember { mutableIntStateOf(0) }; var previewRequest by remember { mutableIntStateOf(0) }; var previewError by remember { mutableStateOf(false) }; var previewReady by remember { mutableStateOf(false) }
     val preview = remember(movie.id) { ExoPlayer.Builder(context).build().apply { volume = 0.4f } }
     val lifecycle = LocalLifecycleOwner.current
     DisposableEffect(preview, lifecycle) {
@@ -185,13 +189,13 @@ private fun QuickLook(model: LibraryModel, movie: Movie, close: () -> Unit, play
         lifecycle.lifecycle.addObserver(observer)
         onDispose { lifecycle.lifecycle.removeObserver(observer); preview.release() }
     }
-    LaunchedEffect(movie.id, moment) {
-        preview.pause(); previewReady = false
+    LaunchedEffect(movie.id, moment, previewRequest) {
+        preview.pause(); previewReady = false; previewError = false
         try {
             val response = model.request("/api/preview", JSONObject().put("id", movie.id).put("moment", moment)); ensureActive()
             withContext(Dispatchers.Main.immediate) { preview.setMediaItem(MediaItem.fromUri(model.url(response.getString("preview")))); preview.prepare(); preview.play(); previewReady = true }
         }
-        catch (e: Exception) { if (e is CancellationException) throw e }
+        catch (e: Exception) { if (e is CancellationException) throw e; previewError = true }
     }
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.widthIn(max = 700.dp).fillMaxWidth().fillMaxHeight(0.94f), color = MaterialTheme.colorScheme.surface) {
@@ -204,13 +208,14 @@ private fun QuickLook(model: LibraryModel, movie: Movie, close: () -> Unit, play
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(0.12, 0.5, 0.78).forEachIndexed { index, fraction ->
-                            Column(Modifier.weight(1f).clickable { moment = index }.testTag("preview-moment-$index"), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(Modifier.weight(1f).clickable { moment = index; previewRequest++ }.testTag("preview-moment-$index"), horizontalAlignment = Alignment.CenterHorizontally) {
                                 HorizontalDivider(color = if (moment == index) Coral else Color.Gray, thickness = 2.dp)
                                 Text(timestamp((movie.duration * fraction).coerceIn(0.0, (movie.duration - 6).coerceAtLeast(0.0))), Modifier.padding(vertical = 12.dp), color = if (moment == index) Coral else Color.Gray)
                             }
                         }
                     }
-                    Text(movie.title, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                    if (previewError) Text("Preview unavailable. You can still play the film.", color = Color.Gray, fontSize = 12.sp)
+                    Text(movie.displayTitle, fontSize = 23.sp, fontWeight = FontWeight.Bold)
                     Text(movie.facts, color = Color.Gray, fontSize = 13.sp)
                     Button(onClick = { preview.pause(); play() }, modifier = Modifier.fillMaxWidth().testTag("play-film"), shape = MaterialTheme.shapes.small) { Icon(Icons.Outlined.PlayArrow, null); Text("Play") }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -236,11 +241,28 @@ private fun NativePlayer(model: LibraryModel, movie: Movie, close: () -> Unit) {
     var description by remember { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current
     DisposableEffect(session, lifecycle) { val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) session.pause() }; lifecycle.lifecycle.addObserver(observer); onDispose { lifecycle.lifecycle.removeObserver(observer); session.close() } }
-    LaunchedEffect(reveal, session.paused, description, tracks) { if (!session.paused && !description && !tracks) { delay(3000); controls = false } }
-    val show = controls || session.paused || session.loading || session.error != null
+    val keyboardFocus = remember { FocusRequester() }
+    LaunchedEffect(session.paused) { controls = true; reveal++ }
+    LaunchedEffect(reveal, description, tracks, scrub != null, session.error) {
+        if (!description && !tracks && scrub == null && session.error == null) { delay(3000); controls = false }
+    }
+    val show = controls || session.error != null
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
-            Box(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().testTag("player-surface")) {
+            LaunchedEffect(Unit) { keyboardFocus.requestFocus() }
+            Box(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().focusRequester(keyboardFocus)
+                .onPreviewKeyEvent { event ->
+                    if (description || tracks || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionLeft, Key.MediaRewind -> { session.seek(session.position - 5); true }
+                        Key.DirectionRight, Key.MediaFastForward -> { session.seek(session.position + 5); true }
+                        Key.Spacebar, Key.MediaPlayPause -> { if (event.nativeKeyEvent.repeatCount == 0) session.toggle(); controls = true; reveal++; true }
+                        Key.MediaPlay -> { session.resume(); controls = true; reveal++; true }
+                        Key.MediaPause -> { session.pause(); controls = true; reveal++; true }
+                        Key.Escape -> { close(); true }
+                        else -> false
+                    }
+                }.focusable().testTag("player-surface")) {
                 AndroidView(factory = { PlayerView(it).apply { player = session.player; useController = false } }, update = { it.keepScreenOn = !session.paused; it.subtitleView?.setBottomPaddingFraction(if (show) 0.22f else 0.08f) }, modifier = Modifier.fillMaxSize())
                 // Receive physical touches above PlayerView, which otherwise consumes them.
                 // Controls are drawn later so their buttons and slider keep their own gestures.
@@ -249,18 +271,17 @@ private fun NativePlayer(model: LibraryModel, movie: Movie, close: () -> Unit) {
                         onTap = { controls = !controls; reveal++ },
                         onDoubleTap = { point ->
                             session.seek(session.position + if (point.x < size.width / 2f) -5 else 5)
-                            controls = true; reveal++
                         }
                     )
                 }.semantics { onClick(label = "Show playback controls") { controls = true; reveal++; true } })
+                if (session.loading) Text("Preparing playback…", Modifier.align(Alignment.Center).testTag("player-loading"))
                 if (show) {
                     Column(Modifier.fillMaxSize()) {
                         Row(Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.8f)), verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = close) { Icon(Icons.Outlined.ArrowBack, "Back to library") }; Text(movie.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(end = 16.dp))
+                            IconButton(onClick = close) { Icon(Icons.Outlined.ArrowBack, "Back to library") }; Text(movie.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(end = 16.dp))
                             IconButton(onClick = { description = true; controls = true; reveal++ }) { Icon(Icons.Outlined.Info, "Movie Description") }
                         }
                         Spacer(Modifier.weight(1f))
-                        if (session.loading) Text("Preparing playback…", Modifier.align(Alignment.CenterHorizontally).testTag("player-loading"))
                         session.error?.let { Text(it, Modifier.padding(20.dp).testTag("player-error")) }
                         Spacer(Modifier.weight(1f))
                         Column(Modifier.background(Color.Black.copy(alpha = 0.8f)).padding(horizontal = 16.dp)) {
@@ -290,7 +311,7 @@ private fun NativePlayer(model: LibraryModel, movie: Movie, close: () -> Unit) {
         Surface(Modifier.widthIn(max = 420.dp).fillMaxWidth().heightIn(max = 480.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text(movie.title, Modifier.weight(1f), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(movie.displayTitle, Modifier.weight(1f), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     IconButton(onClick = { description = false }) { Icon(Icons.Outlined.Close, "Close description") }
                 }
                 SelectionContainer(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {

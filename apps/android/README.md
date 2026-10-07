@@ -6,7 +6,9 @@ The same APK also includes a dedicated **Google TV / Android TV** interface. See
 
 This directory owns the Gradle build, shared manifest, phone UI, library model, and playback. TV's UI, banner, and tests live in `../tv/` and are included by the app's Gradle source sets.
 
-During playback, tap the video to show controls. Double-tap the left or right half to seek backward or forward five seconds. Play/pause and five-second buttons sit below the timeline; the info button opens the description, or indicates when the film has none.
+During playback, tap the video to toggle controls. Double-tap the left or right half, or use keyboard left/right arrows, to seek five seconds without revealing controls or extending their timer. Space and media keys control playback; Escape returns to the library. Controls hide after three seconds even while paused. Description/audio/subtitle panels and timeline scrubbing keep them available. Play/pause and five-second buttons sit below the timeline; the info button opens the description, or indicates when the film has none.
+
+Phone and TV use the same query implementation for natural sorting, title/filename search, category OR matching including Uncategorized, and saved lists. The [shared native behavior contract](../../CROSS_PLATFORM.md#shared-contract) documents matching Apple behavior and intentional input differences. Selecting the current preview moment explicitly replays it.
 
 ## Build and install
 

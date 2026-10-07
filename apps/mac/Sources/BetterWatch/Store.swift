@@ -102,15 +102,7 @@ import UniformTypeIdentifiers
                 try await Task.sleep(for: .milliseconds(120))
                 let result = await Task.detached(priority: .userInitiated) { () -> ([Movie], [(String, String, Int)]) in
                     let scope = query.apply(movies, marks: marks, includeCategories: false)
-                    var counts: [String: (String,Int)] = [:]
-                    for m in scope {
-                        let categories = m.categories ?? []
-                        for value in Set(categories.isEmpty ? ["__uncategorized"] : categories) {
-                            let key = value.lowercased(); let old = counts[key]
-                            counts[key] = (value == "__uncategorized" ? "Uncategorized" : value, (old?.1 ?? 0)+1)
-                        }
-                    }
-                    return (query.apply(movies, marks: marks), counts.map { ($0.value.0, $0.key, $0.value.1) }.sorted { $0.0.localizedStandardCompare($1.0) == .orderedAscending })
+                    return (scope.filter(query.matchesCategories), FilmQuery.categoryOptions(in: scope))
                 }.value
                 guard !Task.isCancelled, generation == token else { return }
                 filtered = result.0; categoryOptions = result.1

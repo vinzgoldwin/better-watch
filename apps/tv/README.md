@@ -40,7 +40,7 @@ Install [Tailscale for Android TV](https://tailscale.com/docs/install/android) a
 | Description | Info opens a panel on the right. Up selects its scrollable text; up/down scrolls. Close or Back returns to the player. |
 | Back from playback | Close an open panel first, then hide controls, then return to the library. During a playback error, Back returns directly to the library. |
 
-Controls hide after four seconds while playing. They do not auto-hide when paused, preparing, or displaying an error. Leaving the app pauses playback. Film browsing loads still covers; moving focus does not start additional preview streams. Text subtitles and alternate audio use the same compatibility endpoints as the phone app. Image-based subtitles remain unsupported by this player.
+Controls hide after three seconds, including while paused or preparing. Open panels and playback errors keep them available. Hidden left/right seeking and media rewind/fast-forward preserve visibility and the hide timer; play/pause reveals controls. Preparation feedback can appear without the controls. Leaving the app pauses playback. Film browsing loads still covers; moving focus does not start additional preview streams. Text subtitles and alternate audio use the same compatibility endpoints as the phone app. Image-based subtitles remain unsupported by this player.
 
 ## Local native UI integration checks
 

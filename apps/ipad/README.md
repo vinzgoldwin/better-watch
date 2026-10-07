@@ -2,7 +2,9 @@
 
 Native SwiftUI interface and AVPlayer playback. Shares `Models.swift` and `SharedLibrary.swift` directly with the Mac app through `project.yml`. See the [cross-platform map](../../CROSS_PLATFORM.md) before editing shared behavior.
 
-Tap the video or letterboxing to show controls. Double-tap the left or right half to seek backward or forward five seconds. Play/pause and five-second buttons have 44-point touch targets. The info button always opens the movie description, with a short fallback when metadata is absent.
+Tap the video or letterboxing to toggle controls. Double-tap the left or right half, or use keyboard left/right arrows, to seek five seconds without revealing controls or extending their timer. Space pauses/resumes; Escape returns to the library. Pointer movement and play/pause reveal controls, which hide after three seconds even while paused. Description/audio/subtitle panels and timeline scrubbing keep them available. Play/pause and five-second buttons have 44-point touch targets. The info button opens the description, with a short fallback when metadata is absent.
+
+Search, category options, saved lists, sorting, and resume follow the [shared native behavior contract](../../CROSS_PLATFORM.md#shared-contract). Selecting an artist clears unrelated film filters. Selecting the current preview moment replays it; previews pause when the app leaves the foreground.
 
 ## Build and install
 

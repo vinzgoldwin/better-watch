@@ -90,7 +90,8 @@ internal fun TvApp(model: LibraryModel) {
     var focusedMovie by remember { mutableStateOf<String?>(null) }
     val grid = rememberLazyGridState()
     val sidebar = remember { FocusRequester() }
-    val films = rememberFilteredMovies(model)
+    val results = rememberLibraryResults(model)
+    val films = results.movies
     Box(Modifier.fillMaxSize().background(TvBackground).testTag("tv-app")) {
         when {
             model.playing != null -> TvPlayer(model, model.playing!!) { model.playing = null }
@@ -99,7 +100,7 @@ internal fun TvApp(model: LibraryModel) {
                 if (fromStart) model.save(movie.id, 0.0, movie.duration)
                 model.selected = null; model.playing = movie
             }
-            else -> TvLibrary(model, films, grid, sidebar, focusedMovie, { focusedMovie = it }, { settings = true })
+            else -> TvLibrary(model, films, results.categories, grid, sidebar, focusedMovie, { focusedMovie = it }, { settings = true })
         }
     }
     if (settings) TvServerSettings(model) { settings = false }
@@ -116,7 +117,7 @@ internal fun TvApp(model: LibraryModel) {
 }
 
 @Composable
-private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridState, sidebar: FocusRequester,
+private fun TvLibrary(model: LibraryModel, films: List<Movie>, categories: List<Pair<String, String>>, grid: LazyGridState, sidebar: FocusRequester,
     focusedId: String?, rememberFocus: (String) -> Unit, settings: () -> Unit) {
     val focusFilm = remember { FocusRequester() }
     val searchFocus = remember { FocusRequester() }
@@ -135,7 +136,6 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
     }
     val folders = remember(model.movies) { model.movies.map { it.topFolder }.distinct().sorted() }
     val artists = remember(model.movies) { model.movies.flatMap { it.artists }.distinct().sorted() }
-    val categories = remember(model.movies) { model.movies.flatMap { it.categories }.distinct().sorted() }
     val chosen = films.firstOrNull { it.id == focusedId } ?: films.firstOrNull()
     // Retain the lazy-grid state and stable movie ID across details and playback.
     // Filter updates return to a real item even if a removed favorite disappeared.
@@ -164,10 +164,10 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
                     .focusProperties { right = if (films.isEmpty() || model.artistsVisible) searchFocus else focusFilm }
                     .testTag("tv-nav-${list.name}"), selected = model.list == list && model.folder.isEmpty() && !model.artistsVisible)
             }
-            item { TvAction("Artists", { model.choose(SavedList.ALL); model.artistsVisible = true }, Modifier.fillMaxWidth(), selected = model.artistsVisible) }
+            item { TvAction("Artists", { model.artistsVisible = true }, Modifier.fillMaxWidth(), selected = model.artistsVisible) }
             item { Text("Folders", Modifier.padding(start = 12.dp, top = 20.dp, bottom = 6.dp), color = TvSecondary, fontSize = 14.sp) }
             items(folders, key = { "folder:$it" }) { folder ->
-                TvAction(folder.ifBlank { "Library root" }, { model.choose(SavedList.ALL); model.chooseFolder(folder); focusGeneration++ }, Modifier.fillMaxWidth(), selected = model.folder == folder && folder.isNotEmpty())
+                TvAction(folder.ifBlank { "Library root" }, { model.chooseFolder(folder); focusGeneration++ }, Modifier.fillMaxWidth(), selected = model.folder == folder && folder.isNotEmpty())
             }
             }
             TvAction("Server", settings, Modifier.padding(top = 8.dp).fillMaxWidth().testTag("tv-server"))
@@ -179,7 +179,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
                 Text("${films.size} films", color = TvSecondary, fontSize = 14.sp)
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TvAction(model.search.ifBlank { if (model.artistsVisible) "Search artists" else "Search films" }, { panel = "search" },
+                TvAction((if (model.artistsVisible) model.artistSearch else model.search).ifBlank { if (model.artistsVisible) "Search artists" else "Search films" }, { panel = "search" },
                     Modifier.weight(1f).focusRequester(searchFocus).testTag("tv-search"), icon = Icons.Outlined.Search)
                 if (!model.artistsVisible) {
                     TvAction(if (model.category.isEmpty()) "All categories" else "${model.category.size} categories", { panel = "categories" }, Modifier.testTag("tv-categories"))
@@ -189,8 +189,8 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
             }
             if (model.artistsVisible) {
                 LazyColumn(Modifier.weight(1f)) {
-                    items(artists.filter { it.contains(model.search, true) }, key = { it }) { name ->
-                        TvAction(name, { model.artist = name; model.search = ""; model.artistsVisible = false; focusGeneration++ }, Modifier.fillMaxWidth())
+                    items(artists.filter { it.contains(model.artistSearch, true) }, key = { it }) { name ->
+                        TvAction(name, { model.chooseArtist(name); focusGeneration++ }, Modifier.fillMaxWidth())
                     }
                 }
             } else if (films.isEmpty()) {
@@ -209,7 +209,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
                             .clickable(role = Role.Button) { rememberFocus(movie.id); model.selected = movie }
                             .padding(4.dp).testTag("tv-movie-${movie.id}")) {
                             TvCover(model, movie, Modifier.fillMaxWidth().aspectRatio(16f / 9))
-                            Text(movie.title, Modifier.padding(top = 8.dp), color = if (focused) Coral else Color.White,
+                            Text(movie.displayTitle, Modifier.padding(top = 8.dp), color = if (focused) Coral else Color.White,
                                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Text(movie.facts, Modifier.padding(top = 3.dp), color = TvSecondary, fontSize = 12.sp, maxLines = 1)
                         }
@@ -218,7 +218,7 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
                 chosen?.let { movie ->
                     HorizontalDivider(Modifier.padding(top = 12.dp, bottom = 10.dp), color = Color(0xFF414145))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(movie.title, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(movie.displayTitle, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(movie.facts, fontSize = 14.sp, color = TvSecondary)
                     }
                     Text(movie.description.ifBlank { "No description available." }, Modifier.padding(top = 6.dp), fontSize = 14.sp, color = TvSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -228,9 +228,9 @@ private fun TvLibrary(model: LibraryModel, films: List<Movie>, grid: LazyGridSta
         }
     }
     when (panel) {
-        "search" -> TvInput(if (model.artistsVisible) "Search artists" else "Search films", model.search, "Search", { panel = null }) { model.search = it; panel = null; focusGeneration++ }
+        "search" -> TvInput(if (model.artistsVisible) "Search artists" else "Search films", if (model.artistsVisible) model.artistSearch else model.search, "Search", { panel = null }) { if (model.artistsVisible) model.artistSearch = it else model.search = it; panel = null; focusGeneration++ }
         "sort" -> TvChoices("Sort", Sort.entries.map { it.name to it.label }, setOf(model.sort.name), { panel = null }) { model.sort = Sort.valueOf(it); panel = null; focusGeneration++ }
-        "categories" -> TvChoices("Categories", listOf("" to "All categories") + categories.map { it to it }, model.category, { panel = null }) {
+        "categories" -> TvChoices("Categories", listOf("" to "All categories") + categories, model.category, { panel = null }) {
             model.category = if (it.isEmpty()) emptySet() else if (it in model.category) model.category - it else model.category + it
         }
         "folders" -> TvChoices("Subfolders", listOf("" to "All subfolders") + model.directories.filter { it.startsWith(model.folder + "/") }.map { it to it.removePrefix(model.folder + "/") }, setOf(model.subfolder), { panel = null }) { model.subfolder = it; panel = null; focusGeneration++ }
@@ -264,7 +264,7 @@ private fun TvDetails(model: LibraryModel, movie: Movie, close: () -> Unit, play
             }
         }
         Column(Modifier.weight(1.1f).fillMaxHeight()) {
-            Text(movie.title, fontSize = 30.sp, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(movie.displayTitle, fontSize = 30.sp, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Text(movie.facts, Modifier.padding(vertical = 14.dp), color = TvSecondary, fontSize = 17.sp)
             TvScrollableText(movie.description.ifBlank { "No description available." } +
                 if (movie.artists.isNotEmpty()) "\n\nArtists\n${movie.artists.joinToString(" · ")}" else "",
@@ -367,10 +367,10 @@ private fun TvPlayer(model: LibraryModel, movie: Movie, close: () -> Unit) {
         onDispose { lifecycle.lifecycle.removeObserver(observer); session.close() }
     }
     val preparing = session.loading || (!session.videoReady && session.error == null)
-    val show = controls || preparing || session.error != null
-    LaunchedEffect(session.paused) { if (session.paused) controls = true }
-    LaunchedEffect(interaction, session.paused, preparing, panel, session.error) {
-        if (!session.paused && !preparing && panel == null && session.error == null) { delay(4000); controls = false }
+    val show = controls || session.error != null
+    LaunchedEffect(session.paused) { controls = true; interaction++ }
+    LaunchedEffect(interaction, panel, session.error) {
+        if (panel == null && session.error == null) { delay(3000); controls = false }
     }
     LaunchedEffect(show) { if (show) play.requestFocus() else surface.requestFocus() }
     LaunchedEffect(seekNotice) { if (seekNotice != null) { delay(1000); seekNotice = null } }
@@ -380,24 +380,24 @@ private fun TvPlayer(model: LibraryModel, movie: Movie, close: () -> Unit) {
         .onPreviewKeyEvent { event ->
             if (panel != null) return@onPreviewKeyEvent false
             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-            interaction++
+            // Quick seeking does not reveal controls or extend their hide timer.
             when (event.key) {
-                Key.MediaPlayPause -> { if (event.nativeKeyEvent.repeatCount == 0) session.toggle(); true }
-                Key.MediaPlay -> { session.player.play(); true }
-                Key.MediaPause -> { session.pause(); true }
+                Key.MediaPlayPause -> { if (event.nativeKeyEvent.repeatCount == 0) session.toggle(); controls = true; interaction++; true }
+                Key.MediaPlay -> { session.resume(); controls = true; interaction++; true }
+                Key.MediaPause -> { session.pause(); controls = true; interaction++; true }
                 Key.MediaRewind -> { skip(-5.0); true }
                 Key.MediaFastForward -> { skip(5.0); true }
-                Key.DirectionLeft, Key.DirectionRight -> if (!show) { skip(if (event.key == Key.DirectionLeft) -5.0 else 5.0); true } else false
-                Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.DirectionUp, Key.DirectionDown -> if (!show) { controls = true; true } else false
+                Key.DirectionLeft, Key.DirectionRight -> if (!show) { skip(if (event.key == Key.DirectionLeft) -5.0 else 5.0); true } else { interaction++; false }
+                Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.DirectionUp, Key.DirectionDown -> if (!show) { controls = true; interaction++; true } else { interaction++; false }
                 else -> false
             }
         }.focusable().testTag("tv-player")) {
         AndroidView(factory = { PlayerView(it).apply { player = session.player; useController = false; isFocusable = false; descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS } },
             update = { it.keepScreenOn = !session.paused; it.subtitleView?.setBottomPaddingFraction(if (show) 0.25f else 0.08f) }, modifier = Modifier.fillMaxSize())
+        if (preparing) Text("Preparing playback…", Modifier.align(Alignment.Center).testTag("tv-player-loading"), fontSize = 20.sp)
         if (show) {
-            if (preparing) Text("Preparing playback…", Modifier.align(Alignment.Center).testTag("tv-player-loading"), fontSize = 20.sp)
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color.Black.copy(alpha = 0.9f)).padding(horizontal = 36.dp, vertical = 20.dp)) {
-                Text(movie.title, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(movie.displayTitle, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 session.error?.let { Text(it, Modifier.testTag("tv-player-error").padding(vertical = 8.dp), color = Coral, fontSize = 16.sp) }
                 TvTimeline(session.position, session.media?.duration ?: movie.duration) { delta -> session.seek(session.position + delta); interaction++ }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -447,7 +447,7 @@ internal fun TvTimeline(position: Double, duration: Double, seek: (Double) -> Un
 @Composable
 internal fun TvDescription(movie: Movie, close: () -> Unit) {
     val done = remember { FocusRequester() }
-    TvDialog(movie.title, close, alignEnd = true) {
+    TvDialog(movie.displayTitle, close, alignEnd = true) {
         Text(movie.facts, fontSize = 16.sp, color = TvSecondary)
         TvScrollableText(movie.description.ifBlank { "No description available." }, Modifier.weight(1f).fillMaxWidth().testTag("tv-description"))
         TvAction("Close description", close, Modifier.focusRequester(done).testTag("tv-description-close"))

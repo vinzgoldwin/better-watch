@@ -4,6 +4,7 @@ import SwiftUI
     @Published var movies: [Movie] = []
     @Published var filtered: [Movie] = []
     @Published var directories: [String] = []
+    @Published var categoryOptions: [(name: String, key: String, count: Int)] = []
     @Published var marks: [String: Mark] = [:]
     @Published var query = FilmQuery() { didSet { filter() } }
     @Published var selected: Movie?
@@ -15,7 +16,6 @@ import SwiftUI
     private var requestedPlayback: Movie?
     var folders: [String] { Array(Set(movies.map(\.topFolder))).sorted() }
     var artists: [String] { Array(Set(movies.flatMap { $0.artists ?? [] })).sorted() }
-    var categories: [String] { Array(Set(movies.flatMap { $0.categories ?? [] })).sorted() }
     var heading: String { artistsVisible ? "Artists" : !query.artist.isEmpty ? query.artist : !query.folder.isEmpty ? query.folder : query.list.rawValue }
     init() {
         SharedLibrary.shared.onMarks = { [weak self] values in self?.marks = values; self?.filter() }
@@ -38,12 +38,25 @@ import SwiftUI
         filterTask = Task {
             do {
                 try await Task.sleep(for: .milliseconds(120))
-                let result = await Task.detached { query.apply(movies, marks: marks) }.value
-                try Task.checkCancellation(); filtered = result
+                let result = await Task.detached {
+                    let scope = query.apply(movies, marks: marks, includeCategories: false)
+                    return (scope.filter(query.matchesCategories), FilmQuery.categoryOptions(in: scope))
+                }.value
+                try Task.checkCancellation(); filtered = result.0; categoryOptions = result.1
             } catch { }
         }
     }
     func choose(_ list: SavedList) { artistsVisible = false; query = FilmQuery(list: list) }
+    func configure(_ address: String) async {
+        guard !loading else { return }
+        closePlayback(); selected = nil; requestedPlayback = nil
+        await SharedLibrary.shared.flush()
+        SharedLibrary.shared.disconnect()
+        filterTask?.cancel()
+        UserDefaults.standard.set(address, forKey: "serverURL")
+        movies = []; filtered = []; marks = [:]; directories = []; categoryOptions = []
+        await connect()
+    }
     func choose(folder: String) { artistsVisible = false; query.folder = folder; query.subfolder = ""; query.artist = ""; query.categories = [] }
     func toggle(_ movie: Movie, _ field: WritableKeyPath<Mark, Bool>) {
         var mark = marks[movie.id] ?? Mark(); mark[keyPath: field].toggle(); marks[movie.id] = mark; filter()

@@ -82,7 +82,8 @@ class PlaybackSession(context: Context, val movie: Movie, private val library: L
         player.setMediaItem(MediaItem.Builder().setUri(library.url(path)).setSubtitleConfigurations(subtitles).build(), (start * 1000).toLong())
         player.prepare(); player.playWhenReady = autoplay
     }
-    fun toggle() { if (player.playWhenReady) player.pause() else { if (completed) seek(0.0); player.play() } }
+    fun resume() { if (completed) seek(0.0); player.play() }
+    fun toggle() { if (player.playWhenReady) player.pause() else resume() }
     fun pause() { player.pause(); save() }
     fun seek(value: Double) {
         completed = false; position = value.coerceIn(0.0, media?.duration ?: 0.0)
@@ -108,4 +109,7 @@ class PlaybackSession(context: Context, val movie: Movie, private val library: L
     fun close() { if (closed) return; pause(); closed = true; job?.cancel(); timer?.cancel(); player.release() }
 }
 
-fun timestamp(value: Double): String { val seconds = value.toInt().coerceAtLeast(0); return "%d:%02d".format(seconds / 60, seconds % 60) }
+fun timestamp(value: Double): String {
+    val seconds = (if (value.isFinite()) value.toInt() else 0).coerceAtLeast(0)
+    return if (seconds >= 3600) "%d:%02d:%02d".format(seconds / 3600, seconds / 60 % 60, seconds % 60) else "%d:%02d".format(seconds / 60, seconds % 60)
+}

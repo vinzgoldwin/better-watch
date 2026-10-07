@@ -8,6 +8,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import org.junit.*
 import org.junit.runner.RunWith
@@ -29,6 +31,11 @@ class TvNavigationTest {
         val fixture = OkHttpClient().newCall(Request.Builder().url("http://127.0.0.1:3399/api/library").build()).execute().use { JSONObject(it.body!!.string()) }.getJSONArray("movies")
         require(fixture.length() == 36 && fixture.getJSONObject(0).getString("id") == "compatible" &&
             fixture.getJSONObject(0).getString("description") == "A generated test film.") { "Start scripts/mobile-fixture.js before local TV tests" }
+        // Each test starts before the optional Resume / Play from start rows appear.
+        for (id in listOf("compatible", "direct")) {
+            OkHttpClient().newCall(Request.Builder().url("http://127.0.0.1:3399/api/profile/positions/$id")
+                .post("{\"seconds\":0,\"duration\":90}".toRequestBody("application/json".toMediaType())).build()).execute().use { require(it.isSuccessful) }
+        }
         ApplicationProvider.getApplicationContext<Context>().getSharedPreferences("library", 0).edit()
             .putString("server", "http://127.0.0.1:3399").commit()
         activity = ActivityScenario.launch(TvActivity::class.java)
@@ -66,6 +73,23 @@ class TvNavigationTest {
         compose.onNode(isFocused()).assertIsDisplayed()
         back()
         compose.onNodeWithTag("tv-nav-ALL").assertIsFocused()
+    }
+
+    @Test fun pausedControlsHideAndRemoteSeekingKeepsFocusOnTheVideo() {
+        key(Key.DirectionCenter); key(Key.DirectionCenter)
+        await("tv-player-toggle")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("1:30").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Pause").fetchSemanticsNodes().isNotEmpty() }
+        key(Key.MediaPause)
+        compose.onNodeWithTag("tv-player-toggle").assertTextContains("Play")
+        compose.mainClock.advanceTimeBy(3200)
+        compose.onNodeWithTag("tv-player-toggle").assertDoesNotExist()
+        compose.onNodeWithTag("tv-player").assertIsFocused()
+        key(Key.DirectionRight); key(Key.DirectionLeft)
+        compose.onNodeWithTag("tv-player-toggle").assertDoesNotExist()
+        compose.onNodeWithTag("tv-player").assertIsFocused()
+        key(Key.MediaPause)
+        compose.onNodeWithTag("tv-player-toggle").assertExists().assertIsFocused()
     }
 
     @Test fun searchEmptyResultsAndSortAreReachableWithoutTouch() {

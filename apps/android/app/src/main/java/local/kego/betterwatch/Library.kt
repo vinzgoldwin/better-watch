@@ -19,12 +19,13 @@ private fun JSONObject.text(key: String) = if (isNull(key)) "" else optString(ke
 data class Movie(val id: String, val title: String, val folder: String, val topFolder: String,
     val duration: Double, val size: Double, val modified: Double, val release: String,
     val height: Int, val description: String, val thumbnail: String,
-    val categories: List<String>, val artists: List<String>, val english: Boolean) {
+    val categories: List<String>, val artists: List<String>, val english: Boolean, val relativePath: String = "$folder/$title") {
+    val displayTitle = title.replace(Regex("\\s*\\[HD]\\s*$"), "")
     val facts get() = listOf(release.take(4), if (duration > 0) "${(duration / 60).toInt().coerceAtLeast(1)}m" else "", if (height > 0) "${height}p" else "").filter { it.isNotEmpty() }.joinToString(" · ")
     companion object {
-        fun parse(j: JSONObject) = Movie(j.getString("id"), j.getString("title").replace(Regex("\\s*\\[HD]\\s*$"), ""), j.optString("folder"), j.optString("topFolder"),
+        fun parse(j: JSONObject) = Movie(j.getString("id"), j.getString("title"), j.optString("folder"), j.optString("topFolder"),
             j.optDouble("duration", 0.0), j.optDouble("size", 0.0), j.optDouble("modified", 0.0), j.text("releaseDate"), j.optInt("height"), j.text("description"), j.text("thumbnail"),
-            j.optJSONArray("categories")?.strings() ?: emptyList(), j.optJSONArray("artists")?.strings() ?: emptyList(), j.optBoolean("hasEnglishSub"))
+            j.optJSONArray("categories")?.strings() ?: emptyList(), j.optJSONArray("artists")?.strings() ?: emptyList(), j.optBoolean("hasEnglishSub"), j.optString("relativePath", "${j.optString("folder")}/${j.getString("title")}"))
     }
 }
 data class Marks(val favorite: Boolean = false, val watchLater: Boolean = false, val watched: Boolean = false) {
@@ -33,7 +34,7 @@ data class Marks(val favorite: Boolean = false, val watchLater: Boolean = false,
     companion object { fun parse(j: JSONObject) = Marks(j.optBoolean("favorite"), j.optBoolean("watchLater"), j.optBoolean("watched")) }
 }
 data class Position(val seconds: Double, val duration: Double) {
-    val resume get() = if (seconds >= 5 && seconds < duration - 10) seconds else 0.0
+    val resume get() = if (seconds.isFinite() && duration.isFinite() && seconds >= 5 && seconds < duration - 10) seconds else 0.0
 }
 enum class SavedList(val label: String) { ALL("All Films"), FAVORITE("Favorites"), LATER("Watch Later"), UNWATCHED("Unwatched"), WATCHED("Watched") }
 enum class Sort(val label: String) { NAME("Name"), FOLDER("Folder"), DURATION("Duration"), SIZE("Size"), MODIFIED("Newest"), RELEASE_NEW("Newest release"), RELEASE_OLD("Oldest release") }
@@ -57,6 +58,7 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
     var category by mutableStateOf<Set<String>>(emptySet())
     var sort by mutableStateOf(Sort.NAME)
     var artist by mutableStateOf("")
+    var artistSearch by mutableStateOf("")
     var artistsVisible by mutableStateOf(false)
     var selected by mutableStateOf<Movie?>(null)
     var playing by mutableStateOf<Movie?>(null)
@@ -149,34 +151,23 @@ class LibraryModel(application: Application) : AndroidViewModel(application) {
         }
     }
     fun disconnect() { eventsCall?.cancel(); eventsCall = null; events?.cancel(); events = null }
-    fun choose(value: SavedList) { list = value; folder = ""; subfolder = ""; artist = ""; category = emptySet(); search = ""; artistsVisible = false }
+    fun choose(value: SavedList) { list = value; folder = ""; subfolder = ""; artist = ""; category = emptySet(); search = ""; sort = Sort.NAME; artistsVisible = false }
+    fun chooseArtist(value: String) { choose(SavedList.ALL); artist = value }
     fun chooseFolder(value: String) { folder = value; subfolder = ""; artist = ""; category = emptySet(); artistsVisible = false }
     override fun onCleared() { disconnect(); writes.close() }
 }
 
 // Phone and TV use the same filtering rules; large libraries stay off the UI thread.
 @Composable
-fun rememberFilteredMovies(model: LibraryModel): List<Movie> {
-    val movies = model.movies; val marks = model.marks; val search = model.search; val folder = model.folder; val subfolder = model.subfolder; val artist = model.artist; val categories = model.category; val list = model.list; val sort = model.sort
-    val filtered by produceState(emptyList<Movie>(), movies, marks, search, folder, subfolder, artist, categories, list, sort) {
+fun rememberLibraryResults(model: LibraryModel): LibraryResults {
+    val movies = model.movies; val marks = model.marks
+    val query = FilmQuery(model.folder, model.subfolder, model.search, model.artist, model.category, model.list, model.sort)
+    val results by produceState(LibraryResults(), movies, marks, query) {
         delay(120)
         value = withContext(Dispatchers.Default) {
-            movies.filter { m ->
-                val mark = marks[m.id] ?: Marks()
-                (folder.isEmpty() || m.topFolder == folder) && (subfolder.isEmpty() || m.folder == subfolder || m.folder.startsWith("$subfolder/")) &&
-                (artist.isEmpty() || artist in m.artists) && (search.isBlank() || m.title.contains(search.trim(), true) || m.folder.contains(search.trim(), true)) &&
-                (categories.isEmpty() || m.categories.any { it in categories }) &&
-                when (list) { SavedList.ALL -> true; SavedList.FAVORITE -> mark.favorite; SavedList.LATER -> mark.watchLater; SavedList.WATCHED -> mark.watched; SavedList.UNWATCHED -> !mark.watched }
-            }.sortedWith(when (sort) {
-                Sort.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }
-                Sort.FOLDER -> compareBy<Movie> { it.folder }.thenBy { it.title }
-                Sort.DURATION -> compareByDescending<Movie> { it.duration }.thenBy { it.title }
-                Sort.SIZE -> compareByDescending<Movie> { it.size }.thenBy { it.title }
-                Sort.MODIFIED -> compareByDescending<Movie> { it.modified }.thenBy { it.title }
-                Sort.RELEASE_NEW -> compareByDescending<Movie> { it.release }.thenBy { it.title }
-                Sort.RELEASE_OLD -> compareBy<Movie> { it.release.ifEmpty { "9999" } }.thenBy { it.title }
-            })
+            val scope = query.copy(categories = emptySet()).apply(movies, marks)
+            LibraryResults(scope.filter(query::matchesCategories), categoryOptions(scope))
         }
     }
-    return filtered
+    return results
 }
