@@ -29,6 +29,8 @@ See [TV instructions](apps/tv/README.md) for controls, installation, local nativ
 
 All apps fetch `GET /api/library` during Connect/foreground reconnect. On Fedora this explicitly wakes the HDD before returning the cached library. No client rebuild is needed for this contract. The root idle monitor requests standby after 10 minutes without I/O or server activity. Scanning and changed playback-position reports protect buffered playback; unchanged paused positions and SSE heartbeats do not reset idle. The server stores activity on the internal runtime filesystem. See [installation and physical verification](scripts/remote/README.md#drive-power-verification).
 
+Systemd mounts the library on demand by stable volume UUID and detaches the mount when the device disappears. Connect ensures the mount is active before waking the disk, so reconnecting the HDD does not require restarting the server or rebuilding any app. Failed requests while disconnected do not permanently disable socket activation. Unmount before unplugging to preserve pending writes.
+
 ## Shared contract
 
 | Behavior | Native app contract |

@@ -6,10 +6,27 @@ ROOT=/home/kevin/Projects/better-watch
 [[ -f "$ROOT/scripts/remote/drive.py" ]] || exit 1
 /usr/bin/install -o root -g root -m 0755 "$ROOT/scripts/remote/drive.py" /usr/local/sbin/better-watch-drive
 mkdir -p /var/lib/better-watch/config-backups
+# Retire the previous mount location before removing its generated units.
+for unit in 'mnt-ultra\x2dtouch.automount' 'mnt-ultra\x2dtouch.mount'; do
+    if /usr/bin/systemctl cat "$unit" >/dev/null 2>&1; then
+        /usr/bin/systemctl stop "$unit"
+    fi
+done
 /usr/bin/python3 - <<'PY'
 from pathlib import Path
 import shutil
 backup = Path('/var/lib/better-watch/config-backups')
+p = Path('/etc/fstab')
+text = p.read_text()
+lines = text.splitlines(keepends=True)
+retained = [line for line in lines if not (
+    len(fields := line.split()) >= 2
+    and fields[0] == 'UUID=3027-844B' and fields[1] == '/mnt/ultra-touch'
+)]
+if retained != lines:
+    if not (backup / 'fstab').exists(): shutil.copy2(p, backup / 'fstab')
+    retained = [line for line in retained if line.strip() != '# Seagate Ultra Touch. Mount on first access and tolerate the drive being disconnected.']
+    p.write_text(''.join(retained))
 # No periodic health queries for this USB bridge: its power-state reports are unreliable.
 p = Path('/etc/smartmontools/smartd.conf')
 line = '/dev/disk/by-id/usb-Seagate_Ultra_Touch_HDD_00000000NADD00NF-0:0 -d ignore'
@@ -35,7 +52,21 @@ trap 'rm -f "$TASK_RULE"' EXIT
 printf '%s\n' 'kevin ALL=(root) NOPASSWD: /usr/local/sbin/better-watch-drive mount, /usr/local/sbin/better-watch-drive wake' > "$TASK_RULE"
 /usr/bin/visudo -cf "$TASK_RULE"
 /usr/bin/install -o root -g root -m 0440 "$TASK_RULE" /etc/sudoers.d/better-watch-mount
-/usr/local/sbin/better-watch-drive mount
+for unit in 'Volumes-Ultra\x20Touch.mount' 'Volumes-Ultra\x20Touch.automount'; do
+    /usr/bin/install -o root -g root -m 0644 "$ROOT/scripts/remote/$unit" "/etc/systemd/system/$unit"
+done
+/usr/bin/systemctl daemon-reload
+if ! /usr/bin/systemctl is-active --quiet 'Volumes-Ultra\x20Touch.automount'; then
+    # One-time migration from the old manual mount. Stop playback before updating.
+    /usr/bin/systemctl stop 'Volumes-Ultra\x20Touch.mount'
+    /usr/bin/python3 - <<'PY'
+from pathlib import Path
+target = Path('/Volumes/Ultra Touch')
+if target.is_symlink() or (target.exists() and (target.stat().st_uid != 0 or any(target.iterdir()))):
+    raise RuntimeError('Mount location is not a safe empty directory')
+PY
+fi
+/usr/bin/systemctl enable --now 'Volumes-Ultra\x20Touch.automount'
 /usr/bin/install -D -o kevin -g kevin -m 0644 "$ROOT/scripts/remote/better-watch.service" /home/kevin/.config/systemd/user/better-watch.service
 /usr/bin/install -D -o kevin -g kevin -m 0644 "$ROOT/scripts/remote/better-watch.socket" /home/kevin/.config/systemd/user/better-watch.socket
 /usr/bin/runuser -u kevin -- env XDG_RUNTIME_DIR=/run/user/1000 /usr/bin/systemctl --user daemon-reload

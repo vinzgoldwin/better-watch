@@ -1,0 +1,16 @@
+[Unit]
+Description=Better Watch Ultra Touch library
+BindsTo=dev-disk-by\x2duuid-3027\x2d844B.device
+After=dev-disk-by\x2duuid-3027\x2d844B.device
+# Failed accesses while unplugged must not prevent the next reconnect.
+StartLimitIntervalSec=0
+JobTimeoutSec=15s
+
+[Mount]
+What=/dev/disk/by-uuid/3027-844B
+Where=/Volumes/Ultra Touch
+Type=exfat
+Options=uid=1000,gid=1000,umask=0077,noatime,nosuid,nodev,noexec
+# Detach stale open handles on removal so they cannot pin the old mount.
+LazyUnmount=yes
+TimeoutSec=30s

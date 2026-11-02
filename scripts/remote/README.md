@@ -12,9 +12,13 @@ Run the prepared privileged installer once:
 ssh -t asahi-codex 'sudo dnf install hdparm && sudo bash /home/kevin/Projects/better-watch/scripts/remote/install.sh'
 ```
 
+Stop playback and `better-watch.socket` / `better-watch.service` before updating an existing installation: migration replaces the manual mount. The installer can run with the HDD disconnected.
+
 The installer makes no partition-table changes and runs no disk repair tools.
 
 It mounts the known ExFAT volume at `/Volumes/Ultra Touch`, retaining cached file paths and IDs. Media cache stays in `.better-watch-cache` on the HDD. Service logs use the internal system journal. Background indexing excludes `/Volumes`; SMART polling ignores this bridge because its power-state readings are unreliable. The system service `better-watch-idle` requests standby after 10 minutes without disk I/O or Better Watch work (checked every 15 seconds). It reads kernel counters, not SMART power-state queries. Connecting from any app wakes the drive through `/api/library` using one uncached, read-only block read. Scans and advancing playback progress keep it awake, including buffered playback. Paused progress and profile SSE heartbeats do not. The monitor remains active when the application server is stopped and survives reboot/reconnection.
+
+Systemd owns the mount through `Volumes-Ultra\x20Touch.automount` and its matching mount unit, using volume UUID `3027-844B`. The mount binds to the device lifetime and detaches stale handles on removal; the automount stays available for the next access. Connect also starts the mount before waking the disk, so a running server recovers after reconnect without a restart, even when Linux assigns another device name. Failed starts while the HDD is absent do not disable the server socket. The installer removes the legacy `/mnt/ultra-touch` fstab entry and backs it up under `/var/lib/better-watch/config-backups/`.
 
 System configuration backups: `/var/lib/better-watch/config-backups/`.
 Media tools: `/home/kevin/.local/share/better-watch-media/bin/` (conda-forge FFmpeg).
@@ -34,9 +38,10 @@ The updated native app disconnects only itself. To take the disk offline, first 
 
 ```sh
 systemctl --user stop better-watch.socket better-watch.service
+sudo systemctl stop 'Volumes-Ultra\x20Touch.automount' 'Volumes-Ultra\x20Touch.mount'
 ```
 
-Re-enable access with `systemctl --user start better-watch.socket`. An older Mac build may still stop the service; the socket remains available to start it on the next incoming request.
+Re-enable access with `sudo systemctl start 'Volumes-Ultra\x20Touch.automount'`, then `systemctl --user start better-watch.socket`. An older Mac build may still stop the service; the socket remains available to start it on the next incoming request. Always unmount before physically unplugging: automatic recovery cannot preserve writes interrupted by removal.
 
 Shared lists and progress are stored at `~/.local/share/better-watch/profile.json` on the internal disk. `STATE_DIR` can override this location, particularly in tests. The service reads the cached library on startup and does not rescan periodically. See [the cross-platform change map](../../CROSS_PLATFORM.md).
 

@@ -2,8 +2,8 @@
 Description=Better Watch library
 Requires=better-watch.socket
 After=better-watch.socket
-StartLimitIntervalSec=60
-StartLimitBurst=2
+# Keep the socket recoverable after requests made while the HDD is absent.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
